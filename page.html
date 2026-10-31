@@ -1169,6 +1169,7 @@ const I18N = {
   "{n} contra 1": ["{n} contra 1", "{n} vs 1"],
   // report tips (written by the program)
   "CS al minut 10: {n}. L'objectiu és 80: prioritza els últims cops a la línia.": ["CS al minuto 10: {n}. El objetivo es 80: prioriza los últimos golpes en la línea.", "CS at minute 10: {n}. The goal is 80: prioritise last hits in lane."],
+  "Al minut 10 portaves {n} de farm, i l'objectiu és 80: prioritza els últims cops a la línia.": ["Al minuto 10 llevabas {n} de farmeo, y el objetivo es 80: prioriza los últimos golpes en la línea.", "At minute 10 you had {n} CS, and the goal is 80: prioritise last hits in lane."],
   "El farm cau de {a} a {b} CS/min a la mitja partida: recull onades laterals entre baralles.": ["El farmeo cae de {a} a {b} CS/min en el medio juego: recoge oleadas laterales entre peleas.", "Farm drops from {a} to {b} CS/min in mid game: catch side waves between fights."],
   "{n} morts abans del minut 15. Revisa-les a la repetició: on era el jungla rival?": ["{n} muertes antes del minuto 15. Revísalas en la repetición: ¿dónde estaba el jungla rival?", "{n} deaths before minute 15. Review them in the replay: where was the enemy jungler?"],
   "T'han gankejat més d'un cop: no empenyis sense visió al riu quan el jungla rival no es veu.": ["Te han gankeado más de una vez: no empujes sin visión en el río cuando no se ve el jungla rival.", "You got ganked more than once: don't push without river vision when the enemy jungler is missing."],
@@ -1562,6 +1563,8 @@ function speechChoice(){
 // someone calls cancel(). So the app keeps its own queue: one sentence at a time, and if a sentence hasn't
 // started after 4 s, or is still going after 30 s, the synthesis is reset and the queue carries on.
 const sayQ = []; let sayCur = null, sayStuck = 0, sayHold = 0;
+// "minut 10: 50" would be read as ten fifty in the morning: a number, colon and number becomes "10, 50"
+const speechText = t => String(t).replace(/(\d)\s*:\s+(\d)/g, "$1, $2");
 function speak(text){
   $("#status").textContent = text;
   if (!synth) return;
@@ -1571,7 +1574,7 @@ function sayPump(){
   if (sayCur || !sayQ.length || reportSpeaking) return;
   if (Date.now() < sayHold) { setTimeout(sayPump, sayHold - Date.now() + 10); return; }
   const text = sayQ.shift(), c = speechChoice();
-  const u = new SpeechSynthesisUtterance(tr(text, 0, c.lang));
+  const u = new SpeechSynthesisUtterance(speechText(tr(text, 0, c.lang)));
   if (c.voice) { u.voice = c.voice; u.lang = c.voice.lang; } else u.lang = {ca: "ca-ES", es: "es-ES", en: "en-US"}[c.lang];
   let started = false, t1 = 0, t2 = 0;
   const done = () => { if (sayCur !== u) return; clearTimeout(t1); clearTimeout(t2); sayCur = null; setTimeout(sayPump, 0); };
@@ -3728,7 +3731,7 @@ function speakReport(r){
   sayCancel(); reportSpeaking = true; if (btn) btn.textContent = "■ Atura";
   const c = speechChoice(), list = reportNarrative(r);
   list.forEach((t, i) => {
-    const u = new SpeechSynthesisUtterance(tr(t, 0, c.lang));
+    const u = new SpeechSynthesisUtterance(speechText(tr(t, 0, c.lang)));
     if (c.voice) { u.voice = c.voice; u.lang = c.voice.lang; }
     u.rate = 1.0;
     if (i === list.length - 1) u.onend = u.onerror = () => { reportSpeaking = false; const b = $("#rpVoice"); if (b) b.textContent = "▶ Escolta l'informe"; sayPump(); };

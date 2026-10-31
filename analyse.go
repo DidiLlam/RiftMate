@@ -357,7 +357,7 @@ func analyse(rec *Record) map[string]any {
 	vision := int(math.Round(me.Scores.WardScore))
 	tips := []string{}
 	if laner && cs["10"] != nil && *cs["10"] < 80 {
-		tips = append(tips, fmt.Sprintf("CS al minut 10: %d. L'objectiu és 80: prioritza els últims cops a la línia.", *cs["10"]))
+		tips = append(tips, fmt.Sprintf("Al minut 10 portaves %d de farm, i l'objectiu és 80: prioritza els últims cops a la línia.", *cs["10"]))
 	}
 	if role != "UTILITY" && csLane != nil && csMid != nil && *csLane > 0 && *csMid < *csLane-1 {
 		tips = append(tips, fmt.Sprintf("El farm cau de %s a %s CS/min a la mitja partida: recull onades laterals entre baralles.", num(*csLane), num(*csMid)))
