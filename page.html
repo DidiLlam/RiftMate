@@ -164,7 +164,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
 .trend .lab{font-size:11px;fill:var(--muted)}.focusbox{border-left:4px solid var(--accent);padding:6px 12px;margin:0}.focusbox.good{border-color:var(--good)}.focusbox.mid{border-color:var(--soon)}.focusbox.bad{border-color:var(--loss)}
 .wrt .ch{display:flex;align-items:center;gap:8px}
-.fdots{display:inline-flex;gap:3px;vertical-align:middle}.fdots i{width:9px;height:9px;border-radius:50%;background:var(--loss);opacity:.85}.fdots i.w{background:var(--good)}
+.fdots{display:inline-flex;gap:3px;vertical-align:middle}.fdots i{width:9px;height:9px;border-radius:50%;background:var(--loss);opacity:.85}.fdots i.w{background:var(--good)}.fdots i.last{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px currentColor;margin-left:3px}
 .cform{margin:0 0 8px;font-size:.92rem}.wrt .ch img{width:28px;height:28px;border-radius:6px}
 .wrbar{position:relative;height:8px;width:90px;border-radius:4px;background:var(--line);display:inline-block;vertical-align:middle;margin-right:8px;overflow:hidden}
 .wrbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}.wrbar.bad i{background:var(--loss)}
@@ -1040,7 +1040,7 @@ const I18N = {
   "Compres per campió": ["Compras por campeón", "Builds per champion"],
   "Torres": ["Torres", "Towers"], "Inhibidors": ["Inhibidores", "Inhibitors"], "Dracs": ["Dragones", "Dragons"], "Barons": ["Barones", "Barons"], "Larves": ["Larvas", "Grubs"],
   "Forma amb el teu campió: en triar-lo, com et va amb ell a les últimes partides": ["Forma con tu campeón: al elegirlo, cómo te va con él en las últimas partidas", "Form with your champion: when you pick it, how you've been doing with it lately"],
-  "Forma": ["Forma", "Form"], "Últimes partides, la més recent a l'esquerra": ["Últimas partidas, la más reciente a la izquierda", "Last games, most recent on the left"],
+  "Forma": ["Forma", "Form"], "Últimes partides: la més recent és la de la dreta, marcada": ["Últimas partidas: la más reciente es la de la derecha, marcada", "Last games: the most recent is the marked one on the right"],
   "Amb {x} vas molt bé: {n} victòries de les últimes {m} partides.": ["Con {x} vas muy bien: {n} victorias de las últimas {m} partidas.", "You're doing great with {x}: {n} wins in your last {m} games."],
   "Amb {x} vas bé: {n} victòries de les últimes {m} partides.": ["Con {x} vas bien: {n} victorias de las últimas {m} partidas.", "You're doing well with {x}: {n} wins in your last {m} games."],
   "Amb {x} últimament et costa: només {n} victòries de les últimes {m} partides.": ["Con {x} últimamente te cuesta: solo {n} victorias de las últimas {m} partidas.", "{x} has been tough lately: only {n} wins in your last {m} games."],
@@ -3071,7 +3071,8 @@ function reportVision(r){
 }
 
 // ---------- Form with a champion: recent results from the season data ----------
-const formDots = f => f ? `<span class="fdots" title="Últimes partides, la més recent a l'esquerra">${[...f.slice(0, 5)].map(x => `<i class="${x === "W" ? "w" : ""}"></i>`).join("")}</span>` : "";
+// oldest on the left, the last game on the right (with a ring)
+const formDots = f => f ? `<span class="fdots" title="Últimes partides: la més recent és la de la dreta, marcada">${[...f.slice(0, 5)].reverse().map((x, i, a) => `<i class="${x === "W" ? "w" : ""}${i === a.length - 1 ? " last" : ""}"></i>`).join("")}</span>` : "";
 function formOf(champ){
   const fm = seasonData?.form; if (!fm || !champ) return null;
   const key = norm(champId(CHAMPS.find(c => norm(c) === norm(champ)) || champ));
