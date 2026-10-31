@@ -3730,6 +3730,14 @@ const OBJ_ICON = {
   inhib: `<svg viewBox="0 0 16 16"><path d="M8 1.5A6.5 6.5 0 1 0 8 14.5 6.5 6.5 0 0 0 8 1.5zm0 2A4.5 4.5 0 1 1 8 12.5 4.5 4.5 0 0 1 8 3.5z"/><path d="M8 5.2 10.8 8 8 10.8 5.2 8z"/></svg>`,
   herald: `<svg viewBox="0 0 16 16"><path d="M8 2C4.5 2 2 5.5 1 8c1 2.5 3.5 6 7 6s6-3.5 7-6c-1-2.5-3.5-6-7-6z"/><circle cx="8" cy="8" r="2.6" fill="var(--panel)"/><circle cx="8" cy="8" r="1.2"/></svg>`
 };
+const cdObj = (name, team) => `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/${name}-${team}.png`;
+const OBJ_CD = {tower: ["tower"], inhib: ["inhibitor"], baron: ["baron"], dragon: ["dragon"], herald: ["herald"], grubs: ["voidgrub", "horde", "grub", "voidgrubs", "vilemaw"]};
+// next possible file name for an objective icon; the drawn icon when none loads
+function objIconNext(img){
+  const ic = img.dataset.ic, i = +img.dataset.try + 1, names = OBJ_CD[ic] || [], team = (img.src.match(/-(\d+)\.png$/) || [])[1] || "100";
+  if (i < names.length) { img.dataset.try = i; img.src = cdObj(names[i], team); return; }
+  img.replaceWith(document.createRange().createContextualFragment(OBJ_ICON[ic]));
+}
 function reportBoard(r){
   const b = r.map?.board;
   if (!b) {
@@ -3759,9 +3767,8 @@ function reportBoard(r){
   const body = teams.map(t => {
     const side = t.id === 100 ? "blue" : "red";
     // the game's own icons (match history of the League client, served by Community Dragon); drawn ones if they don't load
-    const CD = {tower: "tower", inhib: "inhibitor", baron: "baron", dragon: "dragon", herald: "herald", grubs: "horde"};
-    const oi = (ic, n, v) => `<span class="sbo" title="${n}"><img src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/${CD[ic]}-${t.id}.png" alt=""
-      onerror="this.replaceWith(document.createRange().createContextualFragment(OBJ_ICON['${ic}']))">${v ?? 0}</span>`;
+    const CD = {tower: ["tower"], inhib: ["inhibitor"], baron: ["baron"], dragon: ["dragon"], herald: ["herald"], grubs: ["voidgrub", "horde", "grub", "voidgrubs", "vilemaw"]};
+    const oi = (ic, n, v) => `<span class="sbo" title="${n}"><img src="${cdObj(CD[ic][0], t.id)}" alt="" data-ic="${ic}" data-try="0" onerror="objIconNext(this)">${v ?? 0}</span>`;
     const obj = `<span class="sbog">${oi("tower", "Torres", t.towers)}${oi("inhib", "Inhibidors", t.inhibs)}</span><span class="sbog">${oi("baron", "Barons", t.barons)}${oi("dragon", "Dracs", t.dragons)}${oi("grubs", "Larves", t.grubs)}${oi("herald", "Herald", t.heralds)}</span>`;
     return `<tr class="sbh"><td colspan="5"><b class="sb${side}">${t.id === 100 ? "Equip blau" : "Equip vermell"}</b> · <b class="${t.win ? "good" : "bad"}">${t.win ? "Victòria" : "Derrota"}</b>
         <span class="sbobj">${t.k} / ${t.d} / ${t.a}</span>${t.bans?.length ? `<span class="sbbans" title="Bans">${t.bans.map(id => `<img src="${ddChampImg(id)}" alt="" title="${esc(displayChamp(id))}" onerror="this.remove()">`).join("")}</span>` : ""}</td>
