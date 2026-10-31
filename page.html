@@ -1050,6 +1050,7 @@ const I18N = {
   "El teu KDA recent amb {x} és {n}, millor que la teva mitjana de la temporada ({m}).": ["Tu KDA reciente con {x} es {n}, mejor que tu media de la temporada ({m}).", "Your recent KDA with {x} is {n}, better than your season average ({m})."],
   "El teu KDA recent amb {x} és {n}, per sota de la teva mitjana de la temporada ({m}).": ["Tu KDA reciente con {x} es {n}, por debajo de tu media de la temporada ({m}).", "Your recent KDA with {x} is {n}, below your season average ({m})."],
   "Fa {n} dies que no jugues {x}: les primeres partides costen més.": ["Hace {n} días que no juegas {x}: las primeras partidas cuestan más.", "You haven't played {x} for {n} days: the first games are harder."],
+  "De millor a pitjor (victòries menys derrotes)": ["De mejor a peor (victorias menos derrotas)", "Best to worst (wins minus losses)"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2840,9 +2841,11 @@ $("#seasonBody").addEventListener("click", e => {
 });
 // the opponents one champion has faced this season, most played first
 function vsRow(c){
-  const list = c.vs.slice(0, 24).map(o => { const wr = Math.round(100 * o.wins / o.games);
+  // best to worst: wins minus losses, then win rate, then games
+  const sorted = c.vs.slice().sort((x, y) => (y.wins - y.losses) - (x.wins - x.losses) || y.wins / y.games - x.wins / x.games || y.games - x.games);
+  const list = sorted.map(o => { const wr = Math.round(100 * o.wins / o.games);
     return `<span title="${o.wins}V ${o.losses}D"><img src="${champImg(o.champ)}" alt="" onerror="this.style.visibility='hidden'"><i data-noi18n>${esc(o.name)}</i> <b class="${o.games >= 2 ? (wr >= 50 ? "good" : "bad") : ""}">${o.wins}–${o.losses}</b></span>`; }).join("");
-  const more = c.vs.length > 24 ? `<span class="note">i ${c.vs.length - 24} més</span>` : "";
+  const more = `<span class="note">De millor a pitjor (victòries menys derrotes)</span>`;
   return `<tr class="vsrow"><td colspan="6"><div class="vsl">${list}${more}</div></td></tr>`;
 }
 // season record of one of my champions against one lane opponent (names as the client gives them)
