@@ -1,7 +1,7 @@
 {
- "version": "2.0.7",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.7.exe",
- "size": 8205824,
- "sha256": "38b7d8e476345bbea4cd96fabc604f18a9881a69212e1630f0392751a355ffa3",
- "notes": "- Icones oficials del joc per als objectius de la taula\n- Les versions noves es detecten a l'instant (abans podien tardar 5 minuts)"
+ "version": "2.0.8",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.8.exe",
+ "size": 8206336,
+ "sha256": "b48a1a593224658ec1ea6a4e382ed1b523e61ee26938ade0147be8d3cc56ce58",
+ "notes": "- Icona oficial de les larves a la taula (si el joc la té)"
 }
