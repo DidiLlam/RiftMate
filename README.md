@@ -15,3 +15,7 @@ GOOS=windows GOARCH=amd64 go build -ldflags "-H windowsgui -s -w" -o RiftMate.ex
 ```
 
 Les dades (informes, ajustos, claus) es guarden només a l'ordinador, a `%LOCALAPPDATA%\RiftMate`.
+
+---
+
+RiftMate no està avalat per Riot Games i no reflecteix les opinions de Riot Games ni de ningú implicat oficialment en la producció o gestió de League of Legends. League of Legends i Riot Games són marques comercials o marques registrades de Riot Games, Inc.

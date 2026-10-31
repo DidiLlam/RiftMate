@@ -23,6 +23,9 @@ var page []byte
 //go:embed map11.png
 var mapPNG []byte
 
+//go:embed benvinguda.jpg
+var welcomeJPG []byte
+
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
@@ -387,6 +390,11 @@ func serve(ln net.Listener) {
 		w.Header().Set("Cache-Control", "max-age=86400")
 		w.Header().Set("Content-Type", "image/png")
 		w.Write(mapPNG)
+	})
+	mux.HandleFunc("/benvinguda.jpg", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Cache-Control", "max-age=86400")
+		w.Header().Set("Content-Type", "image/jpeg")
+		w.Write(welcomeJPG)
 	})
 	mux.HandleFunc("/api/champselect", func(w http.ResponseWriter, req *http.Request) {
 		b, _ := json.Marshal(champSelect())
