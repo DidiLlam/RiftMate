@@ -1,7 +1,7 @@
 {
- "version": "2.0.2",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.2.exe",
- "size": 8192512,
- "sha256": "6019c470d77b50934142926f3d6df35b5f74237669d3c2e70f24308e30282279",
- "notes": "- Taula de la partida a l'informe (els 10 jugadors, objectes, runes, rang, dany i MVP)\n- Ajustos reorganitzats en columnes\n- Botó per comprovar si hi ha versió nova"
+ "version": "2.0.3",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.3.exe",
+ "size": 8202752,
+ "sha256": "f5a532ae1691303b82c1a9809f50bf2ab9e81fc014cead78352dfa58313a74f0",
+ "notes": "- La taula de la partida es descarrega sola als informes que no la tenien\n- Decoració de temporada molt més treballada (Halloween: lluna, teranyines, aranyes, ratpenats, brases, boira i carbasses amb espelma)"
 }
