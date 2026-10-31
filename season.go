@@ -207,6 +207,17 @@ type champSeason struct {
 	Losses int         `json:"losses"`
 	WR     int         `json:"wr"`
 	KDA    float64     `json:"kda"`
+	Form   string      `json:"form"` // last 10 results with this champion in this queue, newest first: W / L
+}
+
+// champForm: recent form of one champion over every ranked queue (newest first), for the coach's comments
+type champForm struct {
+	Name    string  `json:"name"`
+	Form    string  `json:"form"` // last 10 results, newest first
+	KDA     float64 `json:"kda"`  // KDA of those games
+	SeasonK float64 `json:"season_kda"`
+	Games   int     `json:"games"` // ranked games with it this season
+	Last    int64   `json:"last"`  // end of the last game (unix)
 }
 
 func seasonJSON() []byte {
@@ -216,6 +227,7 @@ func seasonJSON() []byte {
 	out := map[string]any{"busy": seasonBusy, "done": seasonDone, "total": seasonTotal, "error": seasonErr, "synced": cache.IDs != nil}
 	seasonMu.Unlock()
 	queues := map[string]any{}
+	all := []seasonGame{}
 	for q, n := range need {
 		per := map[string]*champSeason{}
 		k, d, a := map[string]int{}, map[string]int{}, map[string]int{}
@@ -235,6 +247,10 @@ func seasonJSON() []byte {
 				per[g.Champ] = cs
 			}
 			cs.Games++
+			if len(cs.Form) < 10 {
+				cs.Form += map[bool]string{true: "W", false: "L"}[g.Win]
+			}
+			all = append(all, g)
 			if g.Win {
 				cs.Wins++
 			} else {
@@ -282,6 +298,37 @@ func seasonJSON() []byte {
 		queues[map[int]string{420: "RANKED_SOLO_5x5", 440: "RANKED_FLEX_SR"}[q]] = map[string]any{"champions": list, "counted": counted, "expected": n}
 	}
 	out["queues"] = queues
+	// recent form per champion, every ranked queue together
+	sort.Slice(all, func(i, j int) bool { return all[i].End > all[j].End })
+	form := map[string]*champForm{}
+	fk := map[string][3]int{}
+	sk := map[string][3]int{}
+	for _, g := range all {
+		f := form[g.Champ]
+		if f == nil {
+			f = &champForm{Name: displayName(g.Champ), Last: g.End}
+			form[g.Champ] = f
+		}
+		f.Games++
+		x := sk[g.Champ]
+		sk[g.Champ] = [3]int{x[0] + g.K, x[1] + g.D, x[2] + g.A}
+		if len(f.Form) < 10 {
+			f.Form += map[bool]string{true: "W", false: "L"}[g.Win]
+			y := fk[g.Champ]
+			fk[g.Champ] = [3]int{y[0] + g.K, y[1] + g.D, y[2] + g.A}
+		}
+	}
+	kda := func(v [3]int) float64 {
+		d := v[1]
+		if d == 0 {
+			d = 1
+		}
+		return float64(int(float64(v[0]+v[2])/float64(d)*100+0.5)) / 100
+	}
+	for ch, f := range form {
+		f.KDA, f.SeasonK = kda(fk[ch]), kda(sk[ch])
+	}
+	out["form"] = form
 	b, _ := json.Marshal(out)
 	return b
 }

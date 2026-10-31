@@ -163,7 +163,9 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend svg{width:100%;height:auto;display:block}.trend .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.trend .ref{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.8}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
 .trend .lab{font-size:11px;fill:var(--muted)}.focusbox{border-left:4px solid var(--accent);padding:6px 12px;margin:0}.focusbox.good{border-color:var(--good)}.focusbox.mid{border-color:var(--soon)}.focusbox.bad{border-color:var(--loss)}
-.wrt .ch{display:flex;align-items:center;gap:8px}.wrt .ch img{width:28px;height:28px;border-radius:6px}
+.wrt .ch{display:flex;align-items:center;gap:8px}
+.fdots{display:inline-flex;gap:3px;vertical-align:middle}.fdots i{width:9px;height:9px;border-radius:50%;background:var(--loss);opacity:.85}.fdots i.w{background:var(--good)}
+.cform{margin:0 0 8px;font-size:.92rem}.wrt .ch img{width:28px;height:28px;border-radius:6px}
 .wrbar{position:relative;height:8px;width:90px;border-radius:4px;background:var(--line);display:inline-block;vertical-align:middle;margin-right:8px;overflow:hidden}
 .wrbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}.wrbar.bad i{background:var(--loss)}
 .scr{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -351,6 +353,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="cRem"><input type="checkbox" id="cRem" checked><span>Recordatoris generals (minimapa, onades, jungla…)</span></label>
     <label class="ph-item" for="cGuide"><input type="checkbox" id="cGuide" checked><span>Consells del teu campió, de guies de jugadors d'alt nivell</span></label>
     <p class="note" id="guideList"></p>
+    <label class="ph-item" for="cForm"><input type="checkbox" id="cForm" checked><span>Forma amb el teu campió: en triar-lo, com et va amb ell a les últimes partides</span></label>
     <label class="ph-item" for="cFocus"><input type="checkbox" id="cFocus" checked><span>Objectiu de la partida: a l'inici, un sol punt a treballar triat de les teves últimes 10 partides</span></label>
     <label class="ph-item" for="cData"><input type="checkbox" id="cData" checked><span>Avisos amb dades de la partida (farm contra el rival, morts, roams del rival)</span></label>
     <div class="row2"><label for="cMin">Recordatori cada</label><input type="number" id="cMin" min="30" max="600" value="70"><span>–</span><input type="number" id="cMax" min="30" max="900" value="110"><span>segons</span></div>
@@ -1036,6 +1039,17 @@ const I18N = {
   "No s'ha pogut comprovar": ["No se ha podido comprobar", "Couldn't check"], "Ja tens l'última ({x})": ["Ya tienes la última ({x})", "You have the latest ({x})"],
   "Compres per campió": ["Compras por campeón", "Builds per champion"],
   "Torres": ["Torres", "Towers"], "Inhibidors": ["Inhibidores", "Inhibitors"], "Dracs": ["Dragones", "Dragons"], "Barons": ["Barones", "Barons"], "Larves": ["Larvas", "Grubs"],
+  "Forma amb el teu campió: en triar-lo, com et va amb ell a les últimes partides": ["Forma con tu campeón: al elegirlo, cómo te va con él en las últimas partidas", "Form with your champion: when you pick it, how you've been doing with it lately"],
+  "Forma": ["Forma", "Form"], "Últimes partides, la més recent a l'esquerra": ["Últimas partidas, la más reciente a la izquierda", "Last games, most recent on the left"],
+  "Amb {x} vas molt bé: {n} victòries de les últimes {m} partides.": ["Con {x} vas muy bien: {n} victorias de las últimas {m} partidas.", "You're doing great with {x}: {n} wins in your last {m} games."],
+  "Amb {x} vas bé: {n} victòries de les últimes {m} partides.": ["Con {x} vas bien: {n} victorias de las últimas {m} partidas.", "You're doing well with {x}: {n} wins in your last {m} games."],
+  "Amb {x} últimament et costa: només {n} victòries de les últimes {m} partides.": ["Con {x} últimamente te cuesta: solo {n} victorias de las últimas {m} partidas.", "{x} has been tough lately: only {n} wins in your last {m} games."],
+  "Amb {x} vas igualat: {n} victòries de les últimes {m} partides.": ["Con {x} vas igualado: {n} victorias de las últimas {m} partidas.", "You're even with {x}: {n} wins in your last {m} games."],
+  "Portes {n} victòries seguides amb {x}.": ["Llevas {n} victorias seguidas con {x}.", "You've won {n} in a row with {x}."],
+  "Portes {n} derrotes seguides amb {x}: juga segur i no forcis.": ["Llevas {n} derrotas seguidas con {x}: juega seguro y no fuerces.", "You've lost {n} in a row with {x}: play safe and don't force."],
+  "El teu KDA recent amb {x} és {n}, millor que la teva mitjana de la temporada ({m}).": ["Tu KDA reciente con {x} es {n}, mejor que tu media de la temporada ({m}).", "Your recent KDA with {x} is {n}, better than your season average ({m})."],
+  "El teu KDA recent amb {x} és {n}, per sota de la teva mitjana de la temporada ({m}).": ["Tu KDA reciente con {x} es {n}, por debajo de tu media de la temporada ({m}).", "Your recent KDA with {x} is {n}, below your season average ({m})."],
+  "Fa {n} dies que no jugues {x}: les primeres partides costen més.": ["Hace {n} días que no juegas {x}: las primeras partidas cuestan más.", "You haven't played {x} for {n} days: the first games are harder."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2005,6 +2019,7 @@ function coachStart(data){
   helpStart(data, t);
   guideStart(data, t);
   focusStart(t);
+  coach.formAt = t < 150 ? t + 12 : Infinity;
   visStart(data, t);
   for (const m of [600, 840, 1500]) if (t > m + 15) coach.said.add("t" + m);
 }
@@ -2070,6 +2085,7 @@ function coachTick(data){
   helpTick(data, t, me, opp);
   guideTick(data, t);
   focusTick(t);
+  if (t >= coach.formAt) { coach.formAt = Infinity; sayForm(playerBy(data, game.me)?.championName, "partida"); }
   visTick(data, t, me);
 
   // general reminders, never right after another message
@@ -2095,7 +2111,7 @@ function loadItems(){
 const CONTROL_WARD = 2055;
 const itemName = id => ITEMS[id]?.name || ("#" + id);
 const isFinal = id => !!ITEMS[id]?.final;
-for (const id of ["cGold","cObj","cSpike","cWard","cScout","cFocus","cVis"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
+for (const id of ["cGold","cObj","cSpike","cWard","cScout","cFocus","cVis","cForm"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
 const parseMS = s => { const m = String(s || "").trim().match(/^(\d{1,2})(?::(\d{2}))?$/); return m ? (+m[1]) * 60 + (+(m[2] || 0)) : null; };
 for (const id of ["oDrag","oGrubs","oHerald","oBaron"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.value = v;
   el.addEventListener("change", () => { if (parseMS(el.value) == null) el.value = el.defaultValue; store.set(id, el.value); }); }
@@ -2801,9 +2817,9 @@ async function loadSeason(sync){
   const q = qs[seasonQueue];
   if (q && q.champions.length) {
     const tot = q.champions.reduce((a, c) => [a[0] + c.wins, a[1] + c.losses], [0, 0]);
-    html += `<div class="tbl"><table class="wrt"><tr><th>Campió</th><th class="n">Partides</th><th class="n">V – D</th><th>Win rate</th><th class="n">KDA</th></tr>` +
+    html += `<div class="tbl"><table class="wrt"><tr><th>Campió</th><th class="n">Partides</th><th class="n">V – D</th><th>Win rate</th><th class="n">KDA</th><th>Forma</th></tr>` +
       q.champions.map(c => `<tr class="${c.vs?.length ? "cl" : ""}" data-ch="${esc(c.champ)}" ${c.vs?.length ? `title="Toca per veure contra qui"` : ""}><td><span class="ch"><span class="car">${c.vs?.length ? (seasonOpen.has(c.champ) ? "▾" : "▸") : ""}</span><img src="${champImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b></span></td><td class="n">${c.games}</td><td class="n">${c.wins} – ${c.losses}</td>
-        <td><span class="wrbar ${c.wr < 50 ? "bad" : ""}"><i style="width:${c.wr}%"></i></span><b class="${c.wr >= 50 ? "good" : "bad"}">${c.wr}%</b></td><td class="n">${c.kda.toFixed(2).replace(".", ",")}</td></tr>` + (seasonOpen.has(c.champ) && c.vs?.length ? vsRow(c) : "")).join("") +
+        <td><span class="wrbar ${c.wr < 50 ? "bad" : ""}"><i style="width:${c.wr}%"></i></span><b class="${c.wr >= 50 ? "good" : "bad"}">${c.wr}%</b></td><td class="n">${c.kda.toFixed(2).replace(".", ",")}</td><td>${formDots(c.form)}</td></tr>` + (seasonOpen.has(c.champ) && c.vs?.length ? vsRow(c) : "")).join("") +
       `</table></div><p class="note">${q.counted} partides de ${queueTxt(seasonQueue)} d'aquesta temporada (${tot[0]}V ${tot[1]}D), tretes de l'historial oficial de Riot. Les partides refetes (remake) no compten, igual que al rang.${q.counted < q.expected ? ` Encara en falten ${q.expected - q.counted}.` : ""} Toca un campió per veure el resultat contra cada rival de línia.</p>`;
   } else if (!r.busy && !r.error && r.synced) html += `<p class="note">Encara no hi ha partides classificatòries aquesta temporada.</p>`;
   else if (!r.busy && !r.error) html += `<p class="note">Preparant la lectura de la temporada…</p>`;
@@ -2824,7 +2840,7 @@ function vsRow(c){
   const list = c.vs.slice(0, 24).map(o => { const wr = Math.round(100 * o.wins / o.games);
     return `<span title="${o.wins}V ${o.losses}D"><img src="${champImg(o.champ)}" alt="" onerror="this.style.visibility='hidden'"><i data-noi18n>${esc(o.name)}</i> <b class="${o.games >= 2 ? (wr >= 50 ? "good" : "bad") : ""}">${o.wins}–${o.losses}</b></span>`; }).join("");
   const more = c.vs.length > 24 ? `<span class="note">i ${c.vs.length - 24} més</span>` : "";
-  return `<tr class="vsrow"><td colspan="5"><div class="vsl">${list}${more}</div></td></tr>`;
+  return `<tr class="vsrow"><td colspan="6"><div class="vsl">${list}${more}</div></td></tr>`;
 }
 // season record of one of my champions against one lane opponent (names as the client gives them)
 function seasonVs(mine, opp){
@@ -3049,6 +3065,44 @@ function reportVision(r){
     <div class="mapwrap wmw"><div class="map"><img alt="" src="/map11.png" onerror="this.remove()"><svg viewBox="0 0 1000 1000">${mapImgOk ? "" : mapBase()}${zones}</svg></div>
     <ol class="wlist">${spots.map(p => `<li><b class="${p.kind === "safe" ? "" : p.kind}">${esc(p.t)}</b>. <span>${esc(p.w)}</span></li>`).join("")}</ol></div>
     <p class="note">Costat ${side === "red" ? "vermell" : "blau"}. Zones aproximades. Verd: segur, quan l'onada et ve empesa. Taronja: quan empenys tu, com més endins més arriscat. Blau: abans dels objectius. Riot no diu on poses els wards, per això no surten els teus. Fonts: guies de visió de Dignitas, Mobalytics, WeCoach i MetaBot.GG.</p></section>`;
+}
+
+// ---------- Form with a champion: recent results from the season data ----------
+const formDots = f => f ? `<span class="fdots" title="Últimes partides, la més recent a l'esquerra">${[...f.slice(0, 5)].map(x => `<i class="${x === "W" ? "w" : ""}"></i>`).join("")}</span>` : "";
+function formOf(champ){
+  const fm = seasonData?.form; if (!fm || !champ) return null;
+  const key = norm(champId(CHAMPS.find(c => norm(c) === norm(champ)) || champ));
+  for (const [k, v] of Object.entries(fm)) if (norm(k) === key || norm(v.name) === norm(champ)) return v;
+  return null;
+}
+// sentences about the form with a champion, most important first ([] when there is too little to say)
+function formFacts(champ){
+  const f = formOf(champ); if (!f || f.form.length < 3) return [];
+  const C = CHAMPS.find(c => norm(c) === norm(champ)) || displayChamp(champ), n = f.form.length, w = [...f.form].filter(x => x === "W").length, wr = w / n, out = [];
+  if (wr >= .65) out.push(`Amb ${C} vas molt bé: ${w} victòries de les últimes ${n} partides.`);
+  else if (wr >= .55) out.push(`Amb ${C} vas bé: ${w} victòries de les últimes ${n} partides.`);
+  else if (wr <= .35) out.push(`Amb ${C} últimament et costa: només ${w} victòries de les últimes ${n} partides.`);
+  else out.push(`Amb ${C} vas igualat: ${w} victòries de les últimes ${n} partides.`);
+  let st = 0; for (const x of f.form) { if (x === f.form[0]) st++; else break; }
+  if (st >= 3 && f.form[0] === "W") out.push(`Portes ${st} victòries seguides amb ${C}.`);
+  else if (st >= 3) out.push(`Portes ${st} derrotes seguides amb ${C}: juga segur i no forcis.`);
+  if (f.games >= 8 && n >= 5 && f.season_kda > 0) {
+    const a = fmt1(f.kda), b = fmt1(f.season_kda);
+    if (f.kda >= f.season_kda * 1.25) out.push(`El teu KDA recent amb ${C} és ${a}, millor que la teva mitjana de la temporada (${b}).`);
+    else if (f.kda <= f.season_kda * .75) out.push(`El teu KDA recent amb ${C} és ${a}, per sota de la teva mitjana de la temporada (${b}).`);
+  }
+  const days = f.last ? Math.floor((Date.now() / 1000 - f.last) / 86400) : 0;
+  if (days >= 21) out.push(`Fa ${days} dies que no jugues ${C}: les primeres partides costen més.`);
+  return out;
+}
+const formSaid = {};
+function sayForm(champ, where){
+  if (!$("#cForm").checked || !champ) return;
+  const k = norm(champ); if (formSaid[k] && Date.now() - formSaid[k] < 20 * 60 * 1000) return;
+  const f = formFacts(champ); if (!f.length) return;
+  formSaid[k] = Date.now();
+  plog(`Forma (${where}): ${f.join(" ")}`);
+  f.slice(0, 2).forEach(x => (coach ? coachSay(x) : speak(x)));
 }
 // ---------- Loading screen: scout the rivals (public Riot data) and warn about the dangerous ones ----------
 let myRankAbs = null, scoutTimer = null, scoutSaid = false, lastScout = null;
@@ -3555,10 +3609,13 @@ function renderCS(cs){
   const same = rs.s.every(x => now.includes(x));
   $("#csSpells").innerHTML = `<div class="spellrec">${rs.s.map(x => `<img alt="${x}" title="${x}" src="${spellIcon(x)}" onerror="this.remove()">`).join("")}<b>${rs.s.map(x => NAMES[x] || x).join(" + ")}</b>${now.length ? (same ? `<span class="tag good">ja els tens</span>` : `<span class="tag bad">ara portes ${now.map(x => NAMES[x] || x).join(" + ")}</span>`) : ""}</div><ul class="cslist">${rs.why.map(w => `<li>${esc(w)}</li>`).join("")}</ul><p class="note">Consells generals; Teleport contra Sion i Galio, de la guia de pumpTM.</p>`;
   const myChamp = me.name;
+  const ff = myChamp ? formFacts(myChamp) : [];
+  if (myChamp && me.locked) sayForm(myChamp, "selecció");
+  const formLine = ff.length ? `<p class="cform">${formDots(formOf(myChamp)?.form)} ${esc(ff[0])}</p>` : "";
   if (myChamp && csSel) {
     const m = MATCHUP[`${myChamp}|${csSel}`], r = recordVs(myChamp, csSel), sv = seasonVs(myChamp, csSel);
-    $("#csMatch").innerHTML = `<p><b data-noi18n>${esc(myChamp)}</b> contra <b data-noi18n>${esc(csSel)}</b></p>` + (sv.n ? `<p>Aquesta temporada: ${sv.w}V – ${sv.l}D.</p>` : r.n ? `<p>El teu historial: ${r.w}V – ${r.l}D.</p>` : "") + (m ? `<p>${esc(m.tip)}</p><p class="note">Font: ${esc(m.src)}</p>` : (r.n || sv.n ? "" : `<p class="note">Sense dades d'aquest enfrontament.</p>`));
-  } else $("#csMatch").innerHTML = `<p class="note">${myChamp ? "Toca el teu rival de línia per veure el matchup." : "Tria (o passa el ratolí per sobre d') un campió per veure el matchup."}</p>`;
+    $("#csMatch").innerHTML = formLine + `<p><b data-noi18n>${esc(myChamp)}</b> contra <b data-noi18n>${esc(csSel)}</b></p>` + (sv.n ? `<p>Aquesta temporada: ${sv.w}V – ${sv.l}D.</p>` : r.n ? `<p>El teu historial: ${r.w}V – ${r.l}D.</p>` : "") + (m ? `<p>${esc(m.tip)}</p><p class="note">Font: ${esc(m.src)}</p>` : (r.n || sv.n ? "" : `<p class="note">Sense dades d'aquest enfrontament.</p>`));
+  } else $("#csMatch").innerHTML = formLine + `<p class="note">${myChamp ? "Toca el teu rival de línia per veure el matchup." : "Tria (o passa el ratolí per sobre d') un campió per veure el matchup."}</p>`;
 }
 async function pollCS(){
   if (game || !location.protocol.startsWith("http")) { $("#csCard").hidden = true; return; }
