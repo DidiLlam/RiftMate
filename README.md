@@ -1,3 +1,3 @@
-# RiftMate: versions per descarregar
+# RiftMate: descàrrega
 
-Descarrega el fitxer `RiftMate-<versió>.exe` més recent. Les versions instal·lades s'actualitzen soles a partir de la 2.0.0.
+Primera instal·lació: descarrega [RiftMate.exe](https://github.com/DidiLlam/RiftMate/raw/dist/RiftMate.exe) (sempre és l'última versió), obre'l i accepta la instal·lació. Després s'actualitza sol.
