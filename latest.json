@@ -1,7 +1,7 @@
 {
- "version": "2.0.8",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.8.exe",
- "size": 8206336,
- "sha256": "b48a1a593224658ec1ea6a4e382ed1b523e61ee26938ade0147be8d3cc56ce58",
- "notes": "- Icona oficial de les larves a la taula (si el joc la té)"
+ "version": "2.0.9",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.9.exe",
+ "size": 8219136,
+ "sha256": "cadee1f175ebbbb8126683f1b6ebc1926eefb7263dedabcf4729204cd0762e0e",
+ "notes": "- El coach et diu com vas amb el teu campió en triar-lo (últimes partides, ratxes i KDA)\n- Columna de forma a la taula de la temporada"
 }
