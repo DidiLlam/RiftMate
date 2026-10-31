@@ -48,7 +48,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
 .sb .sbd i em{display:block;height:100%;border-radius:3px}.sb .sbblue .sbd i em,.sb tr.sbblue .sbd i em{background:var(--blue)}.sb tr.sbred .sbd i em{background:var(--red)}
 .sb .sbbans{display:inline-flex;gap:3px;vertical-align:middle;margin-left:8px}.sb .sbbans img{width:20px;height:20px;border-radius:4px;filter:grayscale(.7)}
 .sbobj{display:inline-flex;gap:12px;margin-left:12px;font-family:var(--mono);align-items:center}
-.sbo{display:inline-flex;align-items:center;gap:5px}.sbo svg{width:16px;height:16px}
+.sbo{display:inline-flex;align-items:center;gap:5px}.sbo svg,.sbo img{width:16px;height:16px;object-fit:contain}
 .sbog{display:inline-flex;gap:10px;margin-right:22px;color:var(--muted)}.sbo svg{fill:var(--muted)}
 /* the empty space at both sides of wide windows: champion art and seasonal decoration, behind the page */
 .sideart{position:fixed;top:0;bottom:0;width:calc((100vw - 1120px) / 2 + 40px);z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
@@ -3758,7 +3758,10 @@ function reportBoard(r){
   const teams = b.teams.slice().sort((a, c) => (c.id === myTeam) - (a.id === myTeam));
   const body = teams.map(t => {
     const side = t.id === 100 ? "blue" : "red";
-    const oi = (ic, n, v) => `<span class="sbo" title="${n}">${OBJ_ICON[ic]}${v ?? 0}</span>`;
+    // the game's own icons (match history of the League client, served by Community Dragon); drawn ones if they don't load
+    const CD = {tower: "tower", inhib: "inhibitor", baron: "baron", dragon: "dragon", herald: "herald", grubs: "horde"};
+    const oi = (ic, n, v) => `<span class="sbo" title="${n}"><img src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/${CD[ic]}-${t.id}.png" alt=""
+      onerror="this.replaceWith(document.createRange().createContextualFragment(OBJ_ICON['${ic}']))">${v ?? 0}</span>`;
     const obj = `<span class="sbog">${oi("tower", "Torres", t.towers)}${oi("inhib", "Inhibidors", t.inhibs)}</span><span class="sbog">${oi("baron", "Barons", t.barons)}${oi("dragon", "Dracs", t.dragons)}${oi("grubs", "Larves", t.grubs)}${oi("herald", "Herald", t.heralds)}</span>`;
     return `<tr class="sbh"><td colspan="5"><b class="sb${side}">${t.id === 100 ? "Equip blau" : "Equip vermell"}</b> · <b class="${t.win ? "good" : "bad"}">${t.win ? "Victòria" : "Derrota"}</b>
         <span class="sbobj">${t.k} / ${t.d} / ${t.a}</span>${t.bans?.length ? `<span class="sbbans" title="Bans">${t.bans.map(id => `<img src="${ddChampImg(id)}" alt="" title="${esc(displayChamp(id))}" onerror="this.remove()">`).join("")}</span>` : ""}</td>
