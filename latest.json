@@ -1,7 +1,7 @@
 {
- "version": "2.0.10",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.10.exe",
- "size": 8220160,
- "sha256": "b0d2054a93f2eb78656e2cb06bd5b9ca69b6a2e66af9ecf557b8f2afaa8843d5",
- "notes": "- La veu ja no llegeix 'minut 10: 50' com si fos una hora"
+ "version": "2.0.11",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.11.exe",
+ "size": 8220672,
+ "sha256": "c47aacddfc475f3f57b60d37a05b5436e0b48a16023b4a773d889822e734ae15",
+ "notes": "- Forma: la partida més recent ara és la de la dreta, marcada\n- La temporada es torna a llegir 3, 10 i 25 minuts després de cada partida"
 }
