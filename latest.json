@@ -1,7 +1,7 @@
 {
- "version": "2.0.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.0.exe",
- "size": 8152576,
- "sha256": "be3c1fd0cfb8b3566171d83d126b03348e290bdff8bca13ec7313a4799d4a425",
- "notes": "- Actualitzacions automàtiques amb un clic\n- Perfils per compte (cada compte té els seus informes, temporada i campions)\n- Pantalla de benvinguda"
+ "version": "2.0.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.1.exe",
+ "size": 8162304,
+ "sha256": "ca5321b11d7915071288df7394448c6f309d961a32e415b38ad9aa021f8d521a",
+ "notes": "- Imatges dels teus campions als costats de la finestra\n- Decoració de temporada: Halloween, Nadal, Sant Valentí, Sant Jordi i estiu"
 }
