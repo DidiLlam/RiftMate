@@ -50,7 +50,8 @@ func updateBase() string {
 	if b := os.Getenv("LT_UPDATE_BASE"); b != "" { // tests
 		return b
 	}
-	return "https://raw.githubusercontent.com/" + updateRepo + "/dist/latest.json"
+	// GitHub's API answers with the file as it is now; raw.githubusercontent.com keeps a copy for 5 minutes
+	return "https://api.github.com/repos/" + updateRepo + "/contents/latest.json?ref=dist"
 }
 
 // newerVersion: is a (like "2.0.1" or "v2.0.1") newer than b?
@@ -80,9 +81,13 @@ func latestRelease(force bool) (*relInfo, error) {
 		return updLast, nil
 	}
 	req, _ := http.NewRequest("GET", updateBase(), nil)
-	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Accept", "application/vnd.github.raw+json")
 	req.Header.Set("User-Agent", appName+"/"+version)
 	r, err := (&http.Client{Timeout: 15 * time.Second}).Do(req)
+	if err == nil && r.StatusCode != 200 && os.Getenv("LT_UPDATE_BASE") == "" { // API limit reached (60 an hour): the raw copy
+		r.Body.Close()
+		r, err = (&http.Client{Timeout: 15 * time.Second}).Get("https://raw.githubusercontent.com/" + updateRepo + "/dist/latest.json?t=" + strconv.FormatInt(time.Now().Unix(), 10))
+	}
 	if err != nil {
 		return nil, err
 	}
