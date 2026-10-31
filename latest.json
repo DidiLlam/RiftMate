@@ -1,7 +1,7 @@
 {
- "version": "2.0.5",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.5.exe",
- "size": 8204800,
- "sha256": "9c6414bda655ab4753e76d7c692d8474389844cfc5b858fa02a03dc4c55127d7",
- "notes": "- Objectius de la taula agrupats amb icones: torres i inhibidors, i baró, dracs, larves i herald"
+ "version": "2.0.6",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.6.exe",
+ "size": 8205312,
+ "sha256": "7e5e589f88a3d54aac69c2712637a3a2d5f42a6d8acb6791d56ba17416432cf9",
+ "notes": "- Icones oficials del joc per als objectius de la taula"
 }
