@@ -25,6 +25,29 @@
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+
+/* scoreboard */
+.sb{width:100%;border-collapse:collapse;font-size:.86rem;min-width:860px}
+.sb td{padding:5px 6px;vertical-align:middle;border-top:1px solid var(--line)}
+.sb tr.sbh td{border-top:none;padding:10px 6px 6px;font-size:.8rem;color:var(--muted)}
+.sb tr.sbh b.sbblue{color:var(--blue)}.sb tr.sbh b.sbred{color:var(--red)}.sb tr.sbh .sbr{text-align:right}
+.sb tr.sbme td{background:color-mix(in srgb,var(--accent) 10%,transparent)}.sb tr.sbme .sbp{color:var(--accent);font-weight:700}
+.sb .sbc{position:relative;width:38px;height:38px}.sb .sbc img{width:38px;height:38px;border-radius:50%;display:block}
+.sb .sbc .sblv{position:absolute;right:-4px;bottom:-4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;font:600 .62rem/1.4 var(--mono);padding:0 4px}
+.sb .sbs{display:grid;grid-template-columns:18px 18px;gap:2px}.sb .sbs img{width:18px;height:18px;border-radius:3px;display:block;background:var(--cool)}
+.sb .sbs img.sbrn{border-radius:50%;background:#0006}
+.sb .sbp{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb .sbb{display:inline-block;min-width:38px;text-align:center;border-radius:6px;padding:2px 6px;font:700 .72rem var(--mono);background:var(--cool);color:var(--fg)}
+.sb .sbb.sbmvp{background:#c8962a;color:#1b1203}.sb .sbb.sbace{background:#7d5ac9;color:#fff}
+.sb .sbt{display:flex;align-items:center;gap:3px;font:600 .72rem var(--mono);color:var(--muted)}.sb .sbt img{width:22px;height:22px;object-fit:contain}
+.sb .sbi{display:flex;gap:2px}.sb .sbi span{width:24px;height:24px;border-radius:4px;background:var(--cool);display:block;overflow:hidden}.sb .sbi img{width:24px;height:24px;display:block}
+.sb .sbi span.sbk{border-radius:50%;margin-left:3px}
+.sb .sbn{text-align:right;font-family:var(--mono);white-space:nowrap}.sb .sbn small{display:block;color:var(--muted);font-size:.74rem}
+.sb .sbn small.sbhi{color:var(--soon)}
+.sb .sbd{min-width:110px}.sb .sbd b{font-family:var(--mono);font-size:.82rem}.sb .sbd i{display:block;height:5px;border-radius:3px;background:var(--line);margin-top:3px;overflow:hidden}
+.sb .sbd i em{display:block;height:100%;border-radius:3px}.sb .sbblue .sbd i em,.sb tr.sbblue .sbd i em{background:var(--blue)}.sb tr.sbred .sbd i em{background:var(--red)}
+.sb .sbbans{display:inline-flex;gap:3px;vertical-align:middle;margin-left:8px}.sb .sbbans img{width:20px;height:20px;border-radius:4px;filter:grayscale(.7)}
+.sbobj{display:inline-flex;gap:10px;margin-left:12px;font-family:var(--mono)}
 /* the empty space at both sides of wide windows: champion art and seasonal decoration, behind the page */
 .sideart{position:fixed;top:0;bottom:0;width:calc((100vw - 1120px) / 2 + 40px);z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
   background:var(--bg) center 20% / cover no-repeat}
@@ -245,8 +268,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 .enemy.me .lane::after{content:attr(data-you);display:block;color:var(--accent);font-size:.68rem;margin-top:2px}
 .lane{white-space:nowrap;flex-shrink:0;width:5.6em}
 .enemy{position:relative}.haste .insp{position:absolute;top:1px;right:12px;font-size:.7rem;line-height:1.1}
-.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
-.settings details{grid-column:1/-1}
+/* settings: cards flow in balanced columns (no holes under the short ones) */
+.settings{columns:3 320px;column-gap:16px}
+.settings > section{break-inside:avoid;display:block;margin:0 0 16px}
+.settings details{column-span:all;margin-top:4px}
 .mapctl{display:flex;gap:10px;align-items:center;margin-top:10px}
 .mapctl input[type=range]{flex:1;accent-color:var(--accent)}
 .mapctl span{font-family:var(--mono);font-variant-numeric:tabular-nums;min-width:5.5em}
@@ -342,7 +367,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <label for="oHerald">Herald</label><input type="text" id="oHerald" value="15:00" class="otime">
       <label for="oBaron">Baró</label><input type="text" id="oBaron" value="20:00" class="otime"></div>
     <p class="note">Després de matar-los: el drac torna als 5 minuts, el baró i el drac ancià als 6. Comprova els temps si hi ha hagut un pedaç nou.</p>
-    <h3 class="sub3">Compres per campió</h3>
+  </section>
+  <section class="card" id="buysCard"><h2>Compres per campió</h2>
     <p class="note">L'app aprèn l'ordre dels objectes que acabes a cada partida. També el pots escriure tu (separat per comes).</p>
     <div id="buildList"></div>
     <div class="row2"><input type="text" id="bChamp" list="champList" placeholder="Campió" style="width:9em"><input type="text" id="bItems" placeholder="Objecte 1, objecte 2, objecte 3" style="flex:1;min-width:12em"><button type="button" id="bSave" class="b">Desar</button></div>
@@ -391,7 +417,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note">Botes Jòniques: +10 de pressa d'encanteri. Perspicàcia còsmica: +18. Recàrrega = base ÷ (1 + pressa/100). Comprova els valors si hi ha hagut un pedaç nou.</p>
   </details>
   </div>
-    <div class="bar"><button class="b" type="button" id="welcomeShow">Veure la pantalla de benvinguda</button><button class="b" id="quitBtn" title="Atura el programa">Tancar el programa</button></div>
+    <div class="bar"><button class="b" type="button" id="updCheck">Comprovar si hi ha versió nova</button><button class="b" type="button" id="welcomeShow">Veure la pantalla de benvinguda</button><button class="b" id="quitBtn" title="Atura el programa">Tancar el programa</button></div>
   </div>
   <div class="view" id="viewS" hidden>
     <section class="card rankcard" id="rankCard" hidden></section>
@@ -997,6 +1023,16 @@ const I18N = {
   "El teu coach de veu": ["Tu coach de voz", "Your voice coach"], "Veure la pantalla de benvinguda": ["Ver la pantalla de bienvenida", "Show the welcome screen"],
   "Imatges de campions als costats (pantalles amples)": ["Imágenes de campeones a los lados (pantallas anchas)", "Champion art at the sides (wide screens)"],
   "Decoració de temporada (Halloween, Nadal, Sant Jordi…)": ["Decoración de temporada (Halloween, Navidad, Sant Jordi…)", "Seasonal decoration (Halloween, Christmas, Saint George's Day…)"],
+  "Taula de la partida": ["Tabla de la partida", "Scoreboard"],
+  "Aquest informe és d'abans de la taula. La pots descarregar de Riot.": ["Este informe es de antes de la tabla. Puedes descargarla de Riot.", "This report is older than the scoreboard. You can download it from Riot."],
+  "Descarregar la taula": ["Descargar la tabla", "Download the scoreboard"],
+  "Equip blau": ["Equipo azul", "Blue team"], "Equip vermell": ["Equipo rojo", "Red team"],
+  "Torres {n}": ["Torres {n}", "Towers {n}"], "Dracs {n}": ["Dragones {n}", "Dragons {n}"], "Barons {n}": ["Barones {n}", "Barons {n}"], "Larves {n}": ["Larvas {n}", "Grubs {n}"], "Herald {n}": ["Heraldo {n}", "Herald {n}"],
+  "{x} d'or": ["{x} de oro", "{x} gold"], "{x} de dany": ["{x} de daño", "{x} damage"],
+  "Dades oficials de Riot. El rang és el de Solo/Duo de cada jugador. La classificació (MVP, ACE, 1r…10è) és una puntuació de l'app amb el KDA, la participació en kills, la part del dany de l'equip, el farm (o la visió si és suport) i les morts per minut: no és la d'OP.GG.": ["Datos oficiales de Riot. El rango es el de Solo/Dúo de cada jugador. La clasificación (MVP, ACE, 1º…10º) es una puntuación de la app con el KDA, la participación en kills, la parte del daño del equipo, el farmeo (o la visión si es soporte) y las muertes por minuto: no es la de OP.GG.", "Official Riot data. Rank is each player's Solo/Duo rank. The placing (MVP, ACE, 1st…10th) is the app's own score from KDA, kill participation, share of team damage, farm (or vision for supports) and deaths per minute: it isn't OP.GG's."],
+  "Comprovar si hi ha versió nova": ["Comprobar si hay versión nueva", "Check for a new version"], "Versió nova: {x}": ["Versión nueva: {x}", "New version: {x}"],
+  "No s'ha pogut comprovar": ["No se ha podido comprobar", "Couldn't check"], "Ja tens l'última ({x})": ["Ya tienes la última ({x})", "You have the latest ({x})"],
+  "Compres per campió": ["Compras por campeón", "Builds per champion"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2518,7 +2554,9 @@ async function applyUpdate(){
   renderUpdate("Instal·lada. Reiniciant RiftMate…");
   plog(`Actualitzant a ${updInfo?.latest}`);
 }
-checkUpdate(false); setInterval(() => checkUpdate(false), 3 * 3600 * 1000);
+checkUpdate(false); setInterval(() => checkUpdate(false), 30 * 60 * 1000);
+$("#updCheck").addEventListener("click", async () => { const b = $("#updCheck"); b.disabled = true; await checkUpdate(true); b.disabled = false;
+  b.textContent = updInfo?.available ? `Versió nova: ${updInfo.latest}` : updInfo?.error ? "No s'ha pogut comprovar" : `Ja tens l'última (${updInfo?.current || ""})`; if (updInfo?.available) window.scrollTo({top: 0, behavior: "smooth"}); });
 
 // ---------- First run: what to set up, step by step ----------
 function renderWelcome(force){
@@ -3585,6 +3623,57 @@ function reportCompare(r){
     ${diffs ? `<div class="tbl"><table><tr><th>Diferència</th><th>Or</th><th>Experiència</th><th>Farm</th></tr>${diffs}</table></div>` : ""}</div>
     <p class="note">Dades oficials de Riot. En verd, on vas per davant.</p></section>`;
 }
+
+// ---------- Scoreboard: the 10 players of the game (Riot's match data) ----------
+let RUNES = null;
+function loadRunes(){
+  if (RUNES || !location.protocol.startsWith("http")) return;
+  RUNES = {};
+  fetch(`https://ddragon.leagueoflegends.com/cdn/${iconVer}/data/en_US/runesReforged.json`).then(r => r.json()).then(list => {
+    for (const st of list) { RUNES[st.id] = st.icon; for (const sl of st.slots || []) for (const ru of sl.runes || []) RUNES[ru.id] = ru.icon; }
+    fillRunes();
+  }).catch(() => {});
+}
+function fillRunes(){ if (!RUNES) return; document.querySelectorAll("img[data-rune]").forEach(im => { const ic = RUNES[im.dataset.rune]; if (ic && !im.src) im.src = `https://ddragon.leagueoflegends.com/cdn/img/${ic}`; }); }
+const ddChampImg = id => `https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/champion/${encodeURIComponent(id)}.png`;
+function reportBoard(r){
+  const b = r.map?.board;
+  if (!b) {
+    if (!r.map) return "";
+    return `<section class="card"><h2>Taula de la partida</h2><p class="note">Aquest informe és d'abans de la taula. La pots descarregar de Riot.</p><button class="b" type="button" id="boardBtn">Descarregar la taula</button><p class="note" id="mapErr"></p></section>`;
+  }
+  const maxDmg = Math.max(1, ...b.players.map(p => p.dmg));
+  const k = v => v >= 1000 ? (v / 1000).toFixed(1).replace(".", ",") + "k" : String(v);
+  const place = n => ["1r", "2n", "3r", "4t"][n - 1] || `${n}è`;
+  const row = (p, side) => {
+    const kda = (p.k + p.a) / Math.max(1, p.d), items = p.items.slice(0, 6), tk = p.items[6];
+    const tier = p.tier ? `<span class="sbt" title="${esc(tierTxt({tier: p.tier, rank: p.rank}))}">${emblemImg(p.tier, "")}${["MASTER", "GRANDMASTER", "CHALLENGER"].includes(p.tier) ? "" : (DIV[p.rank] || "")}</span>` : `<span class="sbt" title="Sense rang">—</span>`;
+    return `<tr class="sb${side}${p.me ? " sbme" : ""}">
+      <td><div class="sbc"><img src="${ddChampImg(p.champ)}" alt="" title="${esc(displayChamp(p.champ))}" onerror="this.style.visibility='hidden'"><span class="sblv">${p.level}</span></div></td>
+      <td><div class="sbs">${p.spells.map(x => x ? `<img src="${spellIcon(x)}" alt="" title="${esc(NAMES[x] || x)}" onerror="this.style.visibility='hidden'">` : "<img alt=''>").join("")}
+        <img class="sbrn" data-rune="${p.keystone}" alt=""><img class="sbrn" data-rune="${p.sub}" alt=""></div></td>
+      <td class="sbp" data-noi18n title="${esc(p.name + (p.tag ? "#" + p.tag : ""))}">${esc(p.name)}</td>
+      <td><span class="sbb ${p.badge ? "sb" + p.badge.toLowerCase() : ""}" title="Puntuació de l'app: ${String(p.score).replace(".", ",")}">${p.badge || place(p.place)}</span></td>
+      <td>${tier}</td>
+      <td><div class="sbi">${items.map(id => `<span>${id ? `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">` : ""}</span>`).join("")}<span class="sbk">${tk ? `<img src="${itemIcon(tk)}" alt="" onerror="this.remove()">` : ""}</span></div></td>
+      <td class="sbn">${p.k} / ${p.d} / ${p.a}<small class="${kda >= 4 ? "sbhi" : ""}">${kda.toFixed(2).replace(".", ",")} KDA</small></td>
+      <td class="sbn">${p.cs} CS<small>${Math.round(p.kp * 100)}% KP</small></td>
+      <td class="sbd"><b>${p.dmg.toLocaleString("ca-ES")}</b><i><em style="width:${(100 * p.dmg / maxDmg).toFixed(1)}%"></em></i></td></tr>`;
+  };
+  const myTeam = (b.players.find(p => p.me) || {}).team;
+  const teams = b.teams.slice().sort((a, c) => (c.id === myTeam) - (a.id === myTeam));
+  const body = teams.map(t => {
+    const side = t.id === 100 ? "blue" : "red";
+    const obj = [["Torres", t.towers], ["Dracs", t.dragons], ["Barons", t.barons], ["Larves", t.grubs], ["Herald", t.heralds]].filter(x => x[1] != null)
+      .map(([n, v]) => `<span title="${n}">${n} ${v}</span>`).join("");
+    return `<tr class="sbh"><td colspan="5"><b class="sb${side}">${t.id === 100 ? "Equip blau" : "Equip vermell"}</b> · <b class="${t.win ? "good" : "bad"}">${t.win ? "Victòria" : "Derrota"}</b>
+        <span class="sbobj">${t.k} / ${t.d} / ${t.a}</span>${t.bans?.length ? `<span class="sbbans" title="Bans">${t.bans.map(id => `<img src="${ddChampImg(id)}" alt="" title="${esc(displayChamp(id))}" onerror="this.remove()">`).join("")}</span>` : ""}</td>
+      <td colspan="2"><span class="sbobj">${obj}</span></td><td class="sbn">${k(t.gold)} d'or</td><td class="sbn">${t.dmg.toLocaleString("ca-ES")} de dany</td></tr>` +
+      b.players.filter(p => p.team === t.id).map(p => row(p, side)).join("");
+  }).join("");
+  return `<section class="card"><h2>Taula de la partida</h2><div class="tbl"><table class="sb">${body}</table></div>
+    <p class="note">Dades oficials de Riot. El rang és el de Solo/Duo de cada jugador. La classificació (MVP, ACE, 1r…10è) és una puntuació de l'app amb el KDA, la participació en kills, la part del dany de l'equip, el farm (o la visió si és suport) i les morts per minut: no és la d'OP.GG.</p></section>`;
+}
 function reportTop(r){
   const win = r.result === "Victòria", grades = reportGrades(r), pos = reportPositives(r), narr = reportNarrative(r);
   const tips = (r.tips || []);
@@ -3599,6 +3688,7 @@ function reportTop(r){
     </div>
     <div class="kv"><div><span>KDA</span><b>${r.kda.join(" / ")}</b></div><div><span>Participació</span><b>${dash(kpOf(r))}${kpOf(r) != null ? "%" : ""}</b></div><div><span>CS/min</span><b>${dash(r.cs_rate.total)}</b></div><div><span>Morts abans del 15</span><b class="${r.deaths15 >= 2 ? "bad" : ""}">${r.deaths15}</b></div>${lpCell(r)}</div>
   </section>
+  ${reportBoard(r)}
   ${focusHtml(r)}
   <section class="card"><h2>Nota per apartats</h2>
     <div class="grades">${grades.map(g => `<div class="gr ${g.level}" title="${esc(g.rule)}"><span class="gl"></span><div><b>${esc(g.area)}</b><span>${esc(g.value)}</span><span class="gw">${({good: "Bé", mid: "Millorable", bad: "A treballar"})[g.level]}</span></div></div>`).join("")}</div>
@@ -3640,6 +3730,8 @@ function renderReport(r){
   <section class="card"><h2>Objectius</h2><p class="note">${obj}</p></section>`;
   reportSpeaking = false;
   $("#rpVoice")?.addEventListener("click", () => { unlockAudio(); speakReport(r); });
+  $("#boardBtn")?.addEventListener("click", () => requestMap(r.date));
+  loadRunes(); fillRunes();
 }
 function avg(list, f){ const v = list.map(f).filter(x => x != null && !isNaN(x)); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(1) : "—"; }
 function renderHistory(h){

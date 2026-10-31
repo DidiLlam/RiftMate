@@ -76,7 +76,7 @@ func verParts(v string) [3]int {
 func latestRelease(force bool) (*relInfo, error) {
 	updMu.Lock()
 	defer updMu.Unlock()
-	if !force && updLast != nil && time.Since(updAt) < time.Hour {
+	if !force && updLast != nil && time.Since(updAt) < 10*time.Minute {
 		return updLast, nil
 	}
 	req, _ := http.NewRequest("GET", updateBase(), nil)

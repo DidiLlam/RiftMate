@@ -137,13 +137,44 @@ type matchDTO struct {
 			Minions       int    `json:"totalMinionsKilled"`
 			Neutral       int    `json:"neutralMinionsKilled"`
 			TimeDead      int    `json:"totalTimeSpentDead"`
-			Challenges    struct {
+			ChampLevel    int    `json:"champLevel"`
+			Summoner1     int    `json:"summoner1Id"`
+			Summoner2     int    `json:"summoner2Id"`
+			Item0         int    `json:"item0"`
+			Item1         int    `json:"item1"`
+			Item2         int    `json:"item2"`
+			Item3         int    `json:"item3"`
+			Item4         int    `json:"item4"`
+			Item5         int    `json:"item5"`
+			Item6         int    `json:"item6"`
+			GameName      string `json:"riotIdGameName"`
+			TagLine       string `json:"riotIdTagline"`
+			SummonerName  string `json:"summonerName"`
+			Perks         struct {
+				Styles []struct {
+					Style      int `json:"style"`
+					Selections []struct {
+						Perk int `json:"perk"`
+					} `json:"selections"`
+				} `json:"styles"`
+			} `json:"perks"`
+			Challenges struct {
 				SoloKills   float64 `json:"soloKills"`
 				DamageShare float64 `json:"teamDamagePercentage"`
 				KP          float64 `json:"killParticipation"`
 				Plates      float64 `json:"turretPlatesTaken"`
 			} `json:"challenges"`
 		} `json:"participants"`
+		Teams []struct {
+			TeamID int  `json:"teamId"`
+			Win    bool `json:"win"`
+			Bans   []struct {
+				ChampionID int `json:"championId"`
+			} `json:"bans"`
+			Objectives map[string]struct {
+				Kills int `json:"kills"`
+			} `json:"objectives"`
+		} `json:"teams"`
 	} `json:"info"`
 }
 
@@ -208,6 +239,7 @@ type MapData struct {
 	Stats   *MatchStats `json:"stats,omitempty"`
 	Win     *bool       `json:"win,omitempty"` // official result
 	Queue   int         `json:"queue,omitempty"`
+	Board   *Board      `json:"board,omitempty"` // the scoreboard of the 10 players
 }
 
 // Official end-of-game numbers for you and your lane opponent, and the differences at minutes 10 and 15.
@@ -364,6 +396,7 @@ func fetchMap(rec *Record, endUnix int64) (*MapData, error) {
 			}
 		}
 		md.Stats = st
+		md.Board = makeBoard(c, &m, me)
 		for _, p := range m.Info.Participants {
 			if p.ParticipantID == me {
 				w := p.Win
@@ -475,7 +508,9 @@ func addMap(date string) (string, error) {
 	}
 	// fetch again when the game's result is unknown (the game closed before its end event was read)
 	if g.Report["map"] != nil && g.Report["result"] != nil && g.Report["result"] != "" {
-		return "ok", nil
+		if mm, _ := g.Report["map"].(map[string]any); mm != nil && mm["board"] != nil {
+			return "ok", nil
+		} // saved before the scoreboard existed: read it again
 	}
 	md, err := fetchMap(rec, g.EndUnix)
 	if err != nil {
