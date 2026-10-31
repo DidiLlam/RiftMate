@@ -17,9 +17,10 @@ import (
 	"time"
 )
 
-// Automatic updates: the program asks GitHub for the latest release of DidiLlam/RiftMate; the page offers
-// the update and, when accepted, the new RiftMate.exe is downloaded, checked (size, Windows executable,
-// SHA-256 when GitHub gives it), swapped in place of the running one and started.
+// Automatic updates: the program reads latest.json from the "dist" branch of DidiLlam/RiftMate on GitHub
+// (version, download address, size, SHA-256, notes); the page offers the update and, when accepted, the new
+// RiftMate.exe is downloaded, checked (size, Windows executable, SHA-256), swapped in place of the running
+// one and started. A GitHub release in the same repository is understood too.
 const updateRepo = "DidiLlam/RiftMate"
 
 type relAsset struct {
@@ -49,7 +50,7 @@ func updateBase() string {
 	if b := os.Getenv("LT_UPDATE_BASE"); b != "" { // tests
 		return b
 	}
-	return "https://api.github.com/repos/" + updateRepo + "/releases/latest"
+	return "https://raw.githubusercontent.com/" + updateRepo + "/dist/latest.json"
 }
 
 // newerVersion: is a (like "2.0.1" or "v2.0.1") newer than b?
@@ -90,7 +91,20 @@ func latestRelease(force bool) (*relInfo, error) {
 		return nil, fmt.Errorf("HTTP %d", r.StatusCode)
 	}
 	var rel relInfo
-	if err := json.NewDecoder(r.Body).Decode(&rel); err != nil {
+	b, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		return nil, err
+	}
+	var man struct {
+		Version string `json:"version"`
+		URL     string `json:"url"`
+		Size    int64  `json:"size"`
+		SHA256  string `json:"sha256"`
+		Notes   string `json:"notes"`
+	}
+	if json.Unmarshal(b, &man) == nil && man.Version != "" { // latest.json of the dist branch
+		rel = relInfo{Tag: man.Version, Body: man.Notes, Assets: []relAsset{{Name: appName + ".exe", URL: man.URL, Size: man.Size, Digest: "sha256:" + man.SHA256}}}
+	} else if err := json.Unmarshal(b, &rel); err != nil {
 		return nil, err
 	}
 	updLast, updAt = &rel, time.Now()

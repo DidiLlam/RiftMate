@@ -4,7 +4,7 @@ Coach de veu, temporitzadors d'encanteris i informes de partida per a League of 
 
 ## Instal·lar
 
-1. Descarrega `RiftMate.exe` de l'última versió a [Releases](https://github.com/DidiLlam/RiftMate/releases/latest).
+1. Descarrega `RiftMate.exe` de la branca [dist](https://github.com/DidiLlam/RiftMate/tree/dist) (el fitxer `RiftMate-<versió>.exe`).
 2. Obre'l i accepta la instal·lació: es crea un accés directe a l'escriptori.
 3. A partir de la 2.0.0 l'app avisa sola quan hi ha una versió nova i s'actualitza amb un clic.
 
