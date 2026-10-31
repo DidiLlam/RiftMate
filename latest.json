@@ -1,7 +1,7 @@
 {
- "version": "2.0.6",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.6.exe",
- "size": 8205312,
- "sha256": "7e5e589f88a3d54aac69c2712637a3a2d5f42a6d8acb6791d56ba17416432cf9",
- "notes": "- Icones oficials del joc per als objectius de la taula"
+ "version": "2.0.7",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.7.exe",
+ "size": 8205824,
+ "sha256": "38b7d8e476345bbea4cd96fabc604f18a9881a69212e1630f0392751a355ffa3",
+ "notes": "- Icones oficials del joc per als objectius de la taula\n- Les versions noves es detecten a l'instant (abans podien tardar 5 minuts)"
 }
