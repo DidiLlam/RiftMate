@@ -25,7 +25,15 @@
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
-.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+/* the empty space at both sides of wide windows: champion art and seasonal decoration, behind the page */
+.sideart{position:fixed;top:0;bottom:0;width:calc((100vw - 1120px) / 2 + 40px);z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
+  background:var(--bg) center 20% / cover no-repeat}
+.sideart.on{opacity:.5}:root[data-theme="light"] .sideart.on{opacity:.35}
+.sideart.l{left:0;-webkit-mask-image:linear-gradient(90deg,#000 35%,transparent 100%);mask-image:linear-gradient(90deg,#000 35%,transparent 100%)}
+.sideart.r{right:0;-webkit-mask-image:linear-gradient(270deg,#000 35%,transparent 100%);mask-image:linear-gradient(270deg,#000 35%,transparent 100%)}
+@media (max-width:1400px){.sideart{display:none}}
+#deco{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 #viewR,#viewS,#viewA,.tabs,.session,header{width:100%}   /* one width for every part of every tab */
 h1{font-family:var(--display);font-size:1.5rem;margin:0;letter-spacing:.02em}
 .sub{color:var(--muted);margin:2px 0 0;font-size:.9rem;max-width:62ch}
@@ -267,6 +275,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head><body>
+<div class="sideart l" id="artL" aria-hidden="true"></div><div class="sideart r" id="artR" aria-hidden="true"></div>
+<canvas id="deco" aria-hidden="true"></canvas>
 
 <div class="wrap">
   <header>
@@ -370,6 +380,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <div class="row2"><label for="aTheme">Tema</label><select id="aTheme"><option value="system">Com el sistema</option><option value="light">Clar</option><option value="dark">Fosc</option></select></div>
     <div class="row2"><span>Color</span><div class="swatches" id="aColor" role="radiogroup" aria-label="Color"></div></div>
     <div class="row2"><label for="aSize">Mida del text</label><select id="aSize"><option value="15">Normal</option><option value="17">Gran</option><option value="19">Molt gran</option></select></div>
+    <label class="ph-item" for="aArt"><input type="checkbox" id="aArt" checked><span>Imatges de campions als costats (pantalles amples)</span></label>
+    <label class="ph-item" for="aDeco"><input type="checkbox" id="aDeco" checked><span>Decoració de temporada (Halloween, Nadal, Sant Jordi…)</span></label>
     <div class="row2"><label for="aFont">Lletra</label><select id="aFont"><option value="orig">Original</option><option value="sys">La del sistema</option><option value="read">Molt llegible</option></select></div>
   </section>
   <details>
@@ -983,6 +995,8 @@ const I18N = {
   "Opcional: la clau de Gemini (gratis), per preguntar a la IA durant la partida dient \"coach\".": ["Opcional: la clave de Gemini (gratis), para preguntar a la IA durante la partida diciendo \"coach\".", "Optional: a Gemini key (free), to ask the AI during the game by saying \"coach\"."],
   "Anar-hi": ["Ir", "Go"], "Ja està": ["Listo", "Done"],
   "El teu coach de veu": ["Tu coach de voz", "Your voice coach"], "Veure la pantalla de benvinguda": ["Ver la pantalla de bienvenida", "Show the welcome screen"],
+  "Imatges de campions als costats (pantalles amples)": ["Imágenes de campeones a los lados (pantallas anchas)", "Champion art at the sides (wide screens)"],
+  "Decoració de temporada (Halloween, Nadal, Sant Jordi…)": ["Decoración de temporada (Halloween, Navidad, Sant Jordi…)", "Seasonal decoration (Halloween, Christmas, Saint George's Day…)"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2540,6 +2554,99 @@ function applyAccount(m){
   if (histCount >= 0) loadHistory();
   if (riotCfg) renderWelcome();
 }
+
+// ---------- Wide windows: champion splash art at the sides, and seasonal decoration ----------
+// Splash art from Data Dragon (Riot's public files): a random skin of one of your champions; in a season
+// (Halloween, Christmas...) a themed skin of theirs when there is one. Decorations are drawn here (no images).
+const SEASONS = [
+  {k: "halloween", from: [10, 20], to: [11, 2], skins: /bewitching|haunted|headless|zombie|nightmare|pumpkin|spooky|fright|undead|grim/i},
+  {k: "nadal", from: [12, 5], to: [1, 7], skins: /snow ?day|snowdown|winter|frost|\bice\b|winterblessed|candy|reindeer|nutcracker|gingerbread/i},
+  {k: "valenti", from: [2, 7], to: [2, 14], skins: /heartseeker|sweetheart|heartthrob|cupid/i},
+  {k: "santjordi", from: [4, 19], to: [4, 23], skins: /dragon|rose|knight/i},
+  {k: "estiu", from: [7, 1], to: [8, 31], skins: /pool party|beach|ocean song|summer/i}
+];
+function seasonNow(d = new Date()){
+  const v = (d.getMonth() + 1) * 100 + d.getDate();
+  return SEASONS.find(x => { const a = x.from[0] * 100 + x.from[1], b = x.to[0] * 100 + x.to[1]; return a <= b ? v >= a && v <= b : v >= a || v <= b; }) || null;
+}
+const skinCache = {};
+async function splashFor(champ, season){
+  const id = champId(CHAMPS.find(c => norm(c) === norm(champ)) || champ);
+  let skins = skinCache[id];
+  if (!skins) {
+    try { const j = await (await fetch(`https://ddragon.leagueoflegends.com/cdn/${iconVer}/data/en_US/champion/${encodeURIComponent(id)}.json`)).json(); skins = skinCache[id] = Object.values(j.data)[0].skins.map(x => ({num: x.num, name: x.name})); }
+    catch (e) { skins = [{num: 0, name: "default"}]; }
+  }
+  const themed = season ? skins.filter(x => season.skins.test(x.name)) : [];
+  const pick = (themed.length ? themed : skins)[Math.floor(Math.random() * (themed.length || skins.length))];
+  return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${encodeURIComponent(id)}_${pick.num}.jpg`;
+}
+async function sideArt(){
+  const L = $("#artL"), R = $("#artR");
+  if (!$("#aArt").checked || innerWidth <= 1400) { L.classList.remove("on"); R.classList.remove("on"); return; }
+  const pool = csPool(), champs = (pool.length ? pool : ["Diana", "LeBlanc", "Elise"]).slice().sort(() => Math.random() - .5), season = seasonNow();
+  const show = (el, url) => { const im = new Image(); im.onload = () => { el.style.backgroundImage = `url("${url}")`; el.classList.add("on"); }; im.src = url; };
+  show(L, await splashFor(champs[0], season));
+  show(R, Math.random() < .5 || champs.length < 2 ? "/benvinguda.jpg" : await splashFor(champs[1], season));
+}
+// seasonal particles, drawn on a canvas behind the page (they only show in the empty space at the sides)
+const deco = {raf: 0, parts: [], season: null, last: 0};
+function decoStart(){
+  cancelAnimationFrame(deco.raf);
+  const cv = $("#deco"), ctx = cv.getContext("2d");
+  deco.season = $("#aDeco").checked ? seasonNow() : null;
+  const fit = () => { cv.width = innerWidth; cv.height = innerHeight; };
+  fit(); ctx.clearRect(0, 0, cv.width, cv.height);
+  if (!deco.season) return;
+  const k = deco.season.k, still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const n = {halloween: 14, nadal: 90, valenti: 22, santjordi: 26, estiu: 30}[k];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  deco.parts = Array.from({length: n}, () => ({x: rnd(0, innerWidth), y: rnd(0, innerHeight), s: rnd(.6, 1.4), p: rnd(0, 6.28), v: rnd(.4, 1)}));
+  const gutter = () => Math.max(0, (innerWidth - 1120) / 2);
+  const drawBat = (x, y, s, ph) => { const f = Math.sin(ph) * 6 * s; ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.beginPath();
+    ctx.moveTo(0, -3); ctx.quadraticCurveTo(-8, -10 - f, -20, -6 - f); ctx.quadraticCurveTo(-15, -2, -14, 3); ctx.quadraticCurveTo(-9, 0, -6, 4); ctx.quadraticCurveTo(-3, 2, 0, 5);
+    ctx.quadraticCurveTo(3, 2, 6, 4); ctx.quadraticCurveTo(9, 0, 14, 3); ctx.quadraticCurveTo(15, -2, 20, -6 - f); ctx.quadraticCurveTo(8, -10 - f, 0, -3); ctx.fill(); ctx.restore(); };
+  const drawPumpkin = (x, y, r) => { ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = "#e07a1f"; for (const dx of [-r * .45, r * .45, 0]) { ctx.beginPath(); ctx.ellipse(dx, 0, r * .62, r * .8, 0, 0, 6.29); ctx.fill(); }
+    ctx.fillStyle = "#4e7a2c"; ctx.fillRect(-r * .08, -r * 1.05, r * .16, r * .32);
+    ctx.fillStyle = "#ffd36b"; ctx.beginPath(); ctx.moveTo(-r * .42, -r * .18); ctx.lineTo(-r * .2, -r * .18); ctx.lineTo(-r * .31, -r * .42); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(r * .42, -r * .18); ctx.lineTo(r * .2, -r * .18); ctx.lineTo(r * .31, -r * .42); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-r * .45, r * .15); ctx.quadraticCurveTo(0, r * .55, r * .45, r * .15); ctx.quadraticCurveTo(0, r * .32, -r * .45, r * .15); ctx.fill(); ctx.restore(); };
+  const drawHeart = (x, y, s) => { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.beginPath(); ctx.moveTo(0, 4);
+    ctx.bezierCurveTo(-10, -4, -6, -12, 0, -6); ctx.bezierCurveTo(6, -12, 10, -4, 0, 4); ctx.fill(); ctx.restore(); };
+  const drawRose = (x, y, s, ph) => { ctx.save(); ctx.translate(x, y); ctx.rotate(ph); ctx.scale(s, s); ctx.beginPath(); ctx.ellipse(0, 0, 6, 3.2, 0, 0, 6.29); ctx.fill(); ctx.restore(); };
+  const frame = now => {
+    deco.raf = requestAnimationFrame(frame);
+    if (now - deco.last < 33) return; deco.last = now;          // ~30 fps
+    if (cv.width !== innerWidth || cv.height !== innerHeight) fit();
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const g = gutter(); if (g < 60) return;
+    const W = innerWidth, H = innerHeight;
+    for (const q of deco.parts) {
+      if (!still) {
+        q.p += .08 * q.v;
+        if (k === "halloween") { q.x += Math.cos(q.p * .25) * 1.1 * q.v; q.y += Math.sin(q.p * .4) * .7; }
+        else if (k === "nadal") { q.y += .6 + q.v * .9; q.x += Math.sin(q.p * .3) * .4; }
+        else if (k === "valenti" || k === "estiu") { q.y -= .4 + q.v * .5; q.x += Math.sin(q.p * .3) * .3; }
+        else { q.y += .5 + q.v * .6; q.x += Math.sin(q.p * .2) * .6; }
+        if (q.y > H + 20) q.y = -20; if (q.y < -20) q.y = H + 20; if (q.x < -30) q.x = W + 30; if (q.x > W + 30) q.x = -30;
+      }
+      if (q.x > g - 10 && q.x < W - g + 10) continue;             // keep the content area clean
+      if (k === "halloween") { ctx.fillStyle = "rgba(255,140,50,.55)"; drawBat(q.x, q.y, q.s, q.p * 3); }
+      else if (k === "nadal") { ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.beginPath(); ctx.arc(q.x, q.y, 1.2 + q.s * 1.6, 0, 6.29); ctx.fill(); }
+      else if (k === "valenti") { ctx.fillStyle = "rgba(255,90,130,.55)"; drawHeart(q.x, q.y, q.s); }
+      else if (k === "santjordi") { ctx.fillStyle = "rgba(210,30,50,.6)"; drawRose(q.x, q.y, q.s, q.p); }
+      else { ctx.strokeStyle = "rgba(120,210,255,.5)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q.x, q.y, 3 + q.s * 4, 0, 6.29); ctx.stroke(); }
+    }
+    if (k === "halloween") { const r = Math.min(34, g / 6); drawPumpkin(g * .3, H - r - 18, r); drawPumpkin(g * .62, H - r * .7 - 14, r * .7); drawPumpkin(W - g * .35, H - r - 18, r); }
+  };
+  deco.raf = requestAnimationFrame(frame);
+}
+{ for (const id of ["aArt", "aDeco"]) { const el = $("#" + id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => { store.set(id, el.checked); id === "aArt" ? sideArt() : decoStart(); }); } }
+document.addEventListener("visibilitychange", () => { if (document.hidden) cancelAnimationFrame(deco.raf); else decoStart(); });
+let artResize = 0; addEventListener("resize", () => { clearTimeout(artResize); artResize = setTimeout(sideArt, 400); });
+setTimeout(() => { sideArt(); decoStart(); }, 1200);
+setInterval(() => { if (!game) sideArt(); }, 15 * 60 * 1000);
 // ---------- Header: summoner name, level and icon (League client or Riot API), app version ----------
 async function loadMe(){
   if (!location.protocol.startsWith("http")) return;
