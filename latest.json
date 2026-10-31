@@ -1,7 +1,7 @@
 {
- "version": "2.0.9",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.9.exe",
- "size": 8219136,
- "sha256": "cadee1f175ebbbb8126683f1b6ebc1926eefb7263dedabcf4729204cd0762e0e",
- "notes": "- El coach et diu com vas amb el teu campió en triar-lo (últimes partides, ratxes i KDA)\n- Columna de forma a la taula de la temporada"
+ "version": "2.0.10",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.10.exe",
+ "size": 8220160,
+ "sha256": "b0d2054a93f2eb78656e2cb06bd5b9ca69b6a2e66af9ecf557b8f2afaa8843d5",
+ "notes": "- La veu ja no llegeix 'minut 10: 50' com si fos una hora"
 }
