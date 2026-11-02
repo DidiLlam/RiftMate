@@ -1,7 +1,7 @@
 {
- "version": "2.0.12",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.12.exe",
- "size": 8220672,
- "sha256": "6cbf16a6c30bb5874c90b85a7fe43214d9cc91fa32ef23168cb729d4141e61ad",
- "notes": "- Enfrontaments de cada campió ordenats de millor a pitjor"
+ "version": "2.0.13",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.13.exe",
+ "size": 8221184,
+ "sha256": "b795d9adc1815b615f7b33ab8a900d4e48bf3f6cf538e205df0b7e3751747424",
+ "notes": "- En començar la partida, l'app torna sola a la pantalla dels temporitzadors\n- Reconeixement de veu més permissiu amb els campions de la partida i amb les línies\n- El registre ja apunta tota la partida"
 }
