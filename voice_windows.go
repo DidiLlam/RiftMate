@@ -78,9 +78,13 @@ try {
     $r = $eng.Recognize()
     if ($r) {
       # the wake word is a single short word the Spanish recognizer scores low: accept it from 0.3
-      $thr = 0.6; if ($r.Grammar -and $r.Grammar.Name -eq 'coach') { $thr = 0.3 }
-      # short "lane + spell" phrases ("top jil") are what noise gets mistaken for: they need more certainty
-      elseif ($r.Text -match '\b(top|jungla|jungle|mid|adc|bot|suport|support|soporte)\b' -and $r.Grammar.Name -ne 'linies') { $thr = 0.8 }
+      $thr = 0.6; $gn = ''; if ($r.Grammar) { $gn = $r.Grammar.Name }
+      if ($gn -eq 'coach') { $thr = 0.3 }
+      # "top jil" / "heal top" is what game noise gets mistaken for: that one needs real certainty
+      elseif ($r.Text -match '\btop\b' -and $r.Text -match '\b(jil|heal)\b' -and $gn -ne 'linies') { $thr = 0.8 }
+      elseif ($r.Text -match '\b(top|jungla|jungle|mid|adc|bot|suport|support|soporte)\b' -and $gn -ne 'linies') { $thr = 0.62 }
+      # a champion of this game: the page still ignores a spell that champion doesn't carry
+      elseif ($gn -like 'partida*') { $thr = 0.5 }
       if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text) }
       else { [Console]::Out.WriteLine('LOW ' + [math]::Round($r.Confidence, 2) + ' ' + $r.Text) }
     }

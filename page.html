@@ -1887,7 +1887,7 @@ function placeTeams(mySide){
   store.set("side", mySide);
 }
 function onGameStart(data){
-  if (!$("#viewA").hidden) showTab("T");   // the game starts: back to the timers
+  showTab("T"); setTimeout(() => $("#teams")?.scrollIntoView({behavior: "smooth", block: "start"}), 300);   // the game starts: the timers, whatever tab was open
   plog(`Partida a la pagina: ${data.allPlayers.length} jugadors · posicions: ${data.allPlayers.map(p => (p.championName || "?") + ":" + (p.position || "-")).join(", ")}`);
   const meId = data.activePlayer && (data.activePlayer.riotId || data.activePlayer.summonerName);
   const me = data.allPlayers.find(p => pid(p) === meId) || data.allPlayers[0];
@@ -3495,7 +3495,7 @@ function csChart(r){
 
 // ---------- Log ----------
 let logCount = 0;
-function plog(msg){ if (!location.protocol.startsWith("http") || ++logCount > 80) return; fetch("/api/log", {method: "POST", body: String(msg).slice(0, 1500)}).catch(() => {}); }
+function plog(msg){ if (!location.protocol.startsWith("http") || ++logCount > 4000) return; fetch("/api/log", {method: "POST", body: String(msg).slice(0, 1500)}).catch(() => {}); }
 window.addEventListener("error", e => plog(`Error JS: ${e.message} (${(e.filename || "").split("/").pop()}:${e.lineno})`));
 window.addEventListener("unhandledrejection", e => plog(`Error JS (promesa): ${e.reason && (e.reason.message || e.reason)}`));
 $("#openLog").addEventListener("click", () => fetch("/api/openlog", {method: "POST"}).catch(() => {}));
