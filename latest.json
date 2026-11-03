@@ -1,7 +1,7 @@
 {
- "version": "2.0.13",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.13.exe",
- "size": 8221184,
- "sha256": "b795d9adc1815b615f7b33ab8a900d4e48bf3f6cf538e205df0b7e3751747424",
- "notes": "- En començar la partida, l'app torna sola a la pantalla dels temporitzadors\n- Reconeixement de veu més permissiu amb els campions de la partida i amb les línies\n- El registre ja apunta tota la partida"
+ "version": "2.0.14",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.14.exe",
+ "size": 8233984,
+ "sha256": "a8a46f87a005af9000c020400edb1e058659b7969c19e94082abf8d9e5b22131",
+ "notes": "- RiftMate es posa al davant a la selecció de campions i quan l'informe està llest\n- Anàlisi dels companys d'equip: amb qui jugar i amb qui no comptar gaire\n- El coach calla mentre fas una pregunta a la IA"
 }
