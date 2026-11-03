@@ -32,8 +32,10 @@ var voiceVariants = map[string][]string{
 }
 
 // Words the recognizer listens for. The page maps them back with its own vocabulary.
-var voiceSpells = []string{"flash", "flas", "ignite", "ignait", "heal", "jil", "teleport", "teletransporte", "exhaust", "exaust", "barrera", "barrier",
-	"ghost", "gost", "fantasma", "cleanse", "clins", "purificar", "zhonya", "zonia", "ulti", "ultimate", "definitiva"}
+// English names and the Spanish client's ones (Destello, Prender, Curar, Teleportar, Extenuación, Barrera, Fantasma, Limpiar)
+var voiceSpells = []string{"flash", "flas", "destello", "ignite", "ignait", "prender", "heal", "jil", "curar", "teleport", "teletransporte", "teleportar",
+	"exhaust", "exaust", "extenuación", "barrera", "barrier", "ghost", "gost", "fantasma", "cleanse", "clins", "purificar", "limpiar",
+	"zhonya", "zonia", "reloj", "ulti", "ultimate", "definitiva"}
 var voiceLanes = []string{"top", "jungla", "jungle", "mid", "adc", "bot", "suport", "support", "soporte"}
 
 // Wake words for the AI coach: after one of these, the next sentence is a free question.

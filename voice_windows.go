@@ -81,7 +81,7 @@ try {
       $thr = 0.6; $gn = ''; if ($r.Grammar) { $gn = $r.Grammar.Name }
       if ($gn -eq 'coach') { $thr = 0.3 }
       # "top jil" / "heal top" is what game noise gets mistaken for: that one needs real certainty
-      elseif ($r.Text -match '\btop\b' -and $r.Text -match '\b(jil|heal)\b' -and $gn -ne 'linies') { $thr = 0.8 }
+      elseif ($r.Text -match '\btop\b' -and $r.Text -match '\b(jil|heal|curar)\b' -and $gn -ne 'linies') { $thr = 0.8 }
       elseif ($r.Text -match '\b(top|jungla|jungle|mid|adc|bot|suport|support|soporte)\b' -and $gn -ne 'linies') { $thr = 0.62 }
       # a champion of this game: the page still ignores a spell that champion doesn't carry
       elseif ($gn -like 'partida*') { $thr = 0.5 }
