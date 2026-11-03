@@ -170,7 +170,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .wrbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}.wrbar.bad i{background:var(--loss)}
 .scr{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .scr img{width:36px;height:36px;border-radius:8px}.scr .sn{min-width:7em}.scr .sr{color:var(--muted);font-size:.85rem;font-family:var(--mono);min-width:12em}
-.scr .tags{display:flex;gap:6px;flex-wrap:wrap}.scr .tg{font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+.scr .tags{display:flex;gap:6px;flex-wrap:wrap}.scr .vd{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:6px}.scr .vd.good{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}.scr .vd.warn{background:color-mix(in srgb,var(--loss) 20%,transparent);color:var(--loss)}
+.scgrp{margin:10px 0 2px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.scr .tg{font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
 .scr .tg.warn{border-color:var(--loss);color:var(--loss)}.scr .tg.good{border-color:var(--good);color:var(--good)}
 .big{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline}
 .big .res{font-family:var(--display);font-size:1.5rem;font-weight:700}
@@ -319,7 +320,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <div class="view" id="viewT">
     <section class="card welcome" id="welcome" hidden></section>
     <div class="rankbadge" id="rankBadge" hidden></div>
-    <section class="card" id="scoutCard" hidden><h2>Rivals d'aquesta partida</h2><div id="scoutBody"></div></section>
+    <section class="card" id="scoutCard" hidden><h2>Jugadors d'aquesta partida</h2><div id="scoutBody"></div></section>
   <section class="card cs" id="csCard" hidden>
     <h2 id="csTitle">Selecció de campions</h2>
     <div class="csteams"><div><span class="note">El teu equip</span><div class="faces" id="csMine"></div></div><div><span class="note">Rivals (toca el teu rival de línia)</span><div class="faces" id="csTheirs"></div></div></div>
@@ -363,6 +364,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="cGold"><input type="checkbox" id="cGold" checked><span>Or i compres: quan pots comprar el següent objecte i quan tornar a base</span></label>
     <label class="ph-item" for="cObj"><input type="checkbox" id="cObj" checked><span>Objectius: avís un minut abans del drac, les larves, el herald i el baró</span></label>
     <label class="ph-item" for="cSpike"><input type="checkbox" id="cSpike" checked><span>Rival més fort: nivell 6 i objectes acabats del teu rival de línia</span></label>
+    <label class="ph-item" for="cFront"><input type="checkbox" id="cFront" checked><span>Posar RiftMate al davant quan entris a la selecció de campions i quan l'informe estigui llest</span></label>
     <label class="ph-item" for="cScout"><input type="checkbox" id="cScout" checked><span>Rivals: analitzar-los a la pantalla de càrrega i avisar dels perillosos</span></label>
     <label class="ph-item" for="cWard"><input type="checkbox" id="cWard" checked><span>Visió: avís si tornes de comprar sense ward de control</span></label>
     <label class="ph-item" for="cVis"><input type="checkbox" id="cVis" checked><span>Wards: on i quan posar-los (primer gank, ward groc sense fer servir, objectius, canvi de trinket)</span></label>
@@ -1051,6 +1053,17 @@ const I18N = {
   "El teu KDA recent amb {x} és {n}, per sota de la teva mitjana de la temporada ({m}).": ["Tu KDA reciente con {x} es {n}, por debajo de tu media de la temporada ({m}).", "Your recent KDA with {x} is {n}, below your season average ({m})."],
   "Fa {n} dies que no jugues {x}: les primeres partides costen més.": ["Hace {n} días que no juegas {x}: las primeras partidas cuestan más.", "You haven't played {x} for {n} days: the first games are harder."],
   "De millor a pitjor (victòries menys derrotes)": ["De mejor a peor (victorias menos derrotas)", "Best to worst (wins minus losses)"],
+  "Jugadors d'aquesta partida": ["Jugadores de esta partida", "Players in this game"], "Analitzant els jugadors…": ["Analizando a los jugadores…", "Scouting the players…"],
+  "Rivals": ["Rivales", "Enemies"], "El teu equip (del més fiable al que menys)": ["Tu equipo (del más fiable al que menos)", "Your team (most reliable first)"],
+  "Dades públiques de Riot: rang de Solo/Duo, maestria amb el campió i les seves últimes 12 partides classificatòries. Al teu equip, en verd el que suma i en vermell el que resta.": ["Datos públicos de Riot: rango de Solo/Dúo, maestría con el campeón y sus últimas 12 partidas clasificatorias. En tu equipo, en verde lo que suma y en rojo lo que resta.", "Public Riot data: Solo/Duo rank, champion mastery and their last 12 ranked games. For your team, green adds and red subtracts."],
+  "Juga amb ell": ["Juega con él", "Play with him"], "No hi comptis gaire": ["No cuentes mucho con él", "Don't count on him"], "per sota teu": ["por debajo de ti", "below you"],
+  "El teu equip.": ["Tu equipo.", "Your team."], "Juga al voltant de {x}.": ["Juega alrededor de {x}.", "Play around {x}."],
+  "{x} porta {n} de les últimes {m} partides amb aquest campió i en guanya {k}: és de fiar.": ["{x} lleva {n} de las últimas {m} partidas con este campeón y gana {k}: es de fiar.", "{x} has played this champion in {n} of their last {m} games and won {k}: reliable."],
+  "{x} juga molt aquest campió però només n'ha guanyat {n} de {m}.": ["{x} juega mucho este campeón pero solo ha ganado {n} de {m}.", "{x} plays this champion a lot but has only won {n} of {m}."],
+  "{x} gairebé no ha jugat mai aquest campió: no hi comptis gaire al principi.": ["{x} casi nunca ha jugado este campeón: no cuentes mucho con él al principio.", "{x} has barely played this champion: don't count on him early."],
+  "{x} ve de guanyar {n} partides seguides.": ["{x} viene de ganar {n} partidas seguidas.", "{x} has won {n} games in a row."],
+  "{x} ve de perdre {n} partides seguides: pot estar tiltat, anima'l.": ["{x} viene de perder {n} partidas seguidas: puede estar tilteado, anímalo.", "{x} has lost {n} in a row: may be tilted, cheer him up."],
+  "Posar RiftMate al davant quan entris a la selecció de campions i quan l'informe estigui llest": ["Poner RiftMate delante al entrar en la selección de campeones y cuando el informe esté listo", "Bring RiftMate to the front at champion select and when the report is ready"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2115,7 +2128,7 @@ function loadItems(){
 const CONTROL_WARD = 2055;
 const itemName = id => ITEMS[id]?.name || ("#" + id);
 const isFinal = id => !!ITEMS[id]?.final;
-for (const id of ["cGold","cObj","cSpike","cWard","cScout","cFocus","cVis","cForm"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
+for (const id of ["cGold","cObj","cSpike","cWard","cScout","cFocus","cVis","cForm","cFront"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
 const parseMS = s => { const m = String(s || "").trim().match(/^(\d{1,2})(?::(\d{2}))?$/); return m ? (+m[1]) * 60 + (+(m[2] || 0)) : null; };
 for (const id of ["oDrag","oGrubs","oHerald","oBaron"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.value = v;
   el.addEventListener("change", () => { if (parseMS(el.value) == null) el.value = el.defaultValue; store.set(id, el.value); }); }
@@ -2416,9 +2429,9 @@ function aiState(){
     const ob = [["drac", help.obj.drag], ["larves", help.obj.grubs], ["herald", help.obj.herald], ["baró", help.obj.baron]].filter(([, v]) => isFinite(v) && v > t).map(([n, v]) => `${n === "drac" && help.elderNext ? "drac ancià" : n} al ${fmtClock(v)}`);
     out.push(`Dracs: el meu equip ${help.drakes?.[me.team] ?? 0}, rival ${help.drakes?.[me.team === "ORDER" ? "CHAOS" : "ORDER"] ?? 0}.` + (ob.length ? ` Propers objectius: ${ob.join(", ")}.` : ""));
   }
-  if (lastScout && lastScout.length) out.push("Dades dels rivals (Riot, abans de la partida): " + lastScout.map(r => {
+  if (lastScout && lastScout.length) out.push("Dades dels jugadors (Riot, abans de la partida; [aliat] = del meu equip): " + lastScout.map(r => {
     const g = r.wins + r.losses, games = r.games || [], mine = games.filter(x => x.c.toLowerCase() === r.champ.toLowerCase()), w = mine.filter(x => x.w).length;
-    return `${displayChamp(r.champ)}: ${r.tier ? `${r.tier} ${r.rank} ${r.lp} LP, ${g ? Math.round(100 * r.wins / g) : 0}% de victòries en ${g} partides` : "sense rang"}; amb aquest campió ${mine.length} de les últimes ${games.length} partides (${w} guanyades); maestria ${r.mastery} punts`;
+    return `${r.ally ? "[aliat] " : ""}${displayChamp(r.champ)}: ${r.tier ? `${r.tier} ${r.rank} ${r.lp} LP, ${g ? Math.round(100 * r.wins / g) : 0}% de victòries en ${g} partides` : "sense rang"}; amb aquest campió ${mine.length} de les últimes ${games.length} partides (${w} guanyades); maestria ${r.mastery} punts`;
   }).join(" | ") + ".");
   const kills = (d.events?.Events || []).filter(e => e.EventName === "ChampionKill").slice(-6).map(e => `${fmtClock(e.EventTime)} ${e.KillerName} mata ${e.VictimName}`);
   if (kills.length) out.push("Últimes kills: " + kills.join("; ") + ".");
@@ -2464,12 +2477,15 @@ function startQuestion(){
   const q = new SR(); q.lang = $("#lang").value; q.continuous = false; q.interimResults = false; q.maxAlternatives = 1;
   let got = false;
   questionUntil = Date.now() + 10000;            // meanwhile the Windows engine must not take the question for a command
-  q.onresult = e => { got = true; questionUntil = 0; const txt = e.results[0][0].transcript; $("#heard").textContent = txt; askAI(txt); };
+  sayHold = Date.now() + 10000; if (sayCur && synth) synth.cancel();   // and the coach keeps quiet, so the mic hears only you
+  q.onresult = e => { got = true; questionUntil = 0; sayHold = 0; const txt = e.results[0][0].transcript; $("#heard").textContent = txt; askAI(txt); };
   q.onerror = e => plog(`IA: error del micro ${e.error}`);
-  q.onend = () => { questionUntil = 0; if (!got) { $("#status").textContent = "No he sentit cap pregunta."; plog("IA: no he sentit cap pregunta"); } };
+  q.onend = () => { questionUntil = 0; sayHold = 0; sayPump(); if (!got) { $("#status").textContent = "No he sentit cap pregunta."; plog("IA: no he sentit cap pregunta"); } };
   try { q.start(); } catch (e) { questionUntil = 0; plog(`IA: no puc escoltar la pregunta (${e.message})`); }
 }
 let questionUntil = 0;
+// RiftMate above the other windows (without taking the keyboard from the League client)
+function toFront(why){ if ($("#cFront")?.checked && location.protocol.startsWith("http")) fetch("/api/front?why=" + encodeURIComponent(why), {method: "POST"}).catch(() => {}); }
 // returns true if the text was for the AI coach (wake word, or "coach ..." with the question in the same sentence)
 // "skip": not final yet, so don't treat it as a command either
 function aiHandle(text, final){
@@ -3141,16 +3157,44 @@ function scoutFacts(r){
   if (r.mastery >= 300000) { tags.push({t: `${Math.round(r.mastery / 1000)} mil de maestria`, c: "warn"}); if (g < 4) { say.push(`${C} té ${Math.round(r.mastery / 1000)} mil punts de maestria amb aquest campió.`); score += 1; } }
   return {tags, say, score};
 }
+// the same for a teammate: how much you can count on him (score > 0 reliable, < 0 not much)
+function allyFacts(r){
+  const C = displayChamp(r.champ), games = r.games || [], n = games.length, mine = games.filter(x => x.c.toLowerCase() === r.champ.toLowerCase());
+  const g = mine.length, w = mine.filter(x => x.w).length, tags = [], say = [], bad = [];
+  let score = 0;
+  const kdaOf = list => { const d = list.reduce((a, x) => a + x.d, 0); return (list.reduce((a, x) => a + x.k + x.a, 0)) / Math.max(1, d); };
+  if (g >= 4 && g / n >= 0.5) {
+    if (w / g >= 0.6) { tags.push({t: `${g}/${n} amb ${C}`, c: "good"}); say.push(`${C} porta ${g} de les últimes ${n} partides amb aquest campió i en guanya ${w}: és de fiar.`); score += 3; }
+    else if (w / g <= 0.4) { tags.push({t: `${g}/${n} amb ${C}`, c: ""}); bad.push(`${C} juga molt aquest campió però només n'ha guanyat ${w} de ${g}.`); score -= 1; }
+    else { tags.push({t: `${g}/${n} amb ${C}`, c: ""}); score += 1; }
+  }
+  if (g) tags.push({t: `${w}V ${g - w}D amb ell`, c: w / g >= 0.6 ? "good" : w / g <= 0.4 ? "warn" : ""});
+  if (r.masteryOk && r.mastery < 12000) { tags.push({t: "gairebé no l'ha jugat", c: "warn"}); bad.push(`${C} gairebé no ha jugat mai aquest campió: no hi comptis gaire al principi.`); score -= 2; }
+  let k = 0; for (const x of games) { if (x.w === games[0].w) k++; else break; }
+  if (n && k >= 3 && games[0].w) { tags.push({t: `${k} victòries seguides`, c: "good"}); say.push(`${C} ve de guanyar ${k} partides seguides.`); score += 2; }
+  else if (n && k >= 3) { tags.push({t: `${k} derrotes seguides`, c: "warn"}); bad.push(`${C} ve de perdre ${k} partides seguides: pot estar tiltat, anima'l.`); score -= 2; }
+  else if (r.hot) { tags.push({t: "ratxa de victòries", c: "good"}); score += 1; }
+  if (g >= 4) { const kda = kdaOf(mine); tags.push({t: `KDA ${fmt1(kda)}`, c: kda >= 4 ? "good" : kda < 2 ? "warn" : ""}); if (kda >= 4) score += 1; else if (kda < 2) score -= 1; }
+  const tot = r.wins + r.losses;
+  if (tot >= 30 && r.wins / tot >= 0.55) score += 1; else if (tot >= 30 && r.wins / tot <= 0.45) score -= 1;
+  if (r.tier && myRankAbs != null) { const d = absRank(r.tier, r.rank, r.lp) - myRankAbs; if (d >= 200) { tags.push({t: "per sobre teu", c: "good"}); score += 1; } else if (d <= -200) { tags.push({t: "per sota teu", c: ""}); score -= 1; } }
+  if (r.mastery >= 300000) { tags.push({t: `${Math.round(r.mastery / 1000)} mil de maestria`, c: "good"}); score += 1; }
+  const verdict = score >= 3 ? {t: "Juga amb ell", c: "good"} : score <= -2 ? {t: "No hi comptis gaire", c: "warn"} : null;
+  return {tags, say, bad, score, verdict};
+}
 function renderScout(res){
   const card = $("#scoutCard"), body = $("#scoutBody");
   card.hidden = false;
-  if (!res) { body.innerHTML = `<p class="note">Analitzant els rivals…</p>`; return; }
-  body.innerHTML = res.map(r => {
-    const g = r.wins + r.losses, wr = g ? Math.round(100 * r.wins / g) : null, fl = scoutFacts(r).tags;
+  if (!res) { body.innerHTML = `<p class="note">Analitzant els jugadors…</p>`; return; }
+  const row = r => {
+    const g = r.wins + r.losses, wr = g ? Math.round(100 * r.wins / g) : null, f = r.ally ? allyFacts(r) : scoutFacts(r);
     return `<div class="scr"><img src="${champImg(r.champ)}" alt="" onerror="this.style.visibility='hidden'"><b class="sn" data-noi18n>${esc(displayChamp(r.champ))}</b>
       <span class="sr"><span>${r.tier ? `${tierTxt({tier: r.tier, rank: r.rank})} · ${wr}% (${g})` : "Sense rang"}</span></span>
-      <span class="tags">${fl.map(x => `<span class="tg ${x.c}">${esc(x.t)}</span>`).join("")}</span></div>`;
-  }).join("") + `<p class="note">Dades públiques de Riot: rang de Solo/Duo, maestria amb el campió i les seves últimes 12 partides classificatòries.</p>`;
+      ${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="tags">${f.tags.map(x => `<span class="tg ${x.c}">${esc(x.t)}</span>`).join("")}</span></div>`;
+  };
+  const foes = res.filter(r => !r.ally), mates = res.filter(r => r.ally).sort((a, b) => allyFacts(b).score - allyFacts(a).score);
+  body.innerHTML = `<p class="scgrp">Rivals</p>` + foes.map(row).join("") + (mates.length ? `<p class="scgrp">El teu equip (del més fiable al que menys)</p>` + mates.map(row).join("") : "") +
+    `<p class="note">Dades públiques de Riot: rang de Solo/Duo, maestria amb el campió i les seves últimes 12 partides classificatòries. Al teu equip, en verd el que suma i en vermell el que resta.</p>`;
 }
 async function pollScout(){
   let r; try { r = await (await fetch("/api/scout", {cache: "no-store"})).json(); } catch (e) { return; }
@@ -3161,17 +3205,23 @@ async function pollScout(){
   const opp = game && game.ids[game.oppIdx];
   const lines = [];
   // lane opponent first, then the most dangerous; two facts per rival, five sentences at most
-  const facts = r.results.map(x => ({x, f: scoutFacts(x)}));
+  const facts = r.results.filter(x => !x.ally).map(x => ({x, f: scoutFacts(x)}));
   facts.sort((a, b) => ((b.x.pos === game?.role) * 100 + b.f.score) - ((a.x.pos === game?.role) * 100 + a.f.score));
   for (const {f} of facts) for (const l of f.say.slice(0, 2)) if (lines.length < 5) lines.push(l);
   plog(`Rivals: ${lines.join(" ") || "cap avís"}`);
   if (lines.length) { speak("Rivals."); lines.forEach(l => speak(l)); } else speak("Rivals analitzats: cap no destaca especialment.");
+  // your team: the one to play around and the one not to count on, a sentence each
+  const mates = r.results.filter(x => x.ally).map(x => ({x, f: allyFacts(x)})).sort((a, b) => b.f.score - a.f.score);
+  const best = mates.find(m => m.f.score >= 3 && m.f.say.length), worst = mates.slice().reverse().find(m => m.f.score <= -2 && m.f.bad.length);
+  const team = [best && `Juga al voltant de ${displayChamp(best.x.champ)}. ${best.f.say[0]}`, worst && worst.f.bad[0]].filter(Boolean);
+  if (team.length) { plog(`El teu equip: ${team.join(" ")}`); speak("El teu equip."); team.forEach(l => speak(l)); }
 }
 function startScout(data, me){
   clearTimeout(scoutTimer); scoutSaid = false; lastScout = null;
   if (!$("#cScout").checked || !riotCfg?.has_key) { $("#scoutCard").hidden = true; return; }
-  const players = data.allPlayers.filter(p => p.team !== me.team && (p.riotId || "").includes("#")).map(p => ({
-    riotId: p.riotId, champ: ((p.rawChampionName || "").match(/_([A-Za-z]+)$/) || [])[1] || champId(p.championName), pos: (p.position || "").toUpperCase()}));
+  const players = data.allPlayers.filter(p => pid(p) !== pid(me) && (p.riotId || "").includes("#")).map(p => ({
+    riotId: p.riotId, champ: ((p.rawChampionName || "").match(/_([A-Za-z]+)$/) || [])[1] || champId(p.championName), pos: (p.position || "").toUpperCase(), ally: p.team === me.team}))
+    .sort((a, b) => a.ally - b.ally);   // rivals first: they are the ones said at the loading screen
   if (!players.length) return;
   renderScout(null);
   fetch("/api/scout", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({players})}).then(() => { scoutTimer = setTimeout(pollScout, 2500); }).catch(() => {});
@@ -3628,7 +3678,8 @@ async function pollCS(){
   if (game || !location.protocol.startsWith("http")) { $("#csCard").hidden = true; return; }
   let cs; try { cs = await (await fetch("/api/champselect", {cache: "no-store"})).json(); } catch (e) { return; }
   if (!cs.active) { if (!$("#csCard").hidden) plog("Selecció de campions acabada"); $("#csCard").hidden = true; csLast = ""; return; }
-  if ($("#csCard").hidden) { plog(`Selecció de campions detectada (rol ${cs.my_position || "-"})`); if (histCount < 0) await loadHistory(); }
+  if ($("#csCard").hidden) { plog(`Selecció de campions detectada (rol ${cs.my_position || "-"})`); if (histCount < 0) await loadHistory();
+    showTab("T"); toFront("selecció"); setTimeout(() => $("#csCard")?.scrollIntoView({behavior: "smooth", block: "start"}), 200); }
   const key = JSON.stringify(cs);
   if (key !== csLast) { csLast = key; renderCS(cs); }
   $("#csCard").hidden = false;
@@ -3915,7 +3966,7 @@ let histCount = -1;
 async function loadHistory(){
   try {
     const h = await (await fetch("/api/history", {cache:"no-store"})).json();
-    if (histCount >= 0 && h.length > histCount) { showTab(true); if (on("vGame")) speak("Informe de la partida llest."); }
+    if (histCount >= 0 && h.length > histCount) { showTab(true); window.scrollTo({top: 0}); toFront("informe"); if (on("vGame")) speak("Informe de la partida llest."); }
     const fresh = histCount >= 0 && h.length > histCount;
     histCount = h.length; histCache = h; renderTrends(); renderReport(h[0]); if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
   } catch(e) { $("#report").innerHTML = `<section class="card"><p class="note warn">Els informes només funcionen obrint la pàgina des del programa RiftMate.</p></section>`; }

@@ -19,11 +19,13 @@ type scoutIn struct {
 	RiotID string `json:"riotId"`
 	Champ  string `json:"champ"` // Data Dragon id ("Ahri", "MonkeyKing")
 	Pos    string `json:"pos"`
+	Ally   bool   `json:"ally,omitempty"` // a player of my own team
 }
 
 type scoutOut struct {
 	Champ      string      `json:"champ"`
 	Pos        string      `json:"pos"`
+	Ally       bool        `json:"ally,omitempty"`
 	Tier       string      `json:"tier,omitempty"`
 	Rank       string      `json:"rank,omitempty"`
 	LP         int         `json:"lp"`
@@ -91,7 +93,7 @@ func champKeyByID(id string) int {
 }
 
 func scoutOne(c Config, in scoutIn) scoutOut {
-	out := scoutOut{Champ: in.Champ, Pos: in.Pos}
+	out := scoutOut{Champ: in.Champ, Pos: in.Pos, Ally: in.Ally}
 	puuid, err := puuidLookup(c, in.RiotID)
 	if err != nil {
 		out.Error = err.Error()
@@ -192,7 +194,7 @@ func scoutHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			}
 			key := strings.Join(ids, "|")
 			scoutMu.Lock()
-			if key != scoutKey && len(in.Players) > 0 && len(in.Players) <= 5 && loadConfig().RiotKey != "" {
+			if key != scoutKey && len(in.Players) > 0 && len(in.Players) <= 9 && loadConfig().RiotKey != "" {
 				scoutKey, scoutBusy, scoutRes = key, true, nil
 				go runScout(key, in.Players)
 			}
