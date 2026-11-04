@@ -422,7 +422,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="vGame"><input type="checkbox" id="vGame" checked><span>Partida detectada, compres de Zhonya, partida acabada i informe llest</span></label>
   </section>
   <section class="card" id="aiCard"><h2>Coach amb IA</h2>
-    <label class="ph-item" for="cAiAuto"><input type="checkbox" id="cAiAuto" checked><span>La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors i tres lliçons a l'informe</span></label>
+    <label class="ph-item" for="cAiAuto"><input type="checkbox" id="cAiAuto" checked><span>La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors, macro als minuts 14, 25 i 35, i tres lliçons a l'informe</span></label>
     <p class="note">Durant la partida, digues "coach" (o "entrenador") i, quan soni el to, fes la pregunta: "què em compro ara?", "com jugo contra Ahri?", "val la pena anar al drac?". Respon una IA que veu l'estat de la partida: campions, nivells, objectes, KDA, or, els temps que porta l'app i els objectius.</p>
     <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de preguntes per minut i per dia que en una partida no s'arriba a tocar.</p>
     <div class="keyrow"><input type="password" id="aiKey" placeholder="Clau de Google AI Studio" autocomplete="off"><button class="b" id="aiSave" type="button">Desar</button><button class="b" id="aiTest" type="button">Provar</button></div>
@@ -1128,9 +1128,9 @@ const I18N = {
   "No he pogut llegir l'historial de Riot ({x}).": ["No he podido leer el historial de Riot ({x}).", "Couldn't read your Riot match history ({x})."],
   "Encara no hi ha partides.": ["Todavía no hay partidas.", "No games yet."],
   "Últimes partides classificatòries (Solo/Duo i Flex), de l'historial oficial de Riot. Toca una partida per veure la taula sencera, i un nom per obrir el seu OP.GG. Els LP surten a les partides jugades amb l'app oberta.": ["Últimas partidas de todas las colas, del historial oficial de Riot. Toca una partida para ver la tabla entera, y un nombre para abrir su OP.GG. Los LP salen en las partidas jugadas con la app abierta.", "Latest games of every queue, from Riot's official history. Tap a game for the full scoreboard, and a name to open their OP.GG. LP shows for games played with the app open."],
-  "La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors i tres lliçons a l'informe": ["La IA habla sola: plan de partida en la pantalla de carga, consejo cuando mueres y tres lecciones en el informe", "The AI speaks on its own: game plan at the loading screen, advice when you die and three lessons in the report"],
+  "La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors, macro als minuts 14, 25 i 35, i tres lliçons a l'informe": ["La IA habla sola: plan de partida en la pantalla de carga, consejo cuando mueres, macro en los minutos 14, 25 y 35, y tres lecciones en el informe", "The AI speaks on its own: game plan at the loading screen, advice when you die, macro at minutes 14, 25 and 35, and three lessons in the report"],
   "Lliçons de la IA": ["Lecciones de la IA", "AI lessons"], "Demanar les tres lliçons d'aquesta partida": ["Pedir las tres lecciones de esta partida", "Ask for this game's three lessons"],
-  "Pla de partida": ["Plan de partida", "Game plan"], "Després de morir": ["Después de morir", "After dying"],
+  "Pla de partida": ["Plan de partida", "Game plan"], "Macro": ["Macro", "Macro"], "Després de morir": ["Después de morir", "After dying"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2118,6 +2118,7 @@ function coachStart(data){
   guideStart(data, t);
   focusStart(t);
   coach.planAt = t < 120 ? t + 25 : Infinity;   // without scouting, the plan comes alone
+  for (const m of [840, 1500, 2100]) if (t > m + 60) coach.said.add("macro" + m);
   coach.formAt = t < 150 ? t + 12 : Infinity;
   visStart(data, t);
   for (const m of [600, 840, 1500]) if (t > m + 15) coach.said.add("t" + m);
@@ -2186,6 +2187,9 @@ function coachTick(data){
   guideTick(data, t);
   focusTick(t);
   if (t >= coach.planAt) { coach.planAt = Infinity; aiPlan(); }
+  for (const [m, q] of [[840, "Minut 14, comença la mitja partida."], [1500, "Minut 25, fase final."], [2100, "Minut 35, partida molt llarga."]])
+    if (t >= m && t < m + 120 && !coach.said.has("macro" + m)) { coach.said.add("macro" + m);
+      aiProactive("macro", `${q} En dues frases curtes, el pla de macro ara: on ha d'estar el meu equip i quin objectiu forçar o defensar, segons el valor dels objectes, les torres, els dracs, el baró i qui va fort de cada equip.`); }
   if (t >= coach.formAt) { coach.formAt = Infinity; sayForm(playerBy(data, game.me)?.championName, "partida"); }
   visTick(data, t, me);
 
@@ -2517,6 +2521,21 @@ function aiState(){
     const g = r.wins + r.losses, games = r.games || [], mine = games.filter(x => x.c.toLowerCase() === r.champ.toLowerCase()), w = mine.filter(x => x.w).length;
     return `${r.ally ? "[aliat] " : ""}${displayChamp(r.champ)}: ${r.tier ? `${r.tier} ${r.rank} ${r.lp} LP, ${g ? Math.round(100 * r.wins / g) : 0}% de victòries en ${g} partides` : "sense rang"}; amb aquest campió ${mine.length} de les últimes ${games.length} partides (${w} guanyades); maestria ${r.mastery} punts`;
   }).join(" | ") + ".");
+  { // the score of the game: kills, towers and inhibitors lost, big objectives, value of the items
+    const ev = d.events?.Events || [], mine = me.team, teamOf = n => playerNamed(d, n)?.team;
+    const T = {[mine]: {k: 0, tw: 0, inh: 0, bar: 0, her: 0}}, other = mine === "ORDER" ? "CHAOS" : "ORDER"; T[other] = {k: 0, tw: 0, inh: 0, bar: 0, her: 0};
+    for (const e of ev) {
+      if (e.EventName === "ChampionKill") { const tm = teamOf(e.KillerName); if (T[tm]) T[tm].k++; }
+      else if (e.EventName === "TurretKilled") { const lost = /_T1_/.test(e.TurretKilled || "") ? "ORDER" : /_T2_/.test(e.TurretKilled || "") ? "CHAOS" : null; if (lost) T[lost].tw++; }
+      else if (e.EventName === "InhibKilled") { const lost = /_T1_/.test(e.InhibKilled || "") ? "ORDER" : /_T2_/.test(e.InhibKilled || "") ? "CHAOS" : null; if (lost) T[lost].inh++; }
+      else if (e.EventName === "BaronKill") { const tm = teamOf(e.KillerName); if (T[tm]) T[tm].bar++; }
+      else if (e.EventName === "HeraldKill") { const tm = teamOf(e.KillerName); if (T[tm]) T[tm].her++; }
+    }
+    const val = tm => d.allPlayers.filter(p => p.team === tm).reduce((a, p) => a + (p.items || []).reduce((b, x) => b + (ITEMS[x.itemID]?.total || 0) * (x.count || 1), 0), 0);
+    const vm = val(mine), vo = val(other);
+    out.push(`Marcador: kills ${T[mine].k} a ${T[other].k}. Torres perdudes: el meu equip ${T[mine].tw}, el rival ${T[other].tw}. Inhibidors perduts: el meu equip ${T[mine].inh}, el rival ${T[other].inh}. Barons: ${T[mine].bar} a ${T[other].bar}. Herald: ${T[mine].her} a ${T[other].her}.`);
+    if (vm && vo) out.push(`Valor dels objectes (mesura de l'or): el meu equip ${vm}, el rival ${vo} (${vm >= vo ? "+" : ""}${vm - vo}).`);
+  }
   const kills = (d.events?.Events || []).filter(e => e.EventName === "ChampionKill").slice(-6).map(e => `${fmtClock(e.EventTime)} ${e.KillerName} mata ${e.VictimName}`);
   if (kills.length) out.push("Últimes kills: " + kills.join("; ") + ".");
   return out.join("\n");
@@ -2554,17 +2573,17 @@ async function askAI(q){
 
 // ---------- The AI speaking by itself: game plan, after a death, lessons of the report ----------
 let aiAutoAt = 0, aiAutoBusy = false;
-async function aiProactive(kind, question){
+async function aiProactive(kind, question, extra){
   if (!aiHasKey || !$("#cAiAuto")?.checked || aiAutoBusy || !location.protocol.startsWith("http")) return;
   aiAutoBusy = true;
   try {
     const lang = speechChoice().lang, t0 = Date.now();
     const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question, state: game ? aiState() : "", lang, history: aiHistory})})).json();
+      body: JSON.stringify({question, state: (game ? aiState() : "") + (extra ? "\n" + extra : ""), lang, history: aiHistory})})).json();
     if (r.answer && !r.error) {
       plog(`IA (${kind}): ${r.answer} (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
       aiHistory.push({role: "user", text: question}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
-      aiShow(kind === "pla" ? "Pla de partida" : "Després de morir", r.answer);
+      aiShow({pla: "Pla de partida", mort: "Després de morir", macro: "Macro"}[kind] || kind, r.answer);
       speak(r.answer); aiAutoAt = Date.now();
     } else if (r.error) plog(`IA (${kind}): error ${r.error}`);
   } catch (e) {}
@@ -2572,12 +2591,63 @@ async function aiProactive(kind, question){
 }
 function aiPlan(){
   if (!game || game.planSaid) return; game.planSaid = true;
-  aiProactive("pla", "Fes-me el pla d'aquesta partida en dues frases curtes: com guanyar la meva línia o el meu rol, i amb qui del meu equip jugar o de quin rival protegir-me, segons els campions i les dades dels jugadors.");
+  aiProactive("pla", "Fes-me el pla d'aquesta partida en dues frases curtes: com guanyar la meva línia o el meu rol, i amb qui del meu equip jugar o de quin rival protegir-me, segons els campions i les dades dels jugadors. Si el meu historial recent mostra un error que es repeteix, recorda-me'l.", aiMemory());
 }
 function aiAfterDeath(killer, helpers, t){
   if (!game || t < 60 || Date.now() - aiAutoAt < 120000) return;
   const by = [killer, ...helpers].filter(Boolean).map(p => p.championName).filter((x, i, a) => x && a.indexOf(x) === i);
   aiProactive("mort", `M'acaben de matar al minut ${fmtClock(t)}${by.length ? `: ${by.join(", ")}` : ""}. En una sola frase: per què probablement he mort, amb el que portem cadascú, i què he de fer diferent.`);
+}
+
+// what the AI should remember: the last 10 games (patterns, not one game)
+function aiMemory(exceptDate){
+  const list = histCache.filter(r => !r.error && r.date !== exceptDate).slice(0, 10); if (list.length < 3) return "";
+  const w = list.filter(r => r.result === "Victòria").length, l = list.filter(r => r.result === "Derrota").length;
+  const avg = f => { const v = list.map(f).filter(x => x != null && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const champs = Object.entries(list.reduce((a, r) => (a[r.champion] = (a[r.champion] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${c} ${n}`).join(", ");
+  const bad = {}; for (const r of list) for (const g of reportGrades(r)) if (g.level === "bad") bad[g.area] = (bad[g.area] || 0) + 1;
+  const kinds = {}; for (const r of list) for (const dd of r.deaths || []) kinds[dd.kind] = (kinds[dd.kind] || 0) + 1;
+  const out = [`Historial recent del jugador (últimes ${list.length} partides amb l'app): ${w} victòries i ${l} derrotes; campions: ${champs}.`];
+  const cs = avg(r => r.role === "UTILITY" ? null : r.cs_rate?.total), d15 = avg(r => r.deaths15), kp = avg(r => kpOf(r)), vis = avg(r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); });
+  out.push(`Mitjanes: ${cs != null ? `farm ${fmt1(cs)}/min, ` : ""}${d15 != null ? `${fmt1(d15)} morts abans del minut 15, ` : ""}${kp != null ? `participació ${Math.round(kp)}%, ` : ""}${vis != null ? `visió ${fmt1(vis)}/min` : ""}.`);
+  const b = Object.entries(bad).sort((a, b) => b[1] - a[1]).slice(0, 3); if (b.length) out.push("Apartats que surten 'a treballar' més sovint: " + b.map(([a, n]) => `${a} (${n} de ${list.length})`).join(", ") + ".");
+  const k = Object.entries(kinds).sort((a, b) => b[1] - a[1]).slice(0, 3); if (k.length) out.push("Com mor més sovint: " + k.map(([a, n]) => `${a} (${n} vegades)`).join(", ") + ".");
+  const prev = list.filter(r => r.ai_review).slice(0, 2).map(r => `${r.date}: ${r.ai_review}`); if (prev.length) out.push("Lliçons que ja li has donat: " + prev.join(" | "));
+  return out.join("\n");
+}
+// where each death happened on the map (Riot's timeline) and who was near; positions are once a minute
+function aiZone(x, y, side){
+  const s = x + y, d = y - x;
+  if (s < 3800) return side === "blue" ? "la seva base" : "la base rival";
+  if (s > 25800) return side === "red" ? "la seva base" : "la base rival";
+  if ((x < 2300 && y > 3800) || (y > 12500 && x < 11000)) return "la línia de dalt";
+  if ((y < 2300 && x > 3800) || (x > 12500 && y < 11000)) return "la línia de baix";
+  if (Math.abs(d) < 1100) return "la línia del mig";
+  if (Math.abs(s - 14800) < 1700) return d > 0 ? "el riu de dalt" : "el riu de baix";
+  const jside = s < 14800 ? "blue" : "red";
+  return `${jside === side ? "la seva jungla" : "la jungla rival"} (${d > 0 ? "dalt" : "baix"})`;
+}
+function deathsOnMap(r){
+  const md = r.map; if (!md?.events) return "";
+  const me = md.players?.find(p => p.me), deaths = md.events.filter(e => e.kind === "death"); if (!deaths.length) return "";
+  const near = (e, foe) => {
+    const f = (md.frames || []).reduce((a, b) => Math.abs(b.t - e.t) < Math.abs((a?.t ?? 1e9) - e.t) ? b : a, null); if (!f) return [];
+    return (md.players || []).filter(p => !p.me && (foe ? p.team !== md.side : p.team === md.side)).filter(p => { const q = f.pos?.[p.id]; return q && Math.hypot(q[0] - e.x, q[1] - e.y) < 2600; }).map(p => displayChamp(p.champ));
+  };
+  return "On ha mort (mapa de Riot, posicions aproximades de minut en minut): " + deaths.map(e => {
+    const foes = near(e, true), mates = near(e, false);
+    return `${fmtClock(e.t)} a ${aiZone(e.x, e.y, md.side)}${e.champ ? `, l'ha matat ${displayChamp(e.champ)}` : ""}; rivals a prop: ${foes.join(", ") || "cap més"}; aliats a prop: ${mates.join(", ") || "cap"}`;
+  }).join(" | ") + ".";
+}
+// the lessons of the game just finished: once Riot's map is in the report (it arrives a minute or two
+// after the end), or after 6 minutes without it
+const reviewTried = new Set(); let reviewWait = 0;
+function maybeReview(r){
+  if (!r || r.error || r.ai_review || reviewTried.has(r.date)) return;
+  const end = new Date((r.date || "").replace(" ", "T")).getTime() + (r.duration || 0) * 1000, age = (Date.now() - end) / 60000;
+  if (!(age >= 0 && age < 30)) return;
+  if (!r.map?.board && riotCfg?.has_key && age < 6) { if (!reviewWait) reviewWait = setTimeout(() => { reviewWait = 0; loadHistory(); }, 45000); return; }
+  reviewTried.add(r.date); aiReview(r, true);
 }
 // lessons of a report: asked once, saved in the report
 async function aiReview(r, speakIt){
@@ -2587,10 +2657,11 @@ async function aiReview(r, speakIt){
     "Notes: " + reportGrades(r).map(g => `${g.area} ${g.value} (${({good: "bé", mid: "millorable", bad: "a treballar"})[g.level]})`).join("; "),
     (r.tips || []).length ? "Consells de l'app: " + r.tips.join(" ") : "",
     me ? `Taula: ${me.place}è de 10, ${me.k}/${me.d}/${me.a}, ${me.cs} CS, ${me.dmg} de dany.` : "",
-    (r.deaths || []).length ? "Morts: " + r.deaths.map(d => `${fmtClock(d.t)} ${d.kind} (${d.by.join(", ")})`).join("; ") : ""].filter(Boolean).join("\n");
+    (r.deaths || []).length ? "Morts: " + r.deaths.map(d => `${fmtClock(d.t)} ${d.kind} (${d.by.join(", ")})`).join("; ") : "",
+    deathsOnMap(r), aiMemory(r.date)].filter(Boolean).join("\n");
   try {
     const res = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question: "Dona'm les tres lliçons d'aquesta partida.", state: text, lang: speechChoice().lang, mode: "review", date: r.date})})).json();
+      body: JSON.stringify({question: "Dona'm les tres lliçons d'aquesta partida. Si un error es repeteix respecte de les partides anteriors, digues-ho; si ha millorat en alguna cosa que li havies dit, reconeix-ho.", state: text, lang: speechChoice().lang, mode: "review", date: r.date})})).json();
     if (res.answer && !res.error) {
       r.ai_review = res.answer; plog(`IA (lliçons): ${res.answer}`);
       if (histCache[0]?.date === r.date && !$("#viewR").hidden) renderReport(r);
@@ -4202,9 +4273,9 @@ async function loadHistory(){
   try {
     const h = await (await fetch("/api/history", {cache:"no-store"})).json();
     if (histCount >= 0 && h.length > histCount) { mhLoaded = false; showTab(true); window.scrollTo({top: 0}); toFront("informe"); if (on("vGame")) speak("Informe de la partida llest.");
-      setTimeout(() => aiReview(histCache[0], true), 2500); }
+      }
     const fresh = histCount >= 0 && h.length > histCount;
-    histCount = h.length; histCache = h; renderTrends(); renderReport(h[0]); if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
+    histCount = h.length; histCache = h; maybeReview(h[0]); renderTrends(); renderReport(h[0]); if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
   } catch(e) { $("#report").innerHTML = `<section class="card"><p class="note warn">Els informes només funcionen obrint la pàgina des del programa RiftMate.</p></section>`; }
 }
 
