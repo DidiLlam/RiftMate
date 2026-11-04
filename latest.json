@@ -1,7 +1,7 @@
 {
- "version": "2.0.22",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.22.exe",
- "size": 8275968,
- "sha256": "4c1e8814500affab28afb9df1b8c5f1670a09e5743d011839d65f3d1ab5b7457",
- "notes": "- La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors i tres lliçons a l'informe\n- La veu ja no llegeix el KDA 8/2/11 com una data"
+ "version": "2.0.23",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.23.exe",
+ "size": 8283136,
+ "sha256": "31de2c54cf1f9f9749dab519d8bdc8b662b2eb1955992e68955b1a32901ea5b4",
+ "notes": "- La IA recorda les teves últimes 10 partides (errors que es repeteixen) al pla i a les lliçons\n- Lliçons amb el mapa de Riot: on has mort i qui hi havia a prop\n- Macro de la IA als minuts 14, 25 i 35 amb el marcador, les torres i l'or de cada equip"
 }
