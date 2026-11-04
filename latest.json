@@ -1,7 +1,7 @@
 {
- "version": "2.0.16",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.16.exe",
- "size": 8242176,
- "sha256": "11efca59083b1ee373f59dd83f0400601d912869e7411c9aeba49c8b3e962a2f",
- "notes": "- L'informe obre amb un titular: has carrilejat, t'han carrilejat, partida per oblidar…\n- Arreglat: el coach confonia el teu rival de línia amb un company (\"Graves ha matat Graves\")"
+ "version": "2.0.17",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.17.exe",
+ "size": 8243200,
+ "sha256": "45bdf215fd0fdab6e31927cfda1a56d0a111123ef098be6eea1118cf764fb2df",
+ "notes": "- La IA comença pel model que va respondre l'últim cop (respon molt abans)\n- El registre apunta si la resposta de la IA s'ha dit per veu"
 }
