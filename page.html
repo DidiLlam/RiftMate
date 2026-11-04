@@ -47,6 +47,8 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
 .sb .sbd{min-width:110px}.sb .sbd b{font-family:var(--mono);font-size:.82rem}.sb .sbd i{display:block;height:5px;border-radius:3px;background:var(--line);margin-top:3px;overflow:hidden}
 .sb .sbd i em{display:block;height:100%;border-radius:3px}.sb .sbblue .sbd i em,.sb tr.sbblue .sbd i em{background:var(--blue)}.sb tr.sbred .sbd i em{background:var(--red)}
 .sb .sbbans{display:inline-flex;gap:3px;vertical-align:middle;margin-left:8px}.sb .sbbans img{width:20px;height:20px;border-radius:4px;filter:grayscale(.7)}
+.rpverdict{margin:10px 0 2px;font:700 1.15rem/1.3 Cinzel,Georgia,serif;letter-spacing:.02em}.rpverdict.carry{color:#e2c06e}.rpverdict.ace{color:#b79cf0}
+.rpverdict.carried{color:var(--good)}.rpverdict.bad{color:var(--loss)}.rpverdict.ok{color:var(--fg)}.rpverdict.meh{color:var(--muted)}
 .sbobj{display:inline-flex;gap:12px;margin-left:12px;font-family:var(--mono);align-items:center}
 .sbo{display:inline-flex;align-items:center;gap:5px}.sbo svg,.sbo img{width:16px;height:16px;object-fit:contain}
 .sbog{display:inline-flex;gap:10px;margin-right:22px;color:var(--muted)}.sbo svg{fill:var(--muted)}
@@ -1064,6 +1066,27 @@ const I18N = {
   "{x} ve de guanyar {n} partides seguides.": ["{x} viene de ganar {n} partidas seguidas.", "{x} has won {n} games in a row."],
   "{x} ve de perdre {n} partides seguides: pot estar tiltat, anima'l.": ["{x} viene de perder {n} partidas seguidas: puede estar tilteado, anímalo.", "{x} has lost {n} in a row: may be tilted, cheer him up."],
   "Posar RiftMate al davant quan entris a la selecció de campions i quan l'informe estigui llest": ["Poner RiftMate delante al entrar en la selección de campeones y cuando el informe esté listo", "Bring RiftMate to the front at champion select and when the report is ready"],
+  // report headline
+  "Has carrilejat tremendament: MVP de la partida amb el {n}% del dany del teu equip.": ["Has carrileado tremendamente: MVP de la partida con el {n}% del daño de tu equipo.", "You hard carried: MVP of the game with {n}% of your team's damage."],
+  "Partida de les que pugen LP: has portat l'equip a l'esquena ({x}).": ["Partida de las que suben LP: has llevado al equipo a la espalda ({x}).", "One of those games that climb: you carried the team on your back ({x})."],
+  "Carrilejada de manual: el millor de la partida i el {n}% del dany de l'equip.": ["Carrileada de manual: el mejor de la partida y el {n}% del daño del equipo.", "Textbook carry: best in the game and {n}% of the team's damage."],
+  "MVP de la partida: has estat el millor del teu equip.": ["MVP de la partida: has sido el mejor de tu equipo.", "MVP of the game: you were your team's best."],
+  "Has fet tot el que has pogut: el millor del teu equip, però no ha estat suficient.": ["Has hecho todo lo que has podido: el mejor de tu equipo, pero no ha bastado.", "You did all you could: your team's best, but it wasn't enough."],
+  "Derrota, però no per culpa teva: ACE de la partida amb {x}.": ["Derrota, pero no por tu culpa: ACE de la partida con {x}.", "A loss, but not your fault: ACE of the game with {x}."],
+  "T'han carrilejat: victòria, però aquesta vegada la feina l'han fet els companys.": ["Te han carrileado: victoria, pero esta vez el trabajo lo han hecho los compañeros.", "You got carried: a win, but this time your teammates did the work."],
+  "Victòria d'equip: avui has sumat menys que els altres, però els LP compten igual.": ["Victoria de equipo: hoy has sumado menos que los demás, pero los LP cuentan igual.", "Team win: you added less than the others today, but the LP count the same."],
+  "Partida per oblidar: ets dels que menys han aportat. Mira on has mort.": ["Partida para olvidar: eres de los que menos han aportado. Mira dónde has muerto.", "One to forget: you were among those who contributed least. Check where you died."],
+  "Avui no ha sortit: dels que menys han sumat de la partida. La pròxima, més prudència.": ["Hoy no ha salido: de los que menos han sumado de la partida. La próxima, más prudencia.", "Not today: among the lowest contributors of the game. Next time, more caution."],
+  "Bona partida: {x} de la partida i victòria.": ["Buena partida: {x} de la partida y victoria.", "Good game: {x} in the game and a win."],
+  "Victòria treballada: has complert la teva part.": ["Victoria trabajada: has cumplido tu parte.", "Hard-earned win: you did your part."],
+  "Derrota amb bona nota: has estat dels millors de la partida ({x}).": ["Derrota con buena nota: has sido de los mejores de la partida ({x}).", "A loss with a good grade: among the best in the game ({x})."],
+  "Derrota ajustada: partida correcta, però no ha anat.": ["Derrota ajustada: partida correcta, pero no ha salido.", "Close loss: a decent game, but it didn't work out."],
+  "Has carrilejat tremendament: {x} i victòria.": ["Has carrileado tremendamente: {x} y victoria.", "You hard carried: {x} and a win."],
+  "Partida impecable: victòria sense morir ni una vegada.": ["Partida impecable: victoria sin morir ni una vez.", "Flawless game: a win without dying once."],
+  "Has fet tot el que has pogut: {n}% de participació, però no ha estat suficient.": ["Has hecho todo lo que has podido: {n}% de participación, pero no ha bastado.", "You did all you could: {n}% kill participation, but it wasn't enough."],
+  "Partida per oblidar: {n} morts. Mira on t'han agafat.": ["Partida para olvidar: {n} muertes. Mira dónde te han pillado.", "One to forget: {n} deaths. Check where you got caught."],
+  "Victòria treballada.": ["Victoria trabajada.", "Hard-earned win."], "Derrota: a la pròxima.": ["Derrota: a la próxima.", "A loss: next time."],
+  "1r": ["1.º", "1st"], "2n": ["2.º", "2nd"], "3r": ["3.º", "3rd"], "4t": ["4.º", "4th"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -1889,7 +1912,16 @@ function spellOf(s){
   const d = (s.displayName || "").toLowerCase();
   return SPELLS.find(x => x.toLowerCase() === d) || null;
 }
-const pid = p => p.riotId || p.summonerName;
+// a player's key in this game: name plus champion, unique even when the game hides or repeats names
+const pid = p => `${p.riotId || p.summonerName || ""}|${p.championName || ""}`;
+// the player an event names (KillerName, VictimName...): only when exactly one player matches
+function playerNamed(data, n){
+  if (!n) return null;
+  const hit = data.allPlayers.filter(q => [q.riotId, q.riotIdGameName, q.summonerName].some(x => x && (x === n || x.split("#")[0] === n)));
+  if (hit.length === 1) return hit[0];
+  const byChamp = data.allPlayers.filter(q => q.championName === n || q.rawChampionName === n);
+  return byChamp.length === 1 ? byChamp[0] : null;
+}
 function placeTeams(mySide){
   if (mySide !== "blue" && mySide !== "red") return;
   const foeSide = mySide === "blue" ? "red" : "blue", name = s => s === "blue" ? "Equip blau" : "Equip vermell";
@@ -1901,9 +1933,10 @@ function placeTeams(mySide){
 }
 function onGameStart(data){
   showTab("T"); setTimeout(() => $("#teams")?.scrollIntoView({behavior: "smooth", block: "start"}), 300);   // the game starts: the timers, whatever tab was open
-  plog(`Partida a la pagina: ${data.allPlayers.length} jugadors · posicions: ${data.allPlayers.map(p => (p.championName || "?") + ":" + (p.position || "-")).join(", ")}`);
+  plog(`Partida a la pagina: ${data.allPlayers.length} jugadors · posicions: ${data.allPlayers.map(p => (p.championName || "?") + ":" + (p.position || "-") + ":" + (p.team || "?") + ":" + (p.riotId || p.summonerName || "(sense nom)")).join(", ")}`);
   const meId = data.activePlayer && (data.activePlayer.riotId || data.activePlayer.summonerName);
-  const me = data.allPlayers.find(p => pid(p) === meId) || data.allPlayers[0];
+  const mine = data.allPlayers.filter(p => (p.riotId || p.summonerName) === meId);
+  const me = (mine.length === 1 ? mine[0] : null) || data.allPlayers.find(p => p.riotIdGameName && meId && meId.startsWith(p.riotIdGameName + "#")) || mine[0] || data.allPlayers[0];
   const foes = data.allPlayers.filter(p => p.team !== me.team);
   placeTeams(me.team === "ORDER" ? "blue" : me.team === "CHAOS" ? "red" : null);
   try { startScout(data, me); } catch (e) {}
@@ -2075,7 +2108,7 @@ function coachTick(data){
     for (const ev of data.events?.Events || []) {
       const id = ev.EventID ?? -1; if (id <= game.seenEv) continue; game.seenEv = id;
       const helpers = ev.Assisters || [];
-      const champOf = n => { const p = data.allPlayers.find(q => [q.riotId, q.riotIdGameName, q.summonerName, q.championName].some(x => x && (x === n || x.split("#")[0] === n))); return p; };
+      const champOf = n => playerNamed(data, n);
       const isMe = n => { const p = champOf(n); return p && pid(p) === game.me; };
       if (ev.EventName === "ChampionKill") {
         if (isMe(ev.VictimName)) {
@@ -2231,7 +2264,7 @@ const OBJ_TEXT = {
 function helpTick(data, t, me, opp){
   if (!help || !me) return;
   help.champ = me.championName;
-  const champOf = n => data.allPlayers.find(q => [q.riotId, q.riotIdGameName, q.summonerName, q.championName].some(x => x && (x === n || x.split("#")[0] === n)));
+  const champOf = n => playerNamed(data, n);
 
   // objectives: timers from the kill events, reminder one minute before each spawn
   for (const ev of data.events?.Events || []) {
@@ -3010,7 +3043,7 @@ function visTick(data, t, me){
   const laner = role === "MIDDLE" || role === "TOP" || role === "BOTTOM";
   if (score != null) { if (v.lastScore == null || score > v.lastScore + 0.01) { v.lastScore = score; v.lastChange = t; } }
   // where the enemy jungler shows up: kills he takes part in, by the lane of the victim
-  const champOf = n => data.allPlayers.find(q => [q.riotId, q.riotIdGameName, q.summonerName, q.championName].some(x => x && (x === n || x.split("#")[0] === n)));
+  const champOf = n => playerNamed(data, n);
   for (const ev of data.events?.Events || []) {
     const id = ev.EventID ?? -1; if (id <= v.seenEv) continue; v.seenEv = id;
     if (ev.EventName !== "ChampionKill" || !v.jgP) continue;
@@ -3742,6 +3775,7 @@ function reportNarrative(r){
   const mins = Math.round(minutesOf(r));
   const res = win ? "Victòria" : r.result === "Derrota" ? "Derrota" : "Partida";
   s.push(r.opponent ? `${res} amb ${r.champion} contra ${r.opponent} en ${mins} minuts.` : `${res} amb ${r.champion} en ${mins} minuts.`);
+  { const v = reportVerdict(r); if (v) s.push(v.t); }
   s.push(`Kills: ${r.kda[0]}. Morts: ${r.kda[1]}. Assistències: ${r.kda[2]}.`);
   if (r.lp?.delta != null) s.push(r.lp.delta >= 0 ? `Has guanyat ${r.lp.delta} LP.` : `Has perdut ${-r.lp.delta} LP.`);
   { const o = focusOf(r); if (o && o.level) s.push(`Objectiu de la partida, ${o.f.name}: ${FOCUS_VERDICT[o.level].toLowerCase()}.`); }
@@ -3893,6 +3927,31 @@ function reportBoard(r){
   return `<section class="card"><h2>Taula de la partida</h2><div class="tbl"><table class="sb">${body}</table></div>
     <p class="note">Dades oficials de Riot. El rang és el de Solo/Duo de cada jugador. La classificació (MVP, ACE, 1r…10è) és una puntuació de l'app amb el KDA, la participació en kills, la part del dany de l'equip, el farm (o la visió si és suport) i les morts per minut: no és la d'OP.GG.</p></section>`;
 }
+
+// ---------- Headline of the report: one sentence with some character, from the scoreboard when there is one ----------
+function reportVerdict(r){
+  const win = r.result === "Victòria", lose = r.result === "Derrota";
+  const b = r.map?.board, me = b?.players.find(p => p.me);
+  const pick = list => list[[...(r.date || "x")].reduce((a, c) => a + c.charCodeAt(0), 0) % list.length];   // the same sentence every time for one report
+  const [k, d, a] = r.kda || [0, 0, 0];
+  if (me) {
+    const team = b.teams.find(t => t.id === me.team) || {}, share = team.dmg ? me.dmg / team.dmg : 0, pct = Math.round(share * 100), kda = (me.k + me.a) / Math.max(1, me.d);
+    if (win && (me.badge === "MVP" || me.place <= 2) && (share >= 0.27 || kda >= 5))
+      return {c: "carry", t: pick([`Has carrilejat tremendament: MVP de la partida amb el ${pct}% del dany del teu equip.`, `Partida de les que pugen LP: has portat l'equip a l'esquena (${me.k}/${me.d}/${me.a}).`, `Carrilejada de manual: el millor de la partida i el ${pct}% del dany de l'equip.`])};
+    if (win && me.badge === "MVP") return {c: "carry", t: `MVP de la partida: has estat el millor del teu equip.`};
+    if (lose && me.badge === "ACE") return {c: "ace", t: pick([`Has fet tot el que has pogut: el millor del teu equip, però no ha estat suficient.`, `Derrota, però no per culpa teva: ACE de la partida amb ${me.k}/${me.d}/${me.a}.`])};
+    if (win && me.place >= 8) return {c: "carried", t: pick([`T'han carrilejat: victòria, però aquesta vegada la feina l'han fet els companys.`, `Victòria d'equip: avui has sumat menys que els altres, però els LP compten igual.`])};
+    if (lose && me.place >= 9) return {c: "bad", t: pick([`Partida per oblidar: ets dels que menys han aportat. Mira on has mort.`, `Avui no ha sortit: dels que menys han sumat de la partida. La pròxima, més prudència.`])};
+    if (win) return {c: "ok", t: me.place <= 4 ? `Bona partida: ${["1r", "2n", "3r", "4t"][me.place - 1]} de la partida i victòria.` : `Victòria treballada: has complert la teva part.`};
+    if (lose) return {c: "meh", t: me.place <= 4 ? `Derrota amb bona nota: has estat dels millors de la partida (${["1r", "2n", "3r", "4t"][me.place - 1]}).` : `Derrota ajustada: partida correcta, però no ha anat.`};
+  }
+  const kp = kpOf(r) ?? 0;
+  if (win && d <= 2 && (k + a) >= 15) return {c: "carry", t: `Has carrilejat tremendament: ${k}/${d}/${a} i victòria.`};
+  if (win && d === 0) return {c: "carry", t: `Partida impecable: victòria sense morir ni una vegada.`};
+  if (lose && kp >= 60 && d <= 4) return {c: "ace", t: `Has fet tot el que has pogut: ${kp}% de participació, però no ha estat suficient.`};
+  if (lose && d >= 9) return {c: "bad", t: `Partida per oblidar: ${d} morts. Mira on t'han agafat.`};
+  return win ? {c: "ok", t: `Victòria treballada.`} : lose ? {c: "meh", t: `Derrota: a la pròxima.`} : null;
+}
 function reportTop(r){
   const win = r.result === "Victòria", grades = reportGrades(r), pos = reportPositives(r), narr = reportNarrative(r);
   const tips = (r.tips || []);
@@ -3905,6 +3964,7 @@ function reportTop(r){
         <b data-noi18n>${esc(r.champion)}</b><span class="note">${ROLE_TXT[r.role] || "mid"} · contra ${esc(r.opponent || "?")} · ${mm(r.duration)} · ${esc(r.date)}${r.queue ? " · " + `<span>${esc(r.queue)}</span>` : ""}</span></div>
       <button class="b primary" id="rpVoice" type="button">▶ Escolta l'informe</button>
     </div>
+    ${(v => v ? `<p class="rpverdict ${v.c}">${esc(v.t)}</p>` : "")(reportVerdict(r))}
     <div class="kv"><div><span>KDA</span><b>${r.kda.join(" / ")}</b></div><div><span>Participació</span><b>${dash(kpOf(r))}${kpOf(r) != null ? "%" : ""}</b></div><div><span>CS/min</span><b>${dash(r.cs_rate.total)}</b></div><div><span>Morts abans del 15</span><b class="${r.deaths15 >= 2 ? "bad" : ""}">${r.deaths15}</b></div>${lpCell(r)}</div>
   </section>
   ${reportBoard(r)}
@@ -3913,7 +3973,7 @@ function reportTop(r){
     <div class="grades">${grades.map(g => `<div class="gr ${g.level}" title="${esc(g.rule)}"><span class="gl"></span><div><b>${esc(g.area)}</b><span>${esc(g.value)}</span><span class="gw">${({good: "Bé", mid: "Millorable", bad: "A treballar"})[g.level]}</span></div></div>`).join("")}</div>
     <p class="note">Referències de l'app per pujar de Platí a Diamant (passa el ratolí per sobre per veure el criteri).</p>
   </section>
-  <section class="card"><h2>Resum</h2><p class="rpsum">${narr.filter(t => t !== "El que has fet bé." && t !== "Per millorar.").slice(0, 9).map(esc).map(t => `<span>${t}</span>`).join(" ")}</p></section>
+  <section class="card"><h2>Resum</h2><p class="rpsum">${narr.filter(t => t !== "El que has fet bé." && t !== "Per millorar." && t !== reportVerdict(r)?.t).slice(0, 9).map(esc).map(t => `<span>${t}</span>`).join(" ")}</p></section>
   <div class="two">
     <section class="card"><h2>El que has fet bé</h2>${pos.length ? `<ul class="tips good">${pos.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : `<p class="note">Aquesta partida no destaca en res en positiu segons les dades.</p>`}</section>
     <section class="card"><h2>Què millorar</h2><ul class="tips">${tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul></section>
