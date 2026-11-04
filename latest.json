@@ -1,7 +1,7 @@
 {
- "version": "2.0.23",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.23.exe",
- "size": 8283136,
- "sha256": "31de2c54cf1f9f9749dab519d8bdc8b662b2eb1955992e68955b1a32901ea5b4",
- "notes": "- La IA recorda les teves últimes 10 partides (errors que es repeteixen) al pla i a les lliçons\n- Lliçons amb el mapa de Riot: on has mort i qui hi havia a prop\n- Macro de la IA als minuts 14, 25 i 35 amb el marcador, les torres i l'or de cada equip"
+ "version": "2.0.24",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.24.exe",
+ "size": 8346112,
+ "sha256": "13cbc27cf223e0a6a55a8e02734927e7342da13faf7043066238e6caba8010b7",
+ "notes": "- Pestanya nova Coach: anàlisi de les teves partides (el que fas bé, el que et costa i un pla)\n- Tu contra Challenger: les teves xifres amb cada campió al costat de partides reals de jugadors Challenger i GM (farm, morts, visió, runes, build, habilitat)\n- Pots preguntar al coach fora de partida\n- El pla de cada partida i l'informe també fan servir les xifres dels Challenger"
 }
