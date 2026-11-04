@@ -1,7 +1,7 @@
 {
- "version": "2.0.26",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.26.exe",
- "size": 8377344,
- "sha256": "93d31b6a836690595d37d287794bfcbb17424e23d2e2f9a910bd13bce06b8153",
- "notes": "- Onades a mitja i final de partida: un minut i mig abans del drac i del baró et diu quines onades empènyer\n- Quan moren 2 rivals o més: empenyeu i aneu a l'objectiu (amb el temps que tenen); quan moren 2 aliats: no empenyis sol\n- Consells de quins minions matar (slow push, congelar, sota torre) i de línies laterals al final\n- Les crides a Riot ja no se'n passen del límit de la clau (abans hi havia molts errors 429 en analitzar els rivals)\n- La lectura dels Challenger s'atura també a la selecció de campions"
+ "version": "2.0.27",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.27.exe",
+ "size": 8401920,
+ "sha256": "4406310c145faad4067799e08d9ca55ccf63c1cefbe335df2bef4b32841a9e44",
+ "notes": "- Tu contra Challenger, refet: la columna Tu surt de les teves partides de Riot, mesurades igual que les dels Challenger\n- Nou requadre 'On et falta més' amb les 3 diferències més grans i què fer, més build, habilitat i encanteris si no fas el mateix que ells\n- Només compta jugadors que juguen el campió ara (últims 10 dies), i deixa de llegir els que no l'estan jugant: menys partides llegides per a res\n- Dades noves: primera tornada a base, roams abans del 14, plaques i kills en solitari\n- Avís quan hi ha poques partides d'un campió"
 }
