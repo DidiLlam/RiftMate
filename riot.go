@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -64,6 +65,53 @@ var riotHTTP = &http.Client{Timeout: 10 * time.Second}
 
 var errNoKey = errors.New("no_key")
 
+// Riot's limits for a personal key: 20 calls a second and 100 every 2 minutes, counted per host (euw1, europe...).
+// Every call waits here for its turn, so the scouting, the season and the Challenger reading never go over them;
+// after a 429 the host is paused for the time Riot asks (Retry-After).
+var (
+	rlMu    sync.Mutex
+	rlHits  = map[string][]time.Time{}
+	rlUntil = map[string]time.Time{}
+)
+
+func rlWait(host string) {
+	if os.Getenv("LT_TEST_FAST") != "" {
+		return
+	}
+	for {
+		rlMu.Lock()
+		now := time.Now()
+		h := rlHits[host]
+		for len(h) > 0 && now.Sub(h[0]) >= 121*time.Second {
+			h = h[1:]
+		}
+		var wait time.Duration
+		if u := rlUntil[host]; now.Before(u) {
+			wait = u.Sub(now)
+		} else if len(h) >= 95 {
+			wait = h[len(h)-95].Add(121 * time.Second).Sub(now)
+		} else if n := len(h); n >= 18 && now.Sub(h[n-18]) < 1100*time.Millisecond {
+			wait = h[n-18].Add(1100 * time.Millisecond).Sub(now)
+		}
+		if wait <= 0 {
+			rlHits[host] = append(h, now)
+			rlMu.Unlock()
+			return
+		}
+		rlHits[host] = h
+		rlMu.Unlock()
+		time.Sleep(wait)
+	}
+}
+
+func rlBlock(host string, d time.Duration) {
+	rlMu.Lock()
+	if u := time.Now().Add(d); u.After(rlUntil[host]) {
+		rlUntil[host] = u
+	}
+	rlMu.Unlock()
+}
+
 func riotGet(c Config, path string, out any) error { return riotGetHost(c, c.Region, path, out) }
 
 // riotGetHost calls a regional host (europe, americas…) or a platform host (euw1, na1…).
@@ -82,6 +130,7 @@ func riotGetHostQ(c Config, host, path string, out any, quiet bool) error {
 	}
 	req, _ := http.NewRequest("GET", base+path, nil)
 	req.Header.Set("X-Riot-Token", c.RiotKey)
+	rlWait(host)
 	r, err := riotHTTP.Do(req)
 	shown := path
 	if i := strings.Index(shown, "by-puuid/"); i >= 0 {
@@ -107,6 +156,11 @@ func riotGetHostQ(c Config, host, path string, out any, quiet bool) error {
 	case 404:
 		return errors.New("not_found")
 	case 429:
+		secs, _ := strconv.Atoi(r.Header.Get("Retry-After"))
+		if secs <= 0 || secs > 120 {
+			secs = 10
+		}
+		rlBlock(host, time.Duration(secs)*time.Second)
 		return errors.New("rate_limited")
 	default:
 		return fmt.Errorf("http_%d", r.StatusCode)

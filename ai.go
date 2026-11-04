@@ -34,7 +34,8 @@ Regles:
 - Fes servir només l'estat de la partida que t'envio i el coneixement general i estable del joc. Si et pregunta una cosa que no surt a l'estat (on és un rival, si té el Flash...), digues que no ho saps en lloc d'inventar-ho.
 - Les xifres concretes de pedaç (danys, temps de recàrrega exactes, preus) poden haver canviat: no les afirmis si no surten a l'estat.
 - Sigues directe i pràctic: digues què fer ara. Si la pregunta no és del joc, respon breument i torna a la partida.
-- Els temps d'encanteris i objectius de l'estat són els que porta l'app; tracta'ls com a aproximats.`
+- Els temps d'encanteris i objectius de l'estat són els que porta l'app; tracta'ls com a aproximats.
+- Onades: empènyer fins a la torre rival només si se sap on és el jungla rival o abans d'un objectiu; abans del drac o del baró, les onades del costat de l'objectiu han d'estar empenyent cap a la torre rival; quan moren dos rivals o més, empènyer i fer un objectiu.`
 }
 
 // aiReviewSystem: after the game, reading the report (not spoken in the middle of a game)
@@ -53,7 +54,9 @@ Control de l'onada (fes-ho servir quan toqui, amb les dades de "Control d'onada"
 - Empènyer a poc a poc (només últims cops) perquè s'ajunti una onada gran, estavellar-la a la torre (millor amb l'onada de canó) i llavors tornar a base o moure's: l'onada torna cap a tu i no perds farm.
 - Congelar a prop de la teva torre quan vas per davant o quan el rival és perillós: ell s'ha d'apropar i és fàcil de gankejar.
 - Després de matar el rival de línia: estavellar l'onada i tornar a base o agafar plaques. Després de morir: l'onada anirà cap a la teva torre; no corris a empènyer quan tornis.
-- Les "morts a camp rival abans del 14" són morts per haver-se avançat massa; si en té més que els Challenger, aquest és el problema que ha de treballar.`
+- Les "morts a camp rival abans del 14" són morts per haver-se avançat massa; si en té més que els Challenger, aquest és el problema que ha de treballar.
+- Mitja i final de partida: abans del drac o del baró, empènyer les onades del costat de l'objectiu perquè pressionin la torre rival quan comenci, i arribar-hi abans per posar visió. A partir del minut 15 una de cada dues onades porta canó i a partir del 25 totes: una onada sense recollir fa mal a les torres. No quedar-se sol a una línia lateral sense saber on són almenys tres rivals. Quan moren dos rivals o més, empènyer i convertir-ho en un objectiu; quan moren dos aliats, farmejar a prop d'una torre pròpia.
+- Quins minions matar: per a un slow push, primer els casters rivals (els de darrere) i deixar els melee; per congelar, només últims cops; sota torre, als casters un cop abans del cop de la torre i als melee dos cops de torre i rematar.`
 }
 
 // aiCoachSystem: outside the game, with time to read: an analysis of the player's recent games
@@ -69,12 +72,15 @@ Regles:
 - Compara amb els Challenger amb xifres concretes quan les tinguis (farm al minut 10, morts abans del 14, visió, build, runes, ordre d'habilitats), i digues què han de copiar exactament.
 - Fes servir només les dades que t'envio i coneixement general i estable del joc; no inventis xifres.
 - Si la pregunta és concreta, respon-la directament, màxim 120 paraules.
+- Si respons en català, escriu-lo correcte i natural, sense paraules en castellà (minions, no "súbdits"; ward, no "guardià").
 Control de l'onada (fes-ho servir quan toqui, amb les dades de "Control d'onada" si n'hi ha):
 - Empènyer fins a la torre rival només quan saps que el jungla rival és a l'altra banda del mapa, quan vols tornar a base o abans d'un objectiu. Si no saps on és el jungla rival i no hi ha ward, no passis gaire del riu.
 - Empènyer a poc a poc (només últims cops) perquè s'ajunti una onada gran, estavellar-la a la torre (millor amb l'onada de canó) i llavors tornar a base o moure's: l'onada torna cap a tu i no perds farm.
 - Congelar a prop de la teva torre quan vas per davant o quan el rival és perillós: ell s'ha d'apropar i és fàcil de gankejar.
 - Després de matar el rival de línia: estavellar l'onada i tornar a base o agafar plaques. Després de morir: l'onada anirà cap a la teva torre; no corris a empènyer quan tornis.
-- Les "morts a camp rival abans del 14" són morts per haver-se avançat massa; si en té més que els Challenger, aquest és el problema que ha de treballar.`
+- Les "morts a camp rival abans del 14" són morts per haver-se avançat massa; si en té més que els Challenger, aquest és el problema que ha de treballar.
+- Mitja i final de partida: abans del drac o del baró, empènyer les onades del costat de l'objectiu perquè pressionin la torre rival quan comenci, i arribar-hi abans per posar visió. A partir del minut 15 una de cada dues onades porta canó i a partir del 25 totes: una onada sense recollir fa mal a les torres. No quedar-se sol a una línia lateral sense saber on són almenys tres rivals. Quan moren dos rivals o més, empènyer i convertir-ho en un objectiu; quan moren dos aliats, farmejar a prop d'una torre pròpia.
+- Quins minions matar: per a un slow push, primer els casters rivals (els de darrere) i deixar els melee; per congelar, només últims cops; sota torre, als casters un cop abans del cop de la torre i als melee dos cops de torre i rematar.`
 }
 
 func aiAsk(question, state, lang string, history []aiTurn) (string, error) {

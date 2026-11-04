@@ -20,7 +20,8 @@ import (
 // runes, skill order...) to compare with you. Players are found by their champion mastery, games by their
 // latest ranked matches. Everything stays on disk; a refresh adds only new games.
 
-var liveNow atomic.Bool // a game is running (set by the recorder): no background reading then
+var liveNow atomic.Bool   // a game is running (set by the recorder): no background reading then
+var selectAt atomic.Int64 // last time a champion select was seen (unix seconds)
 
 type benchGame struct {
 	Match    string  `json:"m"`
@@ -159,12 +160,12 @@ func champKeyOf(id string) int {
 
 // one call, spaced and polite: waits while a game, the scouting or the season reading need the key
 func benchGet(c Config, platform bool, path string, out any) error {
-	for i := 0; i < 600 && (liveNow.Load() || func() bool { scoutMu.Lock(); defer scoutMu.Unlock(); return scoutBusy }() ||
+	for i := 0; i < 600 && (liveNow.Load() || time.Now().Unix()-selectAt.Load() < 20 || func() bool { scoutMu.Lock(); defer scoutMu.Unlock(); return scoutBusy }() ||
 		func() bool { seasonMu.Lock(); defer seasonMu.Unlock(); return seasonBusy }()); i++ {
 		time.Sleep(2 * time.Second)
 	}
 	if os.Getenv("LT_TEST_FAST") == "" {
-		time.Sleep(1300 * time.Millisecond)
+		time.Sleep(2500 * time.Millisecond) // about half of the key's 100 calls every 2 minutes
 	}
 	host := c.Region
 	if platform {

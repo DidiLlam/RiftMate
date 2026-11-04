@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.25"
+	version = "2.0.26"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -403,7 +403,11 @@ func serve(ln net.Listener) {
 		w.Write(welcomeJPG)
 	})
 	mux.HandleFunc("/api/champselect", func(w http.ResponseWriter, req *http.Request) {
-		b, _ := json.Marshal(champSelect())
+		cs := champSelect()
+		if cs["active"] == true {
+			selectAt.Store(time.Now().Unix()) // the Challenger reading leaves the key free for the scouting
+		}
+		b, _ := json.Marshal(cs)
 		send(w, 200, "application/json", b)
 	})
 	mux.HandleFunc("/api/ddragon", func(w http.ResponseWriter, req *http.Request) {

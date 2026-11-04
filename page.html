@@ -1193,6 +1193,21 @@ const I18N = {
   "Fa estona que no se sap on és {x}.": ["Hace rato que no se sabe dónde está {x}.", "Nobody has seen {x} for a while."],
   "No passis gaire del riu si no tens ward.": ["No pases mucho del río si no tienes ward.", "Don't go far past the river without a ward."],
   "El jungla rival": ["El jungla rival", "The enemy jungler"],
+  "{n} rivals morts, el primer torna en {m} segons: empenyeu les onades i {x}.": ["{n} rivales muertos, el primero vuelve en {m} segundos: empujad las oleadas y {x}.", "{n} enemies dead, the first one is back in {m} seconds: push the waves and {x}."],
+  "aneu a fer el baró": ["id a hacer el barón", "go take baron"], "aneu a fer el drac": ["id a hacer el dragón", "go take dragon"], "tireu torres": ["tirad torres", "take towers"],
+  "Teniu {n} aliats morts durant {m} segons: no empenyis sol, farmeja a prop d'una torre teva fins que tornin.": ["Tenéis {n} aliados muertos durante {m} segundos: no empujes solo, farmea cerca de una torre tuya hasta que vuelvan.", "{n} allies dead for {m} seconds: don't push alone, farm near one of your towers until they're back."],
+  "Drac en un minut i mig: empeny ara les onades del mig i de baix perquè pressionin la seva torre quan comenci, i arriba-hi abans que ells per posar visió.": ["Dragón en un minuto y medio: empuja ahora las oleadas de medio y de abajo para que presionen su torre cuando empiece, y llega antes que ellos para poner visión.", "Dragon in a minute and a half: push the mid and bottom waves now so they hit their tower when it starts, and get there first to ward."],
+  "Baró en un minut i mig: empeny les onades de dalt i del mig. Quan comenci, les onades han d'empènyer cap a la seva torre, no cap a la vostra.": ["Barón en un minuto y medio: empuja las oleadas de arriba y de medio. Cuando empiece, las oleadas tienen que empujar hacia su torre, no hacia la vuestra.", "Baron in a minute and a half: push the top and mid waves. When it starts, the waves must be pushing into their tower, not yours."],
+  "Per fer un slow push, mata primer els casters rivals i deixa els melee.": ["Para hacer un slow push, mata primero a los casters rivales y deja los melee.", "To slow push, kill the enemy casters first and leave the melee minions."],
+  "Per congelar, fes només últims cops just fora de la teva torre.": ["Para congelar, haz solo últimos golpes justo fuera de tu torre.", "To freeze, only last-hit, just outside your tower."],
+  "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.": ["Bajo torre: a los casters, un golpe tuyo antes del golpe de la torre; a los melee, deja dos de torre y remata.", "Under tower: casters take one hit from you before the tower shot; melee minions take two tower shots, then you finish."],
+  "Abans de deixar la línia, estavella l'onada a la seva torre.": ["Antes de dejar la línea, estrella la oleada en su torre.", "Before leaving lane, crash the wave into their tower."],
+  "No et quedis sol a una línia lateral si no veus almenys tres rivals al mapa.": ["No te quedes solo en una línea lateral si no ves al menos tres rivales en el mapa.", "Don't stay alone in a side lane unless you can see at least three enemies on the map."],
+  "A partir del minut 25 totes les onades porten canó: una onada sense recollir es menja una torre.": ["A partir del minuto 25 todas las oleadas llevan cañón: una oleada sin recoger se come una torre.", "From minute 25 every wave has a cannon: an uncleared wave eats a tower."],
+  "Abans d'un objectiu, demana a les línies del costat que empenyin la seva onada.": ["Antes de un objetivo, pide a las líneas de ese lado que empujen su oleada.", "Before an objective, ask the nearby lanes to push their wave."],
+  "A partir del minut 15, una de cada dues onades porta canó.": ["A partir del minuto 15, una de cada dos oleadas lleva cañón.", "From minute 15, every second wave has a cannon."],
+  "Abans del baró o del drac, empeny les línies laterals que tinguis a prop.": ["Antes del barón o del dragón, empuja las líneas laterales que tengas cerca.", "Before baron or dragon, push the side lanes near you."],
+  "Abans del baró o del drac, empeny la línia lateral que tinguis a prop, però mai sol sense visió.": ["Antes del barón o del dragón, empuja la línea lateral que tengas cerca, pero nunca solo sin visión.", "Before baron or dragon, push the nearby side lane, but never alone without vision."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2146,14 +2161,15 @@ function pickRole(me){
 }
 { const el = $("#role"), v = store.get("role", null); if (v) el.value = v; el.addEventListener("change", () => store.set(acctKey("role"), el.value)); }
 const ROLE_PHRASES = {
-  TOP: {linia: ["Controla l'onada: congela si el jungla rival no es veu.", "Guarda el Teleport per a una baralla o un drac.", "Si el rival torna a la base, empeny i treu plaques."],
-        mitja: ["Pressiona la línia lateral quan el teu equip estigui a l'objectiu.", "Teleport preparat per a la propera baralla?"], final: ["Si fas split, mira on són els cinc rivals."]},
+  TOP: {linia: ["Per fer un slow push, mata primer els casters rivals i deixa els melee.", "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.", "Controla l'onada: congela si el jungla rival no es veu.", "Guarda el Teleport per a una baralla o un drac.", "Si el rival torna a la base, empeny i treu plaques."],
+        mitja: ["Pressiona la línia lateral quan el teu equip estigui a l'objectiu.", "Teleport preparat per a la propera baralla?", "Abans de deixar la línia, estavella l'onada a la seva torre."],
+        final: ["Si fas split, mira on són els cinc rivals.", "No et quedis sol a una línia lateral si no veus almenys tres rivals al mapa.", "A partir del minut 25 totes les onades porten canó: una onada sense recollir es menja una torre."]},
   JUNGLE: {linia: ["Quina línia té l'onada a favor per gankejar?", "Mira on va el jungla rival i juga a l'altra banda.", "No et saltis camps: el farm també és poder.", "Avisa les línies on és el jungla rival quan el vegis."],
-        mitja: ["Control de visió abans de l'objectiu.", "Busca el jungla rival: pots robar-li camps?", "Prepara el següent objectiu amb les línies empeses."], final: ["Guarda el Càstig per a l'objectiu.", "No entris a la jungla rival sense visió."]},
-  MIDDLE: {linia: ["Últims cops: cada minion compta.", "Si el rival desapareix, segueix-lo o pressiona la torre.", "Empeny l'onada abans de tornar a la base.", "Intercanvis curts quan gasti una habilitat clau."],
-        mitja: ["Recull l'onada lateral.", "Onada empesa abans de moure't.", "Farmeja a prop del teu equip.", "Mou-te només si hi arribes a temps."], final: ["Busca el carry rival.", "Espera que gastin el control abans d'entrar."]},
-  BOTTOM: {linia: ["Últims cops: cada minion compta.", "Posa't darrere dels minions per evitar el gancho.", "Mira on és el suport rival abans d'avançar."],
-        mitja: ["No vagis sol a una línia lateral sense visió.", "Agafa l'onada de mid quan l'equip es reagrupi."], final: ["Posiciona't darrere el teu equip.", "Pega al que tinguis més a prop, no et llancis."]},
+        mitja: ["Control de visió abans de l'objectiu.", "Busca el jungla rival: pots robar-li camps?", "Prepara el següent objectiu amb les línies empeses.", "Abans d'un objectiu, demana a les línies del costat que empenyin la seva onada."], final: ["Guarda el Càstig per a l'objectiu.", "No entris a la jungla rival sense visió."]},
+  MIDDLE: {linia: ["Per fer un slow push, mata primer els casters rivals i deixa els melee.", "Per congelar, fes només últims cops just fora de la teva torre.", "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.", "Últims cops: cada minion compta.", "Si el rival desapareix, segueix-lo o pressiona la torre.", "Empeny l'onada abans de tornar a la base.", "Intercanvis curts quan gasti una habilitat clau."],
+        mitja: ["Recull l'onada lateral.", "Onada empesa abans de moure't.", "A partir del minut 15, una de cada dues onades porta canó.", "Farmeja a prop del teu equip.", "Mou-te només si hi arribes a temps."], final: ["Busca el carry rival.", "Espera que gastin el control abans d'entrar.", "Abans del baró o del drac, empeny les línies laterals que tinguis a prop.", "No et quedis sol a una línia lateral si no veus almenys tres rivals al mapa."]},
+  BOTTOM: {linia: ["Per fer un slow push, mata primer els casters rivals i deixa els melee.", "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.", "Últims cops: cada minion compta.", "Posa't darrere dels minions per evitar el gancho.", "Mira on és el suport rival abans d'avançar."],
+        mitja: ["No vagis sol a una línia lateral sense visió.", "Agafa l'onada de mid quan l'equip es reagrupi."], final: ["Posiciona't darrere el teu equip.", "Pega al que tinguis més a prop, no et llancis.", "Abans del baró o del drac, empeny la línia lateral que tinguis a prop, però mai sol sense visió."]},
   UTILITY: {linia: ["Posa un ward al riu.", "Si el teu ADC torna a la base, fes roam a mid.", "Mira on és el jungla rival."],
         mitja: ["Visió abans del següent objectiu.", "Compra un ward de control.", "Acompanya el jungla a posar visió."], final: ["Protegeix el teu carry.", "No vagis a posar visió sol a la jungla rival."]}
 };
@@ -2251,7 +2267,7 @@ function coachTick(data){
   if (t >= coach.planAt) { coach.planAt = Infinity; aiPlan(); }
   for (const [m, q] of [[840, "Minut 14, comença la mitja partida."], [1500, "Minut 25, fase final."], [2100, "Minut 35, partida molt llarga."]])
     if (t >= m && t < m + 120 && !coach.said.has("macro" + m)) { coach.said.add("macro" + m);
-      aiProactive("macro", `${q} En dues frases curtes, el pla de macro ara: on ha d'estar el meu equip i quin objectiu forçar o defensar, segons el valor dels objectes, les torres, els dracs, el baró i qui va fort de cada equip.`); }
+      aiProactive("macro", `${q} En dues frases curtes, el pla de macro ara: on ha d'estar el meu equip i quin objectiu forçar o defensar i quines onades empènyer abans, segons el valor dels objectes, les torres, els dracs, el baró i qui va fort de cada equip.`); }
   if (t >= coach.formAt) { coach.formAt = Infinity; sayForm(playerBy(data, game.me)?.championName, "partida"); }
   visTick(data, t, me);
   waveTick(data, t, me, opp);
@@ -3311,6 +3327,7 @@ function waveTick(data, t, me, opp){
     } else if (enemyTook && ev.EventName === "DragonKill") seen = {lane: "bot", why: "han fet el drac"};
     else if (enemyTook && (ev.EventName === "HordeKill" || ev.EventName === "HeraldKill")) seen = {lane: "top", why: ev.EventName === "HordeKill" ? "han fet les larves" : "han fet el herald"};
   }
+  if (t >= 840) waveLate(data, t, me, w);
   if (!mine || t < 150 || t > 1200 || me.isDead) return;
   const name = jg?.championName || "El jungla rival";
   if (seen) {
@@ -3325,6 +3342,31 @@ function waveTick(data, t, me, opp){
     w.quietSaid = t; said = `Fa estona que no se sap on és ${name}. No passis gaire del riu si no tens ward.`;
   }
   if (said && t - w.at > (seen ? 8 : 25)) { w.at = t; coachSay(said); coach.lastSaidAt = t; }
+}
+// From minute 14 the lanes mix and the app can't know where you are: the advice comes from the deaths (who is dead
+// and for how long, from the Live Client API) and from the objective timers.
+function waveLate(data, t, me, w){
+  const say = x => { if (t - w.at > 8) { w.at = t; coachSay(x); coach.lastSaidAt = t; } };
+  const foes = data.allPlayers.filter(p => p.team !== me.team && p.isDead), mates = data.allPlayers.filter(p => p.team === me.team && p.isDead && pid(p) !== game.me);
+  const back = list => Math.round(Math.min(...list.map(p => p.respawnTimer || 0)));
+  const up = k => help?.obj && t >= help.obj[k];
+  if (foes.length < 2) w.foeN = 0;
+  else if (((w.foeN || 0) < 2 || ((w.foeN || 0) < 4 && foes.length >= 4)) && !me.isDead) {   // said at 2 dead, again at 4 or 5
+    w.foeN = foes.length; const b = back(foes);
+    if (b >= 12) say(`${foes.length} rivals morts, el primer torna en ${b} segons: empenyeu les onades i ${t >= 1200 && up("baron") ? "aneu a fer el baró" : up("drag") ? "aneu a fer el drac" : "tireu torres"}.`);
+  }
+  if (mates.length < 2) w.mateN = 0;
+  else if ((w.mateN || 0) < 2 && !me.isDead) {
+    w.mateN = mates.length; const b = back(mates);
+    if (b >= 10) say(`Teniu ${mates.length} aliats morts durant ${b} segons: no empenyis sol, farmeja a prop d'una torre teva fins que tornin.`);
+  }
+  // a minute and a half before dragon or baron: the waves have to be pushing into them when it starts
+  for (const k of ["drag", "baron"]) {
+    const at = help?.obj?.[k]; if (!(at > t + 80 && at <= t + 100) || coach.said.has("wv" + k + at)) continue;
+    coach.said.add("wv" + k + at);
+    say(k === "drag" ? "Drac en un minut i mig: empeny ara les onades del mig i de baix perquè pressionin la seva torre quan comenci, i arriba-hi abans que ells per posar visió."
+      : "Baró en un minut i mig: empeny les onades de dalt i del mig. Quan comenci, les onades han d'empènyer cap a la seva torre, no cap a la vostra.");
+  }
 }
 function visTick(data, t, me){
   const v = coach?.vis; if (!v || !me || !$("#cVis").checked) return;
