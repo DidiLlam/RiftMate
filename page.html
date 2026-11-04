@@ -73,6 +73,16 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 .mh .ppl{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:.76rem}.mh .ppl div{display:flex;align-items:center;gap:4px;min-width:0}
 .mh .ppl img{width:16px;height:16px;border-radius:3px;flex:none}.mh .ppl a{text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}.mh .ppl a:hover{color:var(--accent)}.mh .ppl .me a{color:var(--fg);font-weight:700}
 .mhx{margin:-6px 0 12px}
+/* coach tab */
+.coachtxt p{margin:0 0 10px;line-height:1.55}.coachtxt p b{color:var(--accent)}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:4px 28px}
+.bench{width:100%;border-collapse:collapse;font-size:.9rem}.bench th,.bench td{padding:6px 8px;border-top:1px solid var(--line);text-align:right;font-family:var(--mono)}
+.bench th:first-child,.bench td:first-child{text-align:left;font-family:var(--body)}.bench tr:first-child th{border-top:none;color:var(--muted);font-weight:600}
+.bench td.good{color:var(--good)}.bench td.bad{color:var(--loss)}
+.bhow{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:10px 0 4px;font-size:.88rem}.bhow span{display:inline-flex;align-items:center;gap:5px}
+.bhow img{width:26px;height:26px;border-radius:5px;background:var(--cool)}.bhow img.sbrn{border-radius:50%;background:#0006}
+.bchamp{display:flex;align-items:center;gap:10px;margin:14px 0 6px}.bchamp img{width:34px;height:34px;border-radius:8px}.bchamp b{font-size:1.05rem}
+.chatq{margin:6px 0 2px;color:var(--muted);font-size:.88rem}.chata{margin:0 0 10px;line-height:1.5}
 @media (max-width:1000px){.mh{grid-template-columns:6px 56px 1fr 1fr;row-gap:10px}.mh .sr4,.mh .itm,.mh .ppl{grid-column:2/-1}}
 /* the empty space at both sides of wide windows: champion art and seasonal decoration, behind the page */
 .sideart{position:fixed;top:0;bottom:0;width:calc((100vw - 1120px) / 2 + 40px);z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
@@ -83,7 +93,7 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 @media (max-width:1400px){.sideart{display:none}}
 #deco{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
 .wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-#viewR,#viewS,#viewA,#viewH,.tabs,.session,header{width:100%}   /* one width for every part of every tab */
+#viewR,#viewS,#viewA,#viewH,#viewC,.tabs,.session,header{width:100%}   /* one width for every part of every tab */
 h1{font-family:var(--display);font-size:1.5rem;margin:0;letter-spacing:.02em}
 .sub{color:var(--muted);margin:2px 0 0;font-size:.9rem;max-width:62ch}
 .enemy{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
@@ -343,7 +353,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <div class="mechip" id="meChip" hidden><div class="meicon"><img id="meImg" alt="" onerror="this.style.opacity=0"><span class="melvl" id="meLvl"></span></div>
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span></div></div>
   </header>
-  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
+  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
   <div class="updbar" id="updBar" hidden></div>
   <div class="session" id="session" hidden></div>
   <div class="view" id="viewT">
@@ -459,6 +469,18 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <div class="view" id="viewH" hidden>
     <div id="mhList"><p class="note">Carregant…</p></div>
     <div class="bar"><button class="b" type="button" id="mhMore" hidden>Carregar-ne més</button></div>
+  </div>
+  <div class="view" id="viewC" hidden>
+    <section class="card" id="coachAna"><h2>Com vas: el que fas bé i el que has de millorar</h2>
+      <p class="note">La IA llegeix les teves últimes partides amb l'app i les compara amb partides reals de jugadors Challenger amb els teus campions.</p>
+      <div id="coachAnaBody"></div>
+      <div class="bar"><button class="b primary" type="button" id="coachAnaBtn">Analitza les meves partides</button><button class="b" type="button" id="coachAnaVoice" hidden>▶ Escolta-ho</button></div>
+    </section>
+    <section class="card" id="benchCard"><h2>Tu contra Challenger</h2><div id="benchBody"><p class="note">Carregant…</p></div></section>
+    <section class="card"><h2>Pregunta-li al coach</h2>
+      <div id="coachChat"></div>
+      <div class="keyrow"><input type="text" id="coachQ" placeholder="p. ex. com jugo LeBlanc contra Syndra? per què em maten tant al minut 8?"><button class="b" id="coachSend" type="button">Preguntar</button></div>
+    </section>
   </div>
   <div class="view" id="viewS" hidden>
     <section class="card rankcard" id="rankCard" hidden></section>
@@ -1131,6 +1153,22 @@ const I18N = {
   "La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors, macro als minuts 14, 25 i 35, i tres lliçons a l'informe": ["La IA habla sola: plan de partida en la pantalla de carga, consejo cuando mueres, macro en los minutos 14, 25 y 35, y tres lecciones en el informe", "The AI speaks on its own: game plan at the loading screen, advice when you die, macro at minutes 14, 25 and 35, and three lessons in the report"],
   "Lliçons de la IA": ["Lecciones de la IA", "AI lessons"], "Demanar les tres lliçons d'aquesta partida": ["Pedir las tres lecciones de esta partida", "Ask for this game's three lessons"],
   "Pla de partida": ["Plan de partida", "Game plan"], "Macro": ["Macro", "Macro"], "Després de morir": ["Después de morir", "After dying"],
+  "Coach": ["Coach", "Coach"], "Com vas: el que fas bé i el que has de millorar": ["Cómo vas: lo que haces bien y lo que tienes que mejorar", "How you're doing: what you do well and what to improve"],
+  "La IA llegeix les teves últimes partides amb l'app i les compara amb partides reals de jugadors Challenger amb els teus campions.": ["La IA lee tus últimas partidas con la app y las compara con partidas reales de jugadores Challenger con tus campeones.", "The AI reads your latest games with the app and compares them with real games of Challenger players on your champions."],
+  "Analitza les meves partides": ["Analiza mis partidas", "Analyse my games"], "Analitzant…": ["Analizando…", "Analysing…"], "▶ Escolta-ho": ["▶ Escúchalo", "▶ Listen"],
+  "Tu contra Challenger": ["Tú contra Challenger", "You vs Challenger"], "Pregunta-li al coach": ["Pregúntale al coach", "Ask the coach"],
+  "p. ex. com jugo LeBlanc contra Syndra? per què em maten tant al minut 8?": ["p. ej. ¿cómo juego LeBlanc contra Syndra? ¿por qué me matan tanto en el minuto 8?", "e.g. how do I play LeBlanc into Syndra? why do I die so much around minute 8?"],
+  "Farm al minut 10": ["Farmeo en el minuto 10", "CS at 10"], "Farm per minut": ["Farmeo por minuto", "CS per minute"], "Diferència de farm al 10": ["Diferencia de farmeo al 10", "CS diff at 10"],
+  "Diferència d'or al 10": ["Diferencia de oro al 10", "Gold diff at 10"], "Morts abans del 14": ["Muertes antes del 14", "Deaths before 14"], "Morts per partida": ["Muertes por partida", "Deaths per game"],
+  "Participació (%)": ["Participación (%)", "Kill participation (%)"], "Wards de control": ["Wards de control", "Control wards"], "% del dany de l'equip": ["% del daño del equipo", "% of team damage"],
+  "Tu": ["Tú", "You"], "Runes:": ["Runas:", "Runes:"], "Encanteris:": ["Hechizos:", "Spells:"], "Build:": ["Build:", "Build:"],
+  "Primer objecte acabat al minut {n}": ["Primer objeto acabado en el minuto {n}", "First item finished at minute {n}"], "Primer maximitzen la": ["Primero maximizan la", "They max first"],
+  "Afegir-ne de noves": ["Añadir nuevas", "Add new ones"], "Llegir-les ara": ["Leerlas ahora", "Read them now"],
+  "Encara no hi ha partides de Challenger.": ["Todavía no hay partidas de Challenger.", "No Challenger games yet."],
+  "Encara no hi ha cap campió amb 8 partides o més aquesta temporada.": ["Todavía no hay ningún campeón con 8 partidas o más esta temporada.", "No champion with 8 or more games this season yet."],
+  "Per fer servir el coach, posa la clau de Gemini (gratis) als ajustos, a \"Coach amb IA\".": ["Para usar el coach, pon la clave de Gemini (gratis) en los ajustes, en \"Coach con IA\".", "To use the coach, add your (free) Gemini key in Settings, under \"AI coach\"."],
+  "Encara no hi ha partides amb l'app per analitzar.": ["Todavía no hay partidas con la app para analizar.", "No games with the app to analyse yet."],
+  "Anàlisi del {x}.": ["Análisis del {x}.", "Analysis from {x}."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2591,7 +2629,7 @@ async function aiProactive(kind, question, extra){
 }
 function aiPlan(){
   if (!game || game.planSaid) return; game.planSaid = true;
-  aiProactive("pla", "Fes-me el pla d'aquesta partida en dues frases curtes: com guanyar la meva línia o el meu rol, i amb qui del meu equip jugar o de quin rival protegir-me, segons els campions i les dades dels jugadors. Si el meu historial recent mostra un error que es repeteix, recorda-me'l.", aiMemory());
+  aiProactive("pla", "Fes-me el pla d'aquesta partida en dues frases curtes: com guanyar la meva línia o el meu rol, i amb qui del meu equip jugar o de quin rival protegir-me, segons els campions i les dades dels jugadors. Si el meu historial recent mostra un error que es repeteix, recorda-me'l.", [aiMemory(), benchText(playerBy(lastData, game.me)?.championName)].filter(Boolean).join("\n"));
 }
 function aiAfterDeath(killer, helpers, t){
   if (!game || t < 60 || Date.now() - aiAutoAt < 120000) return;
@@ -2658,7 +2696,7 @@ async function aiReview(r, speakIt){
     (r.tips || []).length ? "Consells de l'app: " + r.tips.join(" ") : "",
     me ? `Taula: ${me.place}è de 10, ${me.k}/${me.d}/${me.a}, ${me.cs} CS, ${me.dmg} de dany.` : "",
     (r.deaths || []).length ? "Morts: " + r.deaths.map(d => `${fmtClock(d.t)} ${d.kind} (${d.by.join(", ")})`).join("; ") : "",
-    deathsOnMap(r), aiMemory(r.date)].filter(Boolean).join("\n");
+    deathsOnMap(r), aiMemory(r.date), benchText(r.champion)].filter(Boolean).join("\n");
   try {
     const res = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({question: "Dona'm les tres lliçons d'aquesta partida. Si un error es repeteix respecte de les partides anteriors, digues-ho; si ha millorat en alguna cosa que li havies dit, reconeix-ho.", state: text, lang: speechChoice().lang, mode: "review", date: r.date})})).json();
@@ -3021,6 +3059,7 @@ async function loadMe(){
   $("#meChip").hidden = false;
 }
 loadMe(); setInterval(() => { if (!game) loadMe(); }, 180000);
+setTimeout(() => loadBench(false), 4000);   // for the AI: the Challenger numbers of your champions
 // ---------- Season win rate per champion (Riot match history, kept on disk by the program) ----------
 let seasonQueue = store.get("seasonQueue", "RANKED_SOLO_5x5"), seasonTimer = null, seasonData = null;
 const seasonOpen = new Set();
@@ -3907,12 +3946,13 @@ if (location.protocol.startsWith("http")) setInterval(pollCS, 2000);
 // tabs: false/"T" timer, true/"R" reports, "S" season
 function showTab(r){
   const v = r === true ? "R" : r === false ? "T" : r;
-  for (const k of ["T", "R", "H", "S", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
+  for (const k of ["T", "R", "H", "C", "S", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
   if (v === "R") loadHistory();
   if (v === "S") { loadRank(false); loadSeason(false); loadHistory(); }
   if (v === "H" && !mhLoaded) loadMatches(true);
+  if (v === "C") { if (histCount < 0) loadHistory().then(loadBench); else loadBench(); renderCoachAna(); }
 }
-$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H"));
+$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const mm = t => fmtClock(t);
 const dash = v => v === null || v === undefined ? "—" : v;
@@ -4102,6 +4142,106 @@ $("#mhList").addEventListener("click", e => {
   const c = e.target.closest(".mh"); if (!c) return;
   const id = c.dataset.id; mhOpen.has(id) ? mhOpen.delete(id) : mhOpen.add(id); renderMatches();
 });
+
+// ---------- Coach tab: analysis of your games, you vs Challenger, questions outside the game ----------
+let benchData = null;
+async function loadBench(run){
+  if (!location.protocol.startsWith("http")) return;
+  try { benchData = await (await fetch("/api/bench" + (run ? "?run=1" : ""), {cache: "no-store"})).json(); } catch (e) { return; }
+  renderBench();
+  if (benchData.busy && !$("#viewC").hidden) setTimeout(() => loadBench(false), 5000);
+}
+// your own numbers with a champion, from the app's reports
+function myChampStats(champ){
+  const list = histCache.filter(r => !r.error && norm(champId(CHAMPS.find(c => norm(c) === norm(r.champion)) || r.champion)) === norm(champ)).slice(0, 20);
+  if (!list.length) return null;
+  const avg = f => { const v = list.map(f).filter(x => x != null && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  return {n: list.length, wr: Math.round(100 * list.filter(r => r.result === "Victòria").length / Math.max(1, list.filter(r => r.result).length)),
+    cs10: avg(r => r.cs?.["10"]), csmin: avg(r => r.cs_rate?.total), cs10d: avg(r => r.cs?.["10"] != null && r.opp_cs?.["10"] != null ? r.cs["10"] - r.opp_cs["10"] : null),
+    g10d: avg(r => r.map?.stats?.diffs?.find(d => d.min === 10)?.gold), d14: avg(r => (r.deaths || []).filter(d => d.t < 840).length),
+    kp: avg(r => kpOf(r)), vismin: avg(r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); }),
+    cw: avg(r => r.map?.stats?.me?.control), dmg: avg(r => r.map?.stats?.me?.damage_share != null ? r.map.stats.me.damage_share * 100 : null),
+    d: avg(r => r.kda?.[1])};
+}
+const BENCH_ROWS = [["Farm al minut 10", "cs10", true, 0], ["Farm per minut", "csmin", true, 1], ["Diferència de farm al 10", "cs10d", true, 0], ["Diferència d'or al 10", "g10d", true, 0],
+  ["Morts abans del 14", "d14", false, 1], ["Morts per partida", "d", false, 1], ["Participació (%)", "kp", true, 0], ["Visió per minut", "vismin", true, 1], ["Wards de control", "cw", true, 1], ["% del dany de l'equip", "dmg", true, 0]];
+function renderBench(){
+  const el = $("#benchBody"), b = benchData; if (!el || !b) return;
+  if (b.msg === "no_key") { el.innerHTML = `<p class="note warn">Posa la clau de Riot als ajustos.</p>`; return; }
+  if (b.msg === "no_champs") { el.innerHTML = `<p class="note">Encara no hi ha cap campió amb 8 partides o més aquesta temporada.</p>`; return; }
+  const prog = b.busy ? `<p class="note">Llegint partides de Challenger i Grandmaster de Riot${b.goal ? `: ${b.done} de ${b.goal}` : "…"} (va a poc a poc per no gastar la clau, i s'atura durant les partides).</p>` : "";
+  const champs = (b.champs || []).filter(c => c.games > 0);
+  if (!champs.length) { el.innerHTML = prog || `<p class="note">Encara no hi ha partides de Challenger.</p><div class="bar"><button class="b" type="button" id="benchRun">Llegir-les ara</button></div>`; $("#benchRun")?.addEventListener("click", () => loadBench(true)); return; }
+  const f = (v, d) => v == null ? "—" : (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace(".", ",");
+  el.innerHTML = prog + `<div class="bgrid">` + champs.map(c => {
+    const me = myChampStats(c.champ);
+    const rows = BENCH_ROWS.map(([label, k, up, d]) => {
+      const pro = c[k], mine = me?.[k];
+      let cls = ""; if (pro != null && mine != null) { const better = up ? mine >= pro * 0.95 : mine <= pro * 1.05 + 0.1; cls = better ? "good" : "bad"; }
+      return `<tr><td>${label}</td><td class="${cls}">${f(mine, d)}</td><td>${f(pro, d)}</td></tr>`;
+    }).join("");
+    const build = (c.build || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
+    const [s1, s2] = (c.spells || "").split("+");
+    return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides de ${c.players} jugadors Challenger/GM · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides amb l'app, ${me.wr}%` : ""}</span></div>
+      <div class="tbl"><table class="bench"><tr><th></th><th>Tu</th><th>Challenger</th></tr>${rows}</table></div>
+      <div class="bhow"><span>Runes: <img class="sbrn" data-rune="${c.ks}" alt=""><img class="sbrn" data-rune="${c.sub}" alt=""> <small class="note">${c.share?.ks ?? 0}%</small></span>
+        ${s1 ? `<span>Encanteris: <img src="${spellIcon(s1)}" alt="" title="${esc(NAMES[s1] || s1)}"><img src="${spellIcon(s2)}" alt="" title="${esc(NAMES[s2] || s2)}"> <small class="note">${c.share?.spells ?? 0}%</small></span>` : ""}
+        ${build ? `<span>Build: ${build} <small class="note">${c.share?.build ?? 0}%</small></span>` : ""}
+        ${c.first ? `<span>Primer objecte acabat al minut ${f(c.first, 1)}</span>` : ""}
+        ${c.skills ? `<span>Primer maximitzen la <b>${esc(c.skills)}</b> <small class="note">${c.share?.skills ?? 0}%</small></span>` : ""}</div></div>`;
+  }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo, ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger i Grandmaster amb aquests campions a la mateixa posició. "Tu" surt dels teus informes. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
+    <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Afegir-ne de noves</button></div>`;
+  $("#benchRun")?.addEventListener("click", () => loadBench(true));
+  loadRunes(); fillRunes(); i18nAll();
+}
+// one line per champion for the AI
+function benchText(onlyChamp){
+  const out = [];
+  for (const c of benchData?.champs || []) {
+    if (!c.games || (onlyChamp && norm(c.champ) !== norm(champId(CHAMPS.find(x => norm(x) === norm(onlyChamp)) || onlyChamp)))) continue;
+    const me = myChampStats(c.champ), f = v => v == null ? "?" : Math.round(v * 10) / 10;
+    out.push(`${c.name}: Challenger (${c.games} partides) farm ${f(c.cs10)} al minut 10, ${f(c.csmin)}/min, ${f(c.d14)} morts abans del 14, participació ${f(c.kp)}%, visió ${f(c.vismin)}/min, ${f(c.cw)} wards de control, ${f(c.dmg)}% del dany; build ${(c.build || []).map(itemName).join(" > ")}; primer objecte al minut ${f(c.first)}; maximitzen primer la ${c.skills || "?"}; encanteris ${c.spells}.` +
+      (me ? ` El jugador (${me.n} partides): ` + [[me.cs10, v => `farm ${v} al 10`], [me.csmin, v => `${v}/min`], [me.cs10d, v => `diferència de farm al 10 ${v}`], [me.d14, v => `${v} morts abans del 14`], [me.kp, v => `participació ${v}%`],
+        [me.vismin, v => `visió ${v}/min`], [me.cw, v => `${v} wards de control`], [me.dmg, v => `${v}% del dany`]].filter(([v]) => v != null).map(([v, t]) => t(f(v))).join(", ") + "." : ""));
+  }
+  return out.length ? "Comparació amb jugadors Challenger i Grandmaster:\n" + out.join("\n") : "";
+}
+function coachState(){ return [aiMemory(), benchText()].filter(Boolean).join("\n"); }
+function coachHtml(t){ return String(t).split(/\n\s*\n|\n/).filter(x => x.trim()).map(p => `<p>${esc(p).replace(/^(El que fas bé:|El que t'està costant:|Pla per a les pròximes partides:|Lo que haces bien:|Lo que te está costando:|Plan para las próximas partidas:|What you do well:|What you're struggling with:|Plan for the next games:)/, "<b>$1</b>")}</p>`).join(""); }
+function renderCoachAna(){
+  const a = store.get(acctKey("coachAna"), null), el = $("#coachAnaBody"); if (!el) return;
+  el.innerHTML = a ? `<div class="coachtxt" data-noi18n>${coachHtml(a.text)}</div><p class="note">Anàlisi del ${esc(a.date)}.</p>` : "";
+  $("#coachAnaVoice").hidden = !a;
+  if (!aiHasKey) el.innerHTML = `<p class="note">Per fer servir el coach, posa la clau de Gemini (gratis) als ajustos, a "Coach amb IA".</p>`;
+}
+async function coachAsk(question){
+  const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({question, state: coachState(), lang: speechChoice().lang, mode: "coach"})})).json();
+  if (r.error) throw new Error(r.error);
+  return r.answer;
+}
+$("#coachAnaBtn").addEventListener("click", async () => {
+  const btn = $("#coachAnaBtn"); if (!aiHasKey) { renderCoachAna(); return; }
+  if (!histCache.filter(r => !r.error).length) { $("#coachAnaBody").innerHTML = `<p class="note">Encara no hi ha partides amb l'app per analitzar.</p>`; return; }
+  btn.disabled = true; btn.textContent = "Analitzant…";
+  try {
+    const t = await coachAsk("Fes-me l'anàlisi de les meves últimes partides.");
+    store.set(acctKey("coachAna"), {text: t, date: new Date().toLocaleDateString("ca-ES")}); plog("IA (coach): anàlisi feta"); renderCoachAna();
+  } catch (e) { $("#coachAnaBody").innerHTML = `<p class="note warn">La IA no ha pogut respondre (${esc(e.message)}). Torna-ho a provar d'aquí a una estona.</p>`; }
+  btn.disabled = false; btn.textContent = "Analitza les meves partides";
+});
+$("#coachAnaVoice").addEventListener("click", () => { const a = store.get(acctKey("coachAna"), null); if (a) { unlockAudio(); sayCancel(); a.text.split(/\n+/).filter(Boolean).forEach(x => speak(x)); } });
+async function coachSend(){
+  const inp = $("#coachQ"), q = inp.value.trim(); if (!q) return;
+  if (!aiHasKey) { renderCoachAna(); return; }
+  inp.value = ""; const box = $("#coachChat");
+  box.insertAdjacentHTML("beforeend", `<p class="chatq" data-noi18n>${esc(q)}</p><p class="chata">Pensant…</p>`);
+  const ans = box.lastElementChild;
+  try { const t = await coachAsk(q); ans.innerHTML = ""; ans.setAttribute("data-noi18n", ""); ans.innerHTML = coachHtml(t); }
+  catch (e) { ans.textContent = `No ha pogut respondre (${e.message}).`; }
+}
+$("#coachSend").addEventListener("click", coachSend);
+$("#coachQ").addEventListener("keydown", e => { if (e.key === "Enter") coachSend(); });
 // ---------- Scoreboard: the 10 players of the game (Riot's match data) ----------
 let RUNES = null; const boardTried = new Set();
 function loadRunes(){

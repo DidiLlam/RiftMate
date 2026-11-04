@@ -50,6 +50,21 @@ Regles:
 - No inventis xifres que no siguin a l'informe.`
 }
 
+// aiCoachSystem: outside the game, with time to read: an analysis of the player's recent games
+func aiCoachSystem(lang string) string {
+	name := map[string]string{"ca": "català", "es": "castellano", "en": "English"}[lang]
+	if name == "" {
+		name = "català"
+	}
+	return `Ets el coach personal de League of Legends del jugador, fora de partida. T'envio el resum de les seves últimes partides i, si n'hi ha, les dades reals de jugadors Challenger i Grandmaster amb els mateixos campions.
+Regles:
+- Respon en ` + name + `, en text pla (sense markdown, ni asteriscs, ni emojis), amb frases curtes. Pots fer paràgrafs separats per una línia en blanc.
+- Si et demano una anàlisi: tres parts que comencin exactament per "El que fas bé:", "El que t'està costant:" i "Pla per a les pròximes partides:", màxim 180 paraules en total.
+- Compara amb els Challenger amb xifres concretes quan les tinguis (farm al minut 10, morts abans del 14, visió, build, runes, ordre d'habilitats), i digues què han de copiar exactament.
+- Fes servir només les dades que t'envio i coneixement general i estable del joc; no inventis xifres.
+- Si la pregunta és concreta, respon-la directament, màxim 120 paraules.`
+}
+
 func aiAsk(question, state, lang string, history []aiTurn) (string, error) {
 	return aiAskMode(question, state, lang, history, "")
 }
@@ -80,6 +95,9 @@ func aiAskMode(question, state, lang string, history []aiTurn, mode string) (str
 	if mode == "review" {
 		system = aiReviewSystem(lang)
 		content = "Informe de la partida:\n" + state + "\n\n" + question
+	} else if mode == "coach" {
+		system = aiCoachSystem(lang)
+		content = "Dades del jugador:\n" + state + "\n\nPregunta: " + question
 	} else if strings.TrimSpace(state) != "" {
 		content = "Estat de la partida ara mateix:\n" + state + "\n\nPregunta del jugador: " + question
 	}

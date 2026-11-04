@@ -206,6 +206,9 @@ type timelineDTO struct {
 				AssistingParticipantIDs []int  `json:"assistingParticipantIds"`
 				KillerTeamID            int    `json:"killerTeamId"`
 				MonsterType             string `json:"monsterType"`
+				ParticipantID           int    `json:"participantId"`
+				ItemID                  int    `json:"itemId"`
+				SkillSlot               int    `json:"skillSlot"`
 				Position                *pos   `json:"position"`
 			} `json:"events"`
 		} `json:"frames"`

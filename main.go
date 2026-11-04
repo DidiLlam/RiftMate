@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.23"
+	version = "2.0.24"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -91,6 +91,7 @@ func (r *Recorder) loop() {
 	live := false
 	for {
 		raw, err := fetchLiveRaw()
+		liveNow.Store(err == nil)
 		if (err == nil) != live {
 			live = err == nil
 			if live {
@@ -414,6 +415,7 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/rank", rankHandler(send))
 	mux.HandleFunc("/api/me", meHandler(send))
 	mux.HandleFunc("/api/matches", matchesHandler(send))
+	mux.HandleFunc("/api/bench", benchHandler(send))
 	updateHandlers(mux, send, func(exe string) {
 		time.Sleep(300 * time.Millisecond)
 		voiceStop()
@@ -524,7 +526,8 @@ func main() {
 	go func() {
 		time.Sleep(5 * time.Second)
 		fixUnknownResults()
-		seasonSync() // season win rate per champion: first time reads the whole season, then only new games
+		seasonSync()                                             // season win rate per champion: first time reads the whole season, then only new games
+		go func() { time.Sleep(2 * time.Minute); benchAuto() }() // Challenger games of your champions, in the background
 	}()
 	serve(ln)
 }
