@@ -1,7 +1,7 @@
 {
- "version": "2.0.24",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.24.exe",
- "size": 8346112,
- "sha256": "13cbc27cf223e0a6a55a8e02734927e7342da13faf7043066238e6caba8010b7",
- "notes": "- Pestanya nova Coach: anàlisi de les teves partides (el que fas bé, el que et costa i un pla)\n- Tu contra Challenger: les teves xifres amb cada campió al costat de partides reals de jugadors Challenger i GM (farm, morts, visió, runes, build, habilitat)\n- Pots preguntar al coach fora de partida\n- El pla de cada partida i l'informe també fan servir les xifres dels Challenger"
+ "version": "2.0.25",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.25.exe",
+ "size": 8363008,
+ "sha256": "487da7637bd6b2248e132f3db74244f7bc81eb78860efb97fb62a65c4f3e4cc8",
+ "notes": "- Onades en partida: et diu quan pots empènyer i quan no, segons on s'ha vist el jungla rival (kills, drac, larves, herald) i quan mates el teu rival\n- Avís quan fa estona que no se sap on és el jungla rival\n- Informe: apartat nou Control d'onada (morts a camp rival abans del 14)\n- Coach: el temps a fons al camp rival i les morts per avançar-te, comparats amb els Challenger"
 }
