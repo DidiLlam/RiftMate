@@ -131,7 +131,15 @@ func pickGeminiModel(key string) (string, error) {
 		gemCands = []string{cs[0].name}
 	}
 	gemModel = gemCands[0]
-	logf("IA: models de Gemini disponibles: %s", strings.Join(gemCands, ", "))
+	// the one that answered last time (saved), if it is still offered: the newest ones are often saturated
+	if saved := loadConfig().AIModel; saved != "" {
+		for _, c := range gemCands {
+			if c == saved {
+				gemModel = saved
+			}
+		}
+	}
+	logf("IA: models de Gemini disponibles: %s (primer %s)", strings.Join(gemCands, ", "), gemModel)
 	return gemModel, nil
 }
 
@@ -165,6 +173,10 @@ func geminiAsk(key, system string, msgs []map[string]string) (string, error) {
 				logf("IA: ara faig servir %s", m)
 			}
 			gemModel = m
+			if c := loadConfig(); c.AIModel != m {
+				c.AIModel = m
+				saveConfig(c)
+			}
 			gemMu.Unlock()
 			return ans, nil
 		}

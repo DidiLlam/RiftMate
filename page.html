@@ -1602,25 +1602,25 @@ function speechChoice(){
 const sayQ = []; let sayCur = null, sayStuck = 0, sayHold = 0;
 // "minut 10: 50" would be read as ten fifty in the morning: a number, colon and number becomes "10, 50"
 const speechText = t => String(t).replace(/(\d)\s*:\s+(\d)/g, "$1, $2");
-function speak(text){
+function speak(text, cb){
   $("#status").textContent = text;
-  if (!synth) return;
-  sayQ.push(text); sayPump();
+  if (!synth) { cb?.("no"); return; }
+  sayQ.push({t: text, cb}); sayPump();
 }
 function sayPump(){
   if (sayCur || !sayQ.length || reportSpeaking) return;
   if (Date.now() < sayHold) { setTimeout(sayPump, sayHold - Date.now() + 10); return; }
-  const text = sayQ.shift(), c = speechChoice();
+  const item = sayQ.shift(), text = item.t, c = speechChoice();
   const u = new SpeechSynthesisUtterance(speechText(tr(text, 0, c.lang)));
   if (c.voice) { u.voice = c.voice; u.lang = c.voice.lang; } else u.lang = {ca: "ca-ES", es: "es-ES", en: "en-US"}[c.lang];
   let started = false, t1 = 0, t2 = 0;
-  const done = () => { if (sayCur !== u) return; clearTimeout(t1); clearTimeout(t2); sayCur = null; setTimeout(sayPump, 0); };
-  u.onstart = () => { started = true; sayStuck = 0; };
+  const done = e => { if (sayCur !== u) return; clearTimeout(t1); clearTimeout(t2); sayCur = null; item.cb?.(e?.error ? "error " + e.error : "end"); setTimeout(sayPump, 0); };
+  u.onstart = () => { started = true; sayStuck = 0; item.cb?.("start"); };
   u.onend = u.onerror = done;
   sayCur = u;
   if (synth.paused) synth.resume();
   synth.speak(u);
-  t1 = setTimeout(() => { if (sayCur === u && !started) { plog("La veu s'havia encallat: la reinicio"); synth.cancel(); sayHold = Date.now() + 350; sayCur = null; if (++sayStuck <= 2) sayQ.unshift(text); sayPump(); } }, 4000);
+  t1 = setTimeout(() => { if (sayCur === u && !started) { plog("La veu s'havia encallat: la reinicio"); synth.cancel(); sayHold = Date.now() + 350; sayCur = null; if (++sayStuck <= 2) sayQ.unshift(item); else item.cb?.("lost"); sayPump(); } }, 4000);
   t2 = setTimeout(() => { if (sayCur === u) { synth.cancel(); done(); } }, 30000);
 }
 // interrupt everything queued (an answer of the AI, the spoken report)
@@ -2494,7 +2494,7 @@ async function askAI(q){
     } else {
       aiHistory.push({role: "user", text: q}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
       aiShow(q, r.answer);
-      if (synth) { sayCancel(); speak(r.answer); }
+      if (synth) { sayCancel(); const t0 = Date.now(); speak(r.answer, st => { if (st !== "end") plog(`IA: resposta per veu: ${st} (${((Date.now() - t0) / 1000).toFixed(1)} s)`); }); }
       $("#status").textContent = "Coach: " + r.answer;
     }
   } catch (e) { speak("La IA no ha pogut respondre. Mira la connexió o la clau."); }

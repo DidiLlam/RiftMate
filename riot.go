@@ -22,6 +22,7 @@ type Config struct {
 	Platform string                            `json:"platform"`
 	PUUIDs   map[string]string                 `json:"puuids"`
 	AIKey    string                            `json:"ai_key,omitempty"`
+	AIModel  string                            `json:"ai_model,omitempty"` // Gemini model that answered last
 	MyRiotID string                            `json:"my_riot_id,omitempty"`
 	Peaks    map[string]leagueEntry            `json:"peaks,omitempty"` // highest rank seen this season, by queue
 	Me       *meInfo                           `json:"me,omitempty"`
