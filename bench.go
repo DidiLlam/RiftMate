@@ -52,6 +52,11 @@ type benchGame struct {
 	Push     float64 `json:"pu"` // share of minutes 3-13 spent deep in the enemy half of the map
 	DeepD    int     `json:"dd"` // deaths before 14 in the enemy half
 	GankD    int     `json:"gd"` // deaths before 14 with the enemy jungler taking part
+	V3       bool    `json:"v3"` // the numbers below were measured (games read since 2.0.27)
+	Back     float64 `json:"bk"` // minute of the first recall (first purchase after minute 1:30)
+	Roam     int     `json:"ro"` // kills and assists before 14 on players of another lane
+	Plates   int     `json:"pt"` // tower plates
+	Solo     int     `json:"so"` // solo kills
 	Player   string  `json:"pl"` // start of the player's puuid (to count players)
 }
 
@@ -63,6 +68,7 @@ type benchCache struct {
 	Scanned map[string]bool        `json:"scanned"` // puuids already looked at (mastery)
 	Seen    map[string]bool        `json:"seen"`    // match ids already read
 	Games   map[string][]benchGame `json:"games"`   // champion -> games
+	Mine    map[string][]benchGame `json:"mine"`    // champion -> the player's own games, measured the same way
 }
 
 var (
@@ -89,8 +95,11 @@ func loadBench() benchCache {
 	if b.Seen == nil {
 		b.Seen = map[string]bool{}
 	}
-	if b.Ver < 2 { // games read before the wave numbers existed: read them again (the players found are kept)
-		b.Ver, b.Games, b.Seen, b.Updated = 2, nil, nil, 0
+	if b.Ver < 3 { // 2.0.27: players chosen by recent play, more numbers per game: everything is read again
+		b = benchCache{Ver: 3, Players: map[string][]string{}, Scanned: map[string]bool{}}
+	}
+	if b.Mine == nil {
+		b.Mine = map[string][]benchGame{}
 	}
 	if b.Seen == nil {
 		b.Seen = map[string]bool{}
@@ -165,7 +174,13 @@ func benchGet(c Config, platform bool, path string, out any) error {
 		time.Sleep(2 * time.Second)
 	}
 	if os.Getenv("LT_TEST_FAST") == "" {
-		time.Sleep(2500 * time.Millisecond) // about half of the key's 100 calls every 2 minutes
+		// about half of the key's 100 calls every 2 minutes on the match host (shared with the season and the
+		// scouting); the ladder and mastery host is nearly free, so a bit faster there
+		if platform {
+			time.Sleep(1500 * time.Millisecond)
+		} else {
+			time.Sleep(2500 * time.Millisecond)
+		}
 	}
 	host := c.Region
 	if platform {
@@ -215,6 +230,48 @@ func benchRun() {
 		}
 	}
 	logf("Challenger: començo (%s)", strings.Join(champs, ", "))
+	items := finalItems()
+	// 0) your own last ranked games with each champion, measured exactly like theirs (Riot's data, not the app's reports)
+	if sc := loadSeason(); sc.PUUID != "" {
+		for _, ch := range champs {
+			type ge struct {
+				id  string
+				end int64
+			}
+			list := []ge{}
+			for id, g := range sc.Games {
+				if g.Queue == 420 && !g.Remake && strings.EqualFold(g.Champ, ch) && (pos[ch] == "" || g.Pos == "" || g.Pos == pos[ch]) {
+					list = append(list, ge{id, g.End})
+				}
+			}
+			sort.Slice(list, func(i, j int) bool { return list[i].end > list[j].end })
+			if len(list) > 15 {
+				list = list[:15]
+			}
+			have := map[string]benchGame{}
+			for _, g := range b.Mine[ch] {
+				have[g.Match] = g
+			}
+			out := []benchGame{}
+			for i, x := range list {
+				benchSet("mine", i+1, len(list))
+				if g, ok := have[x.id]; ok {
+					out = append(out, g)
+					continue
+				}
+				var m matchDTO
+				if err := benchGet(c, false, "/lol/match/v5/matches/"+x.id, &m); err != nil {
+					continue
+				}
+				if g, ok := benchFromMatch(c, &m, x.id, sc.PUUID, ch, pos[ch], items); ok {
+					out = append(out, g)
+				}
+			}
+			b.Mine[ch] = out
+			saveBench(b)
+			logf("Challenger: %d partides teves amb %s", len(out), ch)
+		}
+	}
 	// 1) the ladder: Challenger, then Grandmaster
 	type entry struct {
 		PUUID string `json:"puuid"`
@@ -242,7 +299,7 @@ func benchRun() {
 	}
 	enough := func() bool {
 		for _, ch := range champs {
-			if len(b.Players[ch]) < 8 {
+			if len(b.Players[ch]) < 10 {
 				return false
 			}
 		}
@@ -251,24 +308,26 @@ func benchRun() {
 	// 2) players whose top champions include ours
 	scanned := 0
 	for _, e := range ladder {
-		if enough() || scanned >= 160 {
+		if enough() || scanned >= 300 {
 			break
 		}
 		if b.Scanned[e.PUUID] {
 			continue
 		}
 		scanned++
-		benchSet("players", scanned, 160)
+		benchSet("players", scanned, 300)
 		var top []struct {
-			ChampionID int `json:"championId"`
-			Points     int `json:"championPoints"`
+			ChampionID int   `json:"championId"`
+			Points     int   `json:"championPoints"`
+			LastPlay   int64 `json:"lastPlayTime"` // ms
 		}
-		if err := benchGet(c, true, "/lol/champion-mastery/v4/champion-masteries/by-puuid/"+e.PUUID+"/top?count=6", &top); err != nil {
+		if err := benchGet(c, true, "/lol/champion-mastery/v4/champion-masteries/by-puuid/"+e.PUUID+"/top?count=10", &top); err != nil {
 			continue
 		}
 		b.Scanned[e.PUUID] = true
 		for _, t := range top {
-			if ch, ok := keys[t.ChampionID]; ok && t.Points >= 100000 {
+			// played it in the last 10 days, and plays it a lot (40,000 points: enough for a new champion)
+			if ch, ok := keys[t.ChampionID]; ok && t.Points >= 40000 && time.Since(time.UnixMilli(t.LastPlay)) < 10*24*time.Hour {
 				b.Players[ch] = append(b.Players[ch], e.PUUID)
 			}
 		}
@@ -277,8 +336,10 @@ func benchRun() {
 		}
 	}
 	saveBench(b)
+	for _, ch := range champs {
+		logf("Challenger: %d jugadors juguen %s ara mateix", len(b.Players[ch]), ch)
+	}
 	// 3) their latest ranked games with that champion (timeline included)
-	items := finalItems()
 	goal := benchPerChamp * len(champs)
 	done := 0
 	for _, ch := range champs {
@@ -290,12 +351,13 @@ func benchRun() {
 				break
 			}
 			var ids []string
-			if err := benchGet(c, false, "/lol/match/v5/matches/by-puuid/"+pu+"/ids?queue=420&start=0&count=10", &ids); err != nil {
+			if err := benchGet(c, false, "/lol/match/v5/matches/by-puuid/"+pu+"/ids?queue=420&start=0&count=20", &ids); err != nil {
 				continue
 			}
-			got := 0
+			got, miss := 0, 0
 			for _, mid := range ids {
-				if got >= 4 || len(b.Games[ch]) >= benchPerChamp {
+				// up to 5 games each; a player whose first 6 games aren't with it isn't playing it now
+				if got >= 5 || len(b.Games[ch]) >= benchPerChamp || (got == 0 && miss >= 6) {
 					break
 				}
 				if b.Seen[mid] {
@@ -308,6 +370,7 @@ func benchRun() {
 				}
 				g, ok := benchFromMatch(c, &m, mid, pu, ch, pos[ch], items)
 				if !ok {
+					miss++
 					continue
 				}
 				g.Tier, g.Player = tierOf[pu], pu[:min(12, len(pu))]
@@ -322,6 +385,9 @@ func benchRun() {
 	b.Updated = time.Now().Unix()
 	saveBench(b)
 	benchSet("", done, goal)
+	for _, ch := range champs {
+		logf("Challenger: %s, %d partides de Challenger/GM", ch, len(b.Games[ch]))
+	}
 	logf("Challenger: fet (%d partides)", done)
 }
 
@@ -338,7 +404,7 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 			mins := math.Max(1, float64(m.Info.GameDuration)/60)
 			g = benchGame{Match: mid, Champ: p.ChampionName, Pos: p.TeamPosition, Win: p.Win, Mins: math.Round(mins*10) / 10, CS: p.Minions + p.Neutral,
 				K: p.Kills, D: p.Deaths, A: p.Assists, KP: p.Challenges.KP, Vision: p.VisionScore, Control: p.ControlWards, DmgShare: p.Challenges.DamageShare,
-				Spells: spellNames[p.Summoner1] + "+" + spellNames[p.Summoner2]}
+				Spells: spellPair(p.Summoner1, p.Summoner2)}
 			if len(p.Perks.Styles) > 0 && len(p.Perks.Styles[0].Selections) > 0 {
 				g.Keystone = p.Perks.Styles[0].Selections[0].Perk
 			}
@@ -351,7 +417,12 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 		return g, false
 	}
 	opp, jg := 0, 0
+	posOf := map[int]string{}
 	for _, p := range m.Info.Participants {
+		posOf[p.ParticipantID] = p.TeamPosition
+		if p.ParticipantID == me {
+			g.Plates, g.Solo = int(p.Challenges.Plates), int(p.Challenges.SoloKills)
+		}
 		if p.TeamID != team && p.TeamPosition == g.Pos {
 			opp = p.ParticipantID
 		}
@@ -366,7 +437,7 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 	key, okey := strconv.Itoa(me), strconv.Itoa(opp)
 	lv := map[int]int{}
 	order := ""
-	g.HasPush = true
+	g.HasPush, g.V3 = true, true
 	pushN, pushT := 0, 0
 	for _, f := range tl.Info.Frames {
 		if mn := f.Timestamp / 60000; mn >= 3 && mn <= 13 {
@@ -388,6 +459,15 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 		for _, e := range f.Events {
 			switch e.Type {
 			case "CHAMPION_KILL":
+				if e.Timestamp < 14*60000 && e.VictimID != me && posOf[e.VictimID] != g.Pos && posOf[e.VictimID] != "" {
+					in := e.KillerID == me
+					for _, x := range e.AssistingParticipantIDs {
+						in = in || x == me
+					}
+					if in && g.Pos != "JUNGLE" && !(g.Pos == "BOTTOM" && posOf[e.VictimID] == "UTILITY") && !(g.Pos == "UTILITY" && posOf[e.VictimID] == "BOTTOM") {
+						g.Roam++
+					}
+				}
 				if e.VictimID == me && e.Timestamp < 14*60000 {
 					g.D14++
 					if e.Position != nil && enemyHalf(e.Position.X, e.Position.Y, team) {
@@ -402,6 +482,9 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 					}
 				}
 			case "ITEM_PURCHASED":
+				if e.ParticipantID == me && e.Timestamp > 90000 && g.Back == 0 {
+					g.Back = math.Round(float64(e.Timestamp)/6000) / 10
+				}
 				if e.ParticipantID == me && final[e.ItemID] && len(g.Build) < 6 {
 					dup := false
 					for _, x := range g.Build {
@@ -463,6 +546,7 @@ func finalItems() map[int]bool {
 type benchSummary struct {
 	Champ    string         `json:"champ"`
 	Name     string         `json:"name"`
+	Pos      string         `json:"pos,omitempty"`
 	Games    int            `json:"games"`
 	Players  int            `json:"players"`
 	WR       int            `json:"wr"`
@@ -487,7 +571,12 @@ type benchSummary struct {
 	Push     *float64       `json:"push,omitempty"`  // % of minutes 3-13 deep in the enemy half
 	DeepD    *float64       `json:"deepd,omitempty"` // deaths before 14 in the enemy half, per game
 	GankD    *float64       `json:"gankd,omitempty"` // deaths before 14 with the enemy jungler in it, per game
-	Share    map[string]int `json:"share"`           // how often the most common choice was taken, in %
+	Back     *float64       `json:"back,omitempty"`  // minute of the first recall
+	Roam     *float64       `json:"roam,omitempty"`  // kills + assists before 14 in other lanes, per game
+	Plates   *float64       `json:"plates,omitempty"`
+	Solo     *float64       `json:"solo,omitempty"`
+	Me       *benchSummary  `json:"me,omitempty"` // the player's own games, measured the same way
+	Share    map[string]int `json:"share"`        // how often the most common choice was taken, in %
 }
 
 func r1(x float64) float64 { return math.Round(x*10) / 10 }
@@ -524,7 +613,9 @@ func summarize(ch string, gs []benchGame) benchSummary {
 		}
 		ks[g.Keystone]++
 		sub[g.Sub]++
-		sp[g.Spells]++
+		if g.Spells != "" {
+			sp[g.Spells]++
+		}
 		if g.Skills != "" {
 			sk[g.Skills[:1]]++
 		}
@@ -538,7 +629,24 @@ func summarize(ch string, gs []benchGame) benchSummary {
 			pu, dd, gd, np = pu+g.Push, dd+float64(g.DeepD), gd+float64(g.GankD), np+1
 		}
 	}
-	if np >= 5 {
+	var bk, ro, pt, so, n3, nb float64
+	for _, g := range gs {
+		if g.V3 {
+			ro, pt, so, n3 = ro+float64(g.Roam), pt+float64(g.Plates), so+float64(g.Solo), n3+1
+			if g.Back > 0 {
+				bk, nb = bk+g.Back, nb+1
+			}
+		}
+	}
+	if n3 >= 3 {
+		a, b, c := r1(ro/n3), r1(pt/n3), r1(so/n3)
+		s.Roam, s.Plates, s.Solo = &a, &b, &c
+		if nb > 0 {
+			d := r1(bk / nb)
+			s.Back = &d
+		}
+	}
+	if np >= 3 {
 		a, b, c := math.Round(100*pu/np), r1(dd/np), r1(gd/np)
 		s.Push, s.DeepD, s.GankD = &a, &b, &c
 	}
@@ -591,8 +699,15 @@ func benchJSON() []byte {
 	b := loadBench()
 	out := map[string]any{}
 	list := []benchSummary{}
+	_, pos := benchTargets()
 	for _, ch := range b.Champs {
-		list = append(list, summarize(ch, b.Games[ch]))
+		sm := summarize(ch, b.Games[ch])
+		sm.Pos = pos[ch]
+		if len(b.Mine[ch]) > 0 {
+			me := summarize(ch, b.Mine[ch])
+			sm.Me = &me
+		}
+		list = append(list, sm)
 	}
 	benchMu.Lock()
 	out["busy"], out["msg"], out["done"], out["goal"] = benchBusy, benchMsg, benchDone, benchGoal
@@ -620,4 +735,12 @@ func benchAuto() {
 		}
 		time.Sleep(6 * time.Hour)
 	}
+}
+
+// "Flash+Ignite", or "" when Riot sends a spell this app doesn't know
+func spellPair(a, b int) string {
+	if spellNames[a] == "" || spellNames[b] == "" {
+		return ""
+	}
+	return spellNames[a] + "+" + spellNames[b]
 }

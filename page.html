@@ -75,6 +75,7 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 .mhx{margin:-6px 0 12px}
 /* coach tab */
 .coachtxt p{margin:0 0 10px;line-height:1.55}.coachtxt p b{color:var(--accent)}
+.bgap{background:var(--cool);border-radius:10px;padding:10px 14px;margin:4px 0 10px;font-size:.92rem}.bgap ol{margin:6px 0 4px;padding-left:20px}.bgap li{margin:4px 0;line-height:1.45}.bgap li .note{display:block}
 .bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:4px 28px}
 .bench{width:100%;border-collapse:collapse;font-size:.9rem}.bench th,.bench td{padding:6px 8px;border-top:1px solid var(--line);text-align:right;font-family:var(--mono)}
 .bench th:first-child,.bench td:first-child{text-align:left;font-family:var(--body)}.bench tr:first-child th{border-top:none;color:var(--muted);font-weight:600}
@@ -1208,6 +1209,28 @@ const I18N = {
   "A partir del minut 15, una de cada dues onades porta canó.": ["A partir del minuto 15, una de cada dos oleadas lleva cañón.", "From minute 15, every second wave has a cannon."],
   "Abans del baró o del drac, empeny les línies laterals que tinguis a prop.": ["Antes del barón o del dragón, empuja las líneas laterales que tengas cerca.", "Before baron or dragon, push the side lanes near you."],
   "Abans del baró o del drac, empeny la línia lateral que tinguis a prop, però mai sol sense visió.": ["Antes del barón o del dragón, empuja la línea lateral que tengas cerca, pero nunca solo sin visión.", "Before baron or dragon, push the nearby side lane, but never alone without vision."],
+  "Cada onada són 6 minions (7 amb canó): practica els últims cops i torna a base just després d'estavellar l'onada, no a mitja onada.": ["Cada oleada son 6 minions (7 con cañón): practica los últimos golpes y vuelve a base justo después de estrellar la oleada, no a media oleada.", "Each wave is 6 minions (7 with a cannon): practise last-hitting and recall right after crashing the wave, not mid-wave."],
+  "Entre baralles, recull les onades laterals que tinguis a prop en lloc d'esperar amb l'equip.": ["Entre peleas, recoge las oleadas laterales que tengas cerca en lugar de esperar con el equipo.", "Between fights, collect the nearby side waves instead of waiting with your team."],
+  "Quan no puguis pegar al rival, pega als minions: l'avantatge de farm també és avantatge.": ["Cuando no puedas pegar al rival, pega a los minions: la ventaja de farm también es ventaja.", "When you can't hit your opponent, hit minions: a farm lead is a lead too."],
+  "Plaques, farm i no morir: és el que fa l'or dels primers 10 minuts.": ["Placas, farm y no morir: es lo que da el oro de los primeros 10 minutos.", "Plates, farm and not dying: that's where the gold of the first 10 minutes comes from."],
+  "Abans del 14 cada mort et costa una onada i plaques: si no saps on és el jungla rival, juga a prop de la teva torre.": ["Antes del 14 cada muerte te cuesta una oleada y placas: si no sabes dónde está el jungla rival, juega cerca de tu torre.", "Before 14 every death costs you a wave and plates: if you don't know where the enemy jungler is, play near your tower."],
+  "Abans d'entrar a una baralla, mira quants rivals veus al mapa.": ["Antes de entrar en una pelea, mira cuántos rivales ves en el mapa.", "Before you go into a fight, count how many enemies you can see."],
+  "Quan estavellis l'onada, mou-te: al riu, al drac o a la línia del costat.": ["Cuando estrelles la oleada, muévete: al río, al dragón o a la línea de al lado.", "When you crash the wave, move: river, dragon or the next lane."],
+  "Kills i assistències en altres línies abans del 14": ["Kills y asistencias en otras líneas antes del 14", "Kills and assists in other lanes before 14"],
+  "Després d'estavellar l'onada de canó, ves a la línia del costat o al riu: és quan el teu rival no et pot seguir.": ["Después de estrellar la oleada de cañón, ve a la línea de al lado o al río: es cuando tu rival no te puede seguir.", "After crashing the cannon wave, go to the next lane or the river: that's when your opponent can't follow."],
+  "Plaques de torre": ["Placas de torre", "Tower plates"], "Kills en solitari": ["Kills en solitario", "Solo kills"],
+  "Quan el teu rival torni a base o mori, empeny i pega a la torre abans del minut 14.": ["Cuando tu rival vuelva a base o muera, empuja y pega a la torre antes del minuto 14.", "When your opponent recalls or dies, push and hit the tower before minute 14."],
+  "Primera tornada a base (minut)": ["Primera vuelta a base (minuto)", "First recall (minute)"], "Primer objecte acabat (minut)": ["Primer objeto completado (minuto)", "First item completed (minute)"],
+  "Torna a base amb or per a un component sencer i no perdis onades: el primer objecte arriba abans.": ["Vuelve a base con oro para un componente entero y no pierdas oleadas: el primer objeto llega antes.", "Recall with gold for a full component and don't lose waves: your first item comes sooner."],
+  "Posa el ward groc cada vegada que estigui llest i canvia'l per la lent quan tinguis el primer objecte.": ["Pon el ward amarillo cada vez que esté listo y cámbialo por la lente cuando tengas el primer objeto.", "Place your yellow ward whenever it's up and swap to the lens after your first item."],
+  "Compra un ward de control a cada tornada a base.": ["Compra un ward de control en cada vuelta a base.", "Buy a control ward every time you recall."],
+  "Et maten passat el riu: empeny fins a la torre rival només si saps on és el jungla rival.": ["Te matan pasado el río: empuja hasta la torre rival solo si sabes dónde está el jungla rival.", "You die past the river: only push to their tower if you know where the enemy jungler is."],
+  "Abans d'avançar, pensa on va aparèixer el jungla per última vegada.": ["Antes de avanzar, piensa dónde apareció el jungla por última vez.", "Before stepping up, think where the jungler was last seen."],
+  "On et falta més": ["Dónde te falta más", "Where you're furthest behind"], "Ja estàs al seu nivell en: {x}.": ["Ya estás a su nivel en: {x}.", "You're already at their level in: {x}."],
+  "{x}: tu {y}, ells {z}.": ["{x}: tú {y}, ellos {z}.", "{x}: you {y}, them {z}."], "Build d'ells:": ["Su build:", "Their build:"], "La teva:": ["La tuya:", "Yours:"],
+  "Tornar-ho a llegir": ["Volver a leerlo", "Read again"], "Encara no hi ha partides teves per comparar.": ["Todavía no hay partidas tuyas para comparar.", "No games of yours to compare yet."],
+  "Llegint les teves partides": ["Leyendo tus partidas", "Reading your games"], "Buscant jugadors Challenger i Grandmaster que juguin ara els teus campions": ["Buscando jugadores Challenger y Grandmaster que jueguen ahora tus campeones", "Looking for Challenger and Grandmaster players currently playing your champions"],
+  "Llegint les seves partides": ["Leyendo sus partidas", "Reading their games"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -4290,48 +4313,97 @@ function myChampStats(champ){
     cw: avg(r => r.map?.stats?.me?.control), dmg: avg(r => r.map?.stats?.me?.damage_share != null ? r.map.stats.me.damage_share * 100 : null),
     d: avg(r => r.kda?.[1]), push: avg(r => pushStats(r)?.push), deepd: avg(r => pushStats(r)?.deepd), gankd: avg(r => pushStats(r)?.gankd)};
 }
-const BENCH_ROWS = [["Farm al minut 10", "cs10", true, 0], ["Farm per minut", "csmin", true, 1], ["Diferència de farm al 10", "cs10d", true, 0], ["Diferència d'or al 10", "g10d", true, 0],
-  ["Morts abans del 14", "d14", false, 1], ["Morts per partida", "d", false, 1], ["Participació (%)", "kp", true, 0], ["Visió per minut", "vismin", true, 1], ["Wards de control", "cw", true, 1], ["% del dany de l'equip", "dmg", true, 0],
-  ["Temps a fons al camp rival, min 3-13 (%)", "push", null, 0], ["Morts a camp rival abans del 14", "deepd", false, 1], ["Morts amb el jungla rival abans del 14", "gankd", false, 1]];
+// rows: label, key, direction (true: more is better, false: less is better, null: neither), decimals, tip when you're behind
+const BENCH_ROWS = [
+  ["Farm al minut 10", "cs10", true, 0, "Cada onada són 6 minions (7 amb canó): practica els últims cops i torna a base just després d'estavellar l'onada, no a mitja onada."],
+  ["Farm per minut", "csmin", true, 1, "Entre baralles, recull les onades laterals que tinguis a prop en lloc d'esperar amb l'equip."],
+  ["Diferència de farm al 10", "cs10d", true, 0, "Quan no puguis pegar al rival, pega als minions: l'avantatge de farm també és avantatge."],
+  ["Diferència d'or al 10", "g10d", true, 0, "Plaques, farm i no morir: és el que fa l'or dels primers 10 minuts."],
+  ["Morts abans del 14", "d14", false, 1, "Abans del 14 cada mort et costa una onada i plaques: si no saps on és el jungla rival, juga a prop de la teva torre."],
+  ["Morts per partida", "d", false, 1, "Abans d'entrar a una baralla, mira quants rivals veus al mapa."],
+  ["Participació (%)", "kp", true, 0, "Quan estavellis l'onada, mou-te: al riu, al drac o a la línia del costat."],
+  ["Kills i assistències en altres línies abans del 14", "roam", true, 1, "Després d'estavellar l'onada de canó, ves a la línia del costat o al riu: és quan el teu rival no et pot seguir."],
+  ["Plaques de torre", "plates", true, 1, "Quan el teu rival torni a base o mori, empeny i pega a la torre abans del minut 14."],
+  ["Kills en solitari", "solo", true, 1, null],
+  ["Primera tornada a base (minut)", "back", null, 1, null],
+  ["Primer objecte acabat (minut)", "first", false, 1, "Torna a base amb or per a un component sencer i no perdis onades: el primer objecte arriba abans."],
+  ["Visió per minut", "vismin", true, 1, "Posa el ward groc cada vegada que estigui llest i canvia'l per la lent quan tinguis el primer objecte."],
+  ["Wards de control", "cw", true, 1, "Compra un ward de control a cada tornada a base."],
+  ["% del dany de l'equip", "dmg", true, 0, null],
+  ["Temps a fons al camp rival, min 3-13 (%)", "push", null, 0, null],
+  ["Morts a camp rival abans del 14", "deepd", false, 1, "Et maten passat el riu: empeny fins a la torre rival només si saps on és el jungla rival."],
+  ["Morts amb el jungla rival abans del 14", "gankd", false, 1, "Abans d'avançar, pensa on va aparèixer el jungla per última vegada."]];
+// your numbers: Riot's data of your own ranked games, measured exactly like theirs; the app's reports when there aren't any
+function benchMe(c){
+  if (c.me?.games > 0) return {...c.me, n: c.me.games, src: "riot"};
+  const a = myChampStats(c.champ); return a ? {...a, src: "app"} : null;
+}
+const benchFmt = (v, d) => v == null ? "—" : (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace(".", ",");
+// where you're furthest from them, and where you're already at their level
+function benchGaps(c, me){
+  const out = [], good = [];
+  for (const [label, k, up, d, tip] of BENCH_ROWS) {
+    const pro = c[k], mine = me?.[k]; if (pro == null || mine == null || up == null) continue;
+    // how far, relative to what's normal for that number (a difference at minute 10 against their farm or gold then)
+    const scale = k === "cs10d" ? Math.max(40, c.cs10 || 0) : k === "g10d" ? 3000 : ["d14", "d", "deepd", "gankd", "roam", "plates", "solo"].includes(k) ? Math.max(1, Math.abs(pro)) : Math.max(0.5, Math.abs(pro));
+    const gap = (up ? pro - mine : mine - pro) / scale;
+    if (gap > 0.12) out.push({label, k, gap, tip, text: `${label}: tu ${benchFmt(mine, d)}, ells ${benchFmt(pro, d)}.`});
+    else if (gap <= 0 && pro !== 0) good.push(label);
+  }
+  out.sort((a, b) => b.gap - a.gap);
+  // choices: first item, skill order, keystone, spells
+  const ch = [];
+  if (me?.build?.length && c.build?.length && me.build[0] !== c.build[0] && (c.share?.build ?? 0) >= 30) ch.push(`Primer objecte: tu ${itemName(me.build[0])}, ells ${itemName(c.build[0])} (${c.share.build}% d'ells).`);
+  if (me?.skills && c.skills && me.skills !== c.skills && (c.share?.skills ?? 0) >= 50) ch.push(`Primera habilitat al màxim: tu la ${me.skills}, ells la ${c.skills} (${c.share.skills}% d'ells).`);
+  if (/^\w+\+\w+$/.test(me?.spells || "") && c.spells && me.spells !== c.spells && (c.share?.spells ?? 0) >= 50) ch.push(`Encanteris: tu ${me.spells.split("+").map(x => NAMES[x] || x).join(" i ")}, ells ${c.spells.split("+").map(x => NAMES[x] || x).join(" i ")} (${c.share.spells}% d'ells).`);
+  if (me?.ks && c.ks && me.ks !== c.ks && (c.share?.ks ?? 0) >= 50) ch.push(`Runa principal: no és la mateixa que porten ells (${c.share.ks}% porten la del dibuix de sota).`);
+  return {gaps: out.slice(0, 3), good: good.slice(0, 3), choices: ch};
+}
+const BENCH_POS = {TOP: "al top", JUNGLE: "a la jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"};
 function renderBench(){
   const el = $("#benchBody"), b = benchData; if (!el || !b) return;
   if (b.msg === "no_key") { el.innerHTML = `<p class="note warn">Posa la clau de Riot als ajustos.</p>`; return; }
   if (b.msg === "no_champs") { el.innerHTML = `<p class="note">Encara no hi ha cap campió amb 8 partides o més aquesta temporada.</p>`; return; }
-  const prog = b.busy ? `<p class="note">Llegint partides de Challenger i Grandmaster de Riot${b.goal ? `: ${b.done} de ${b.goal}` : "…"} (va a poc a poc per no gastar la clau, i s'atura durant les partides).</p>` : "";
+  const step = {mine: "Llegint les teves partides", players: "Buscant jugadors Challenger i Grandmaster que juguin ara els teus campions", games: "Llegint les seves partides"}[b.msg] || "Llegint partides de Riot";
+  const prog = b.busy ? `<p class="note">${step}${b.goal ? `: ${b.done} de ${b.goal}` : "…"}. Va a poc a poc per no gastar la clau, i s'atura a la selecció de campions i durant les partides.</p>` : "";
   const champs = (b.champs || []).filter(c => c.games > 0);
   if (!champs.length) { el.innerHTML = prog || `<p class="note">Encara no hi ha partides de Challenger.</p><div class="bar"><button class="b" type="button" id="benchRun">Llegir-les ara</button></div>`; $("#benchRun")?.addEventListener("click", () => loadBench(true)); return; }
-  const f = (v, d) => v == null ? "—" : (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace(".", ",");
+  const f = benchFmt;
   el.innerHTML = prog + `<div class="bgrid">` + champs.map(c => {
-    const me = myChampStats(c.champ);
-    const rows = BENCH_ROWS.map(([label, k, up, d]) => {
+    const me = benchMe(c), gp = benchGaps(c, me);
+    const rows = BENCH_ROWS.filter(([, k]) => c[k] != null || me?.[k] != null).map(([label, k, up, d]) => {
       const pro = c[k], mine = me?.[k];
-      let cls = ""; if (pro != null && mine != null && up !== null) { const better = up ? mine >= pro * 0.95 : mine <= pro * 1.05 + 0.1; cls = better ? "good" : "bad"; }
+      let cls = ""; if (pro != null && mine != null && up != null) { const better = up ? mine >= pro * 0.95 : mine <= pro * 1.05 + 0.1; cls = better ? "good" : "bad"; }
       return `<tr><td>${label}</td><td class="${cls}">${f(mine, d)}</td><td>${f(pro, d)}</td></tr>`;
     }).join("");
-    const build = (c.build || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
+    const icons = ids => (ids || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
     const [s1, s2] = (c.spells || "").split("+");
-    return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides de ${c.players} jugadors Challenger/GM · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides amb l'app, ${me.wr}%` : ""}</span></div>
+    const few = c.games < 10 ? `<p class="note warn">Només ${c.games} partides: ara mateix hi ha pocs jugadors Challenger o Grandmaster d'EUW jugant ${esc(c.name)} ${BENCH_POS[c.pos] || ""}. Les xifres són orientatives.</p>` : "";
+    const gaps = gp.gaps.length || gp.choices.length ? `<div class="bgap"><b>On et falta més</b><ol>${gp.gaps.map(g => `<li>${esc(g.text)}${g.tip ? ` <span class="note">${esc(g.tip)}</span>` : ""}</li>`).join("")}${gp.choices.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
+      ${gp.good.length ? `<p class="note">Ja estàs al seu nivell en: ${gp.good.map(x => esc(x.toLowerCase())).join(", ")}.</p>` : ""}</div>` : (me ? "" : `<p class="note">Encara no hi ha partides teves per comparar.</p>`);
+    return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides de ${c.players} jugadors Challenger/GM · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides, ${me.wr}%` : ""}</span></div>
+      ${few}${gaps}
       <div class="tbl"><table class="bench"><tr><th></th><th>Tu</th><th>Challenger</th></tr>${rows}</table></div>
       <div class="bhow"><span>Runes: <img class="sbrn" data-rune="${c.ks}" alt=""><img class="sbrn" data-rune="${c.sub}" alt=""> <small class="note">${c.share?.ks ?? 0}%</small></span>
         ${s1 ? `<span>Encanteris: <img src="${spellIcon(s1)}" alt="" title="${esc(NAMES[s1] || s1)}"><img src="${spellIcon(s2)}" alt="" title="${esc(NAMES[s2] || s2)}"> <small class="note">${c.share?.spells ?? 0}%</small></span>` : ""}
-        ${build ? `<span>Build: ${build} <small class="note">${c.share?.build ?? 0}%</small></span>` : ""}
-        ${c.first ? `<span>Primer objecte acabat al minut ${f(c.first, 1)}</span>` : ""}
+        ${c.build?.length ? `<span>Build d'ells: ${icons(c.build)} <small class="note">${c.share?.build ?? 0}%</small></span>` : ""}
+        ${me?.build?.length ? `<span>La teva: ${icons(me.build)}</span>` : ""}
         ${c.skills ? `<span>Primer maximitzen la <b>${esc(c.skills)}</b> <small class="note">${c.share?.skills ?? 0}%</small></span>` : ""}</div></div>`;
-  }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo, ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger i Grandmaster amb aquests campions a la mateixa posició. "Tu" surt dels teus informes. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
-    <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Afegir-ne de noves</button></div>`;
+  }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo, ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger i Grandmaster que juguen ara aquests campions, a la mateixa posició que tu. "Tu" són les teves últimes partides rankejades amb cada campió, mesurades igual que les seves. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
+    <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Tornar-ho a llegir</button></div>`;
   $("#benchRun")?.addEventListener("click", () => loadBench(true));
   loadRunes(); fillRunes(); i18nAll();
 }
-// one line per champion for the AI
+// one line per champion for the AI: both sides with the same numbers, and the biggest gaps first
 function benchText(onlyChamp){
   const out = [];
+  const nums = o => BENCH_ROWS.filter(([, k]) => o?.[k] != null).map(([label, k, , d]) => `${label.toLowerCase()} ${benchFmt(o[k], d)}`).join(", ");
   for (const c of benchData?.champs || []) {
     if (!c.games || (onlyChamp && norm(c.champ) !== norm(champId(CHAMPS.find(x => norm(x) === norm(onlyChamp)) || onlyChamp)))) continue;
-    const me = myChampStats(c.champ), f = v => v == null ? "?" : Math.round(v * 10) / 10;
-    out.push(`${c.name}: Challenger (${c.games} partides) farm ${f(c.cs10)} al minut 10, ${f(c.csmin)}/min, ${f(c.d14)} morts abans del 14, participació ${f(c.kp)}%, visió ${f(c.vismin)}/min, ${f(c.cw)} wards de control, ${f(c.dmg)}% del dany${c.push != null ? `; control d'onada: ${f(c.push)}% del temps a fons al camp rival (minuts 3-13), ${f(c.deepd)} morts a camp rival abans del 14, ${f(c.gankd)} morts amb el jungla rival abans del 14` : ""}; build ${(c.build || []).map(itemName).join(" > ")}; primer objecte al minut ${f(c.first)}; maximitzen primer la ${c.skills || "?"}; encanteris ${c.spells}.` +
-      (me ? ` El jugador (${me.n} partides): ` + [[me.cs10, v => `farm ${v} al 10`], [me.csmin, v => `${v}/min`], [me.cs10d, v => `diferència de farm al 10 ${v}`], [me.d14, v => `${v} morts abans del 14`], [me.kp, v => `participació ${v}%`],
-        [me.vismin, v => `visió ${v}/min`], [me.cw, v => `${v} wards de control`], [me.dmg, v => `${v}% del dany`],
-        [me.push, v => `${v}% del temps a fons al camp rival`], [me.deepd, v => `${v} morts a camp rival abans del 14`], [me.gankd, v => `${v} morts amb el jungla rival abans del 14`]].filter(([v]) => v != null).map(([v, t]) => t(f(v))).join(", ") + "." : ""));
+    const me = benchMe(c), gp = benchGaps(c, me);
+    out.push(`${c.name}: Challenger/GM (${c.games} partides): ${nums(c)}; build ${(c.build || []).map(itemName).join(" > ")}; maximitzen primer la ${c.skills || "?"}; encanteris ${c.spells}.` +
+      (me ? ` El jugador (${me.n} partides): ${nums(me)}${me.build?.length ? `; build ${me.build.map(itemName).join(" > ")}` : ""}${me.skills ? `; maximitza primer la ${me.skills}` : ""}.` : "") +
+      (gp.gaps.length ? ` On li falta més: ${gp.gaps.map(g => g.text).join(" ")}` : "") + (gp.choices.length ? " " + gp.choices.join(" ") : ""));
   }
   return out.length ? "Comparació amb jugadors Challenger i Grandmaster:\n" + out.join("\n") : "";
 }
