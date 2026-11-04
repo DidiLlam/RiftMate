@@ -1,7 +1,7 @@
 {
- "version": "2.0.18",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.18.exe",
- "size": 8243712,
- "sha256": "09b43e798550d6c4d9275656bd2d9031ab5874a268bb55e051bd38c863afb62b",
- "notes": "- El rol de la partida (el que t'han assignat) mana sobre el dels ajustos: si et toca suport, el coach et parla com a suport"
+ "version": "2.0.19",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.19.exe",
+ "size": 8245760,
+ "sha256": "65d8f4c257e02fe8f393bbaecfd24520ab6dad961d31e0ecddb677560a891e4e",
+ "notes": "- Reconeixement de veu continu: el micro ja no es tanca entre frase i frase, i 'flash Darius' s'entén a la primera"
 }
