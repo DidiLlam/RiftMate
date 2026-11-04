@@ -86,12 +86,17 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 h1{font-family:var(--display);font-size:1.5rem;margin:0;letter-spacing:.02em}
 .sub{color:var(--muted);margin:2px 0 0;font-size:.9rem;max-width:62ch}
 .enemy{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
-.head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.head{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
 .lane{font-family:var(--display);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);width:4.6em}
-.head input[type=text]{flex:1;min-width:8em;font:600 1rem var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.head input[type=text]{flex:1 1 0;min-width:4em;font:600 1rem var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 .haste{display:flex;gap:10px;flex-wrap:nowrap;overflow:hidden;font-size:.78rem;color:var(--muted)}
 .haste label{display:flex;gap:4px;align-items:center;cursor:pointer;white-space:nowrap;min-width:0}
 .haste input{accent-color:var(--accent)}
+/* what the scouting found about the player of a row: always one line high, so rows keep their size */
+.pinfo{height:20px;margin:-4px 0 -2px;display:flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;font-size:.74rem;color:var(--muted)}
+.pinfo .pr{font-family:var(--mono)}.pinfo .tg{padding:0 7px;border-radius:999px;border:1px solid var(--line);line-height:17px}
+.pinfo .tg.warn{border-color:var(--loss);color:var(--loss)}.pinfo .tg.good{border-color:var(--good);color:var(--good)}
+.pinfo .vd{font-weight:700;padding:0 6px;border-radius:5px;line-height:17px}.pinfo .vd.good{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}.pinfo .vd.warn{background:color-mix(in srgb,var(--loss) 20%,transparent);color:var(--loss)}
 .btns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .t{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);
   padding:10px 8px;min-height:64px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:inherit}
@@ -265,7 +270,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .welcome li button{margin-left:8px}
 header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .brand .ver{font:500 .72rem var(--mono);color:var(--muted);align-self:flex-end;margin:0 0 4px -4px;letter-spacing:0}
-.me{display:flex;align-items:center;gap:14px}
+.mechip{display:flex;align-items:center;gap:14px}
 .meicon{position:relative;width:58px;height:58px;flex:none;border-radius:50%;background:var(--cool)}
 .meicon img{width:58px;height:58px;border-radius:50%;display:block;box-shadow:0 0 0 2px var(--accent),0 0 0 4px var(--panel)}
 .melvl{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);border-radius:999px;padding:0 7px;font:600 .7rem/1.45 var(--mono);color:var(--fg)}
@@ -334,7 +339,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
 <div class="wrap">
   <header>
     <h1 class="brand"><img src="data:image/png;base64,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" alt="" width="34" height="34">RiftMate<span class="ver" id="appVer" data-noi18n></span></h1>
-    <div class="me" id="meChip" hidden><div class="meicon"><img id="meImg" alt="" onerror="this.style.opacity=0"><span class="melvl" id="meLvl"></span></div>
+    <div class="mechip" id="meChip" hidden><div class="meicon"><img id="meImg" alt="" onerror="this.style.opacity=0"><span class="melvl" id="meLvl"></span></div>
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span></div></div>
   </header>
   <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
@@ -1120,7 +1125,7 @@ const I18N = {
   "Obre el client del LoL perquè l'app sàpiga quin és el teu compte.": ["Abre el cliente del LoL para que la app sepa cuál es tu cuenta.", "Open the League client so the app knows your account."],
   "No he pogut llegir l'historial de Riot ({x}).": ["No he podido leer el historial de Riot ({x}).", "Couldn't read your Riot match history ({x})."],
   "Encara no hi ha partides.": ["Todavía no hay partidas.", "No games yet."],
-  "Últimes partides de totes les cues, de l'historial oficial de Riot. Toca una partida per veure la taula sencera, i un nom per obrir el seu OP.GG. Els LP surten a les partides jugades amb l'app oberta.": ["Últimas partidas de todas las colas, del historial oficial de Riot. Toca una partida para ver la tabla entera, y un nombre para abrir su OP.GG. Los LP salen en las partidas jugadas con la app abierta.", "Latest games of every queue, from Riot's official history. Tap a game for the full scoreboard, and a name to open their OP.GG. LP shows for games played with the app open."],
+  "Últimes partides classificatòries (Solo/Duo i Flex), de l'historial oficial de Riot. Toca una partida per veure la taula sencera, i un nom per obrir el seu OP.GG. Els LP surten a les partides jugades amb l'app oberta.": ["Últimas partidas de todas las colas, del historial oficial de Riot. Toca una partida para ver la tabla entera, y un nombre para abrir su OP.GG. Los LP salen en las partidas jugadas con la app abierta.", "Latest games of every queue, from Riot's official history. Tap a game for the full scoreboard, and a name to open their OP.GG. LP shows for games played with the app open."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -1550,6 +1555,7 @@ ROWS.forEach(({label: lane, def: def2, team}, i) => {
       <span class="champ"><img id="cimg${i}" alt=""></span>
       <input type="text" id="name${i}" placeholder="Campió (p. ex. Ahri)" value="">
       <div class="haste"><label><input type="checkbox" id="boots${i}">Botes Jòniques</label><label><input type="checkbox" id="cosmic${i}">Perspicàcia còsmica <span class="insp" id="insp${i}" hidden>· porta Inspiració</span></label></div></div>
+    <div class="pinfo" id="pinfo${i}"></div>
     <div class="btns">
       <div class="t" id="t${i}-s1" role="button" tabindex="0"><span class="fill"></span><img class="spi" id="i${i}-s1" alt=""><select id="s1-${i}" aria-label="Primer encanteri"></select><span class="cd">llest</span></div>
       <div class="t" id="t${i}-s2" role="button" tabindex="0"><span class="fill"></span><img class="spi" id="i${i}-s2" alt=""><select id="s2-${i}" aria-label="Segon encanteri"></select><span class="cd">llest</span></div>
@@ -1933,7 +1939,7 @@ const ZHONYA_IDS = [3157], IONIAN_IDS = [3158];
 let game = null; // {ids:[riotId per lane], zhonya:Set, boots:Set}
 function clearEnemies(){
   for (let i = 0; i < NROWS; i++) { const inp = $(`#name${i}`); inp.value = ""; inp.dispatchEvent(new Event("change"));
-    const z = $(`#t${i}-Zhonya`); z.classList.remove("owned","dim"); $(`#insp${i}`).hidden = true; if (i >= 5) { $(`#lane${i}`).textContent = ROWS[i].label; $(`#lane${i}`).closest(".enemy").classList.remove("me"); } }
+    const z = $(`#t${i}-Zhonya`); z.classList.remove("owned","dim"); $(`#insp${i}`).hidden = true; const pi = $(`#pinfo${i}`); if (pi) { pi.innerHTML = ""; pi.title = ""; } if (i >= 5) { $(`#lane${i}`).textContent = ROWS[i].label; $(`#lane${i}`).closest(".enemy").classList.remove("me"); } }
   for (const k in timers) delete timers[k]; render();
 }
 function spellOf(s){
@@ -3269,7 +3275,7 @@ function renderScout(res){
 async function pollScout(){
   let r; try { r = await (await fetch("/api/scout", {cache: "no-store"})).json(); } catch (e) { return; }
   if (r.busy || !r.results) { scoutTimer = setTimeout(pollScout, 2000); return; }
-  renderScout(r.results); lastScout = r.results;
+  renderScout(r.results); lastScout = r.results; scoutRows(r.results);
   if (scoutSaid || !$("#cScout").checked) return;
   scoutSaid = true;
   const opp = game && game.ids[game.oppIdx];
@@ -3285,6 +3291,19 @@ async function pollScout(){
   const best = mates.find(m => m.f.score >= 3 && m.f.say.length), worst = mates.slice().reverse().find(m => m.f.score <= -2 && m.f.bad.length);
   const team = [best && `Juga al voltant de ${displayChamp(best.x.champ)}. ${best.f.say[0]}`, worst && worst.f.bad[0]].filter(Boolean);
   if (team.length) { plog(`El teu equip: ${team.join(" ")}`); speak("El teu equip."); team.forEach(l => speak(l)); }
+}
+// the same data on each row of the timers, so it is still there in the middle of the game
+function scoutRows(res){
+  if (!game) return;
+  for (const x of res || []) {
+    const i = game.ids.findIndex(id => id && id.split("|")[0] === x.riotId); if (i < 0) continue;
+    const el = $(`#pinfo${i}`); if (!el) continue;
+    const f = x.ally ? allyFacts(x) : scoutFacts(x), g = x.wins + x.losses;
+    const rank = x.tier ? `${tierTxt({tier: x.tier, rank: x.rank})} · ${g ? Math.round(100 * x.wins / g) : 0}%` : "Sense rang";
+    el.innerHTML = `${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="pr">${esc(rank)}</span>${f.tags.slice(0, 3).map(t => `<span class="tg ${t.c}">${esc(t.t)}</span>`).join("")}`;
+    el.title = [rank, ...f.tags.map(t => t.t)].join(" · ");
+  }
+  i18nAll();
 }
 function startScout(data, me){
   clearTimeout(scoutTimer); scoutSaid = false; lastScout = null;
@@ -3932,7 +3951,7 @@ function mhCard(m){
 function renderMatches(err){
   const el = $("#mhList");
   if (err) { el.innerHTML = `<p class="note warn">${err === "no_key" ? "Posa la clau de Riot als ajustos per veure l'historial." : err === "no_riot_id" ? "Obre el client del LoL perquè l'app sàpiga quin és el teu compte." : `No he pogut llegir l'historial de Riot (${esc(err)}).`}</p>`; return; }
-  el.innerHTML = mhData.length ? mhData.map(mhCard).join("") + `<p class="note">Últimes partides de totes les cues, de l'historial oficial de Riot. Toca una partida per veure la taula sencera, i un nom per obrir el seu OP.GG. Els LP surten a les partides jugades amb l'app oberta.</p>` : `<p class="note">Encara no hi ha partides.</p>`;
+  el.innerHTML = mhData.length ? mhData.map(mhCard).join("") + `<p class="note">Últimes partides classificatòries (Solo/Duo i Flex), de l'historial oficial de Riot. Toca una partida per veure la taula sencera, i un nom per obrir el seu OP.GG. Els LP surten a les partides jugades amb l'app oberta.</p>` : `<p class="note">Encara no hi ha partides.</p>`;
   loadRunes(); fillRunes();
 }
 async function loadMatches(reset){

@@ -55,7 +55,7 @@ func matchesJSON(start, count int) ([]byte, error) {
 		return nil, err
 	}
 	var ids []string
-	if err := riotGet(c, fmt.Sprintf("/lol/match/v5/matches/by-puuid/%s/ids?start=%d&count=%d", puuid, start, count), &ids); err != nil {
+	if err := riotGet(c, fmt.Sprintf("/lol/match/v5/matches/by-puuid/%s/ids?type=ranked&start=%d&count=%d", puuid, start, count), &ids); err != nil {
 		return nil, err
 	}
 	histMu.Lock()
@@ -80,6 +80,9 @@ func matchesJSON(start, count int) ([]byte, error) {
 			h = histMatch{ID: mid, Queue: m.Info.QueueID, End: m.Info.GameEndTimestamp / 1000, Duration: m.Info.GameDuration, Board: makeBoardOpt(c, &m, me, false)}
 			cache[mid] = h
 			changed = true
+		}
+		if h.Queue != 420 && h.Queue != 440 { // only ranked (games cached by an earlier version may be others)
+			continue
 		}
 		h.QueueTxt = queueName[h.Queue]
 		if h.QueueTxt == "" {
