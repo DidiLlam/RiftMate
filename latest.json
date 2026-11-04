@@ -1,7 +1,7 @@
 {
- "version": "2.0.25",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.25.exe",
- "size": 8363008,
- "sha256": "487da7637bd6b2248e132f3db74244f7bc81eb78860efb97fb62a65c4f3e4cc8",
- "notes": "- Onades en partida: et diu quan pots empènyer i quan no, segons on s'ha vist el jungla rival (kills, drac, larves, herald) i quan mates el teu rival\n- Avís quan fa estona que no se sap on és el jungla rival\n- Informe: apartat nou Control d'onada (morts a camp rival abans del 14)\n- Coach: el temps a fons al camp rival i les morts per avançar-te, comparats amb els Challenger"
+ "version": "2.0.26",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.26.exe",
+ "size": 8377344,
+ "sha256": "93d31b6a836690595d37d287794bfcbb17424e23d2e2f9a910bd13bce06b8153",
+ "notes": "- Onades a mitja i final de partida: un minut i mig abans del drac i del baró et diu quines onades empènyer\n- Quan moren 2 rivals o més: empenyeu i aneu a l'objectiu (amb el temps que tenen); quan moren 2 aliats: no empenyis sol\n- Consells de quins minions matar (slow push, congelar, sota torre) i de línies laterals al final\n- Les crides a Riot ja no se'n passen del límit de la clau (abans hi havia molts errors 429 en analitzar els rivals)\n- La lectura dels Challenger s'atura també a la selecció de campions"
 }
