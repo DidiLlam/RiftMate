@@ -1,7 +1,7 @@
 {
- "version": "2.0.19",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.19.exe",
- "size": 8245760,
- "sha256": "65d8f4c257e02fe8f393bbaecfd24520ab6dad961d31e0ecddb677560a891e4e",
- "notes": "- Reconeixement de veu continu: el micro ja no es tanca entre frase i frase, i 'flash Darius' s'entén a la primera"
+ "version": "2.0.20",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.20.exe",
+ "size": 8267264,
+ "sha256": "cebca48d090c122aa25b37c6a0f19eb52d9d93763804063841da9dbc3d114c08",
+ "notes": "- Pestanya Historial amb les últimes partides de Riot (totes les cues), estil OP.GG\n- Clicant el nom de qualsevol jugador s'obre el seu OP.GG"
 }
