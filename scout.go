@@ -26,6 +26,7 @@ type scoutOut struct {
 	Champ      string      `json:"champ"`
 	Pos        string      `json:"pos"`
 	Ally       bool        `json:"ally,omitempty"`
+	RiotID     string      `json:"riotId,omitempty"`
 	Tier       string      `json:"tier,omitempty"`
 	Rank       string      `json:"rank,omitempty"`
 	LP         int         `json:"lp"`
@@ -93,7 +94,7 @@ func champKeyByID(id string) int {
 }
 
 func scoutOne(c Config, in scoutIn) scoutOut {
-	out := scoutOut{Champ: in.Champ, Pos: in.Pos, Ally: in.Ally}
+	out := scoutOut{Champ: in.Champ, Pos: in.Pos, Ally: in.Ally, RiotID: in.RiotID}
 	puuid, err := puuidLookup(c, in.RiotID)
 	if err != nil {
 		out.Error = err.Error()

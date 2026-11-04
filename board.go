@@ -36,6 +36,9 @@ type BoardPlayer struct {
 	Score    float64   `json:"score"`
 	Place    int       `json:"place"`
 	Badge    string    `json:"badge,omitempty"`
+	FirstB   bool      `json:"fb,omitempty"`    // first blood
+	Multi    int       `json:"multi,omitempty"` // largest multikill (2 double … 5 penta)
+	Remake   bool      `json:"remake,omitempty"`
 }
 
 type BoardTeam struct {
@@ -64,7 +67,10 @@ type Board struct {
 
 var spellNames = map[int]string{4: "Flash", 14: "Ignite", 7: "Heal", 12: "Teleport", 3: "Exhaust", 21: "Barrier", 6: "Ghost", 1: "Cleanse", 11: "Smite"}
 
-func makeBoard(c Config, m *matchDTO, me int) *Board {
+func makeBoard(c Config, m *matchDTO, me int) *Board { return makeBoardOpt(c, m, me, true) }
+
+// makeBoardOpt: withRanks=false skips the 10 rank lookups (match history list: they would cost 10 calls a game)
+func makeBoardOpt(c Config, m *matchDTO, me int, withRanks bool) *Board {
 	b := &Board{Minutes: math.Max(1, float64(m.Info.GameDuration)/60)}
 	teamIdx := map[int]int{}
 	for _, t := range m.Info.Teams {
@@ -90,7 +96,8 @@ func makeBoard(c Config, m *matchDTO, me int) *Board {
 			Spells: [2]string{spellNames[p.Summoner1], spellNames[p.Summoner2]},
 			Items:  [7]int{p.Item0, p.Item1, p.Item2, p.Item3, p.Item4, p.Item5, p.Item6},
 			K:      p.Kills, D: p.Deaths, A: p.Assists, CS: p.Minions + p.Neutral, KP: p.Challenges.KP, Damage: p.Damage,
-			Gold: p.GoldEarned, Vision: p.VisionScore, Team: p.TeamID, Pos: p.TeamPosition, Me: p.ParticipantID == me}
+			Gold: p.GoldEarned, Vision: p.VisionScore, Team: p.TeamID, Pos: p.TeamPosition, Me: p.ParticipantID == me,
+			FirstB: p.FirstBlood, Multi: p.LargestMulti, Remake: p.EarlySurr}
 		if len(p.Perks.Styles) > 0 && len(p.Perks.Styles[0].Selections) > 0 {
 			bp.Keystone = p.Perks.Styles[0].Selections[0].Perk
 		}
@@ -102,7 +109,7 @@ func makeBoard(c Config, m *matchDTO, me int) *Board {
 			t.K, t.D, t.A, t.Gold, t.Damage = t.K+p.Kills, t.D+p.Deaths, t.A+p.Assists, t.Gold+p.GoldEarned, t.Damage+p.Damage
 		}
 		// rank (Solo/Duo) of every player, public data
-		if p.PUUID != "" {
+		if withRanks && p.PUUID != "" {
 			var list []leagueEntry
 			if riotGetHostQ(c, platformHost(c), "/lol/league/v4/entries/by-puuid/"+p.PUUID, &list, true) == nil {
 				for _, e := range list {

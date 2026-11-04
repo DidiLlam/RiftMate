@@ -52,6 +52,27 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
 .sbobj{display:inline-flex;gap:12px;margin-left:12px;font-family:var(--mono);align-items:center}
 .sbo{display:inline-flex;align-items:center;gap:5px}.sbo svg,.sbo img{width:16px;height:16px;object-fit:contain}
 .sbog{display:inline-flex;gap:10px;margin-right:22px;color:var(--muted)}.sbo svg{fill:var(--muted)}
+
+/* op.gg links */
+a.opg{color:inherit;text-decoration:none;border-bottom:1px dotted transparent}a.opg:hover{border-bottom-color:currentColor;color:var(--accent)}
+a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
+/* match history */
+.mh{display:grid;grid-template-columns:6px 62px 150px 140px 46px minmax(170px,1fr) 250px;gap:0 14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 0;margin-bottom:10px;cursor:pointer;overflow:hidden}
+.mh:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.mh .bar6{align-self:stretch;margin:-12px 0;border-radius:0}.mh.win .bar6{background:var(--good)}.mh.lose .bar6{background:var(--loss)}.mh.rmk .bar6{background:var(--muted)}
+.mh.win{background:color-mix(in srgb,var(--good) 6%,var(--panel))}.mh.lose{background:color-mix(in srgb,var(--loss) 6%,var(--panel))}
+.mh .chp{position:relative;width:56px;height:56px}.mh .chp img{width:56px;height:56px;border-radius:12px;display:block}
+.mh .chp span{position:absolute;right:-5px;bottom:-5px;background:var(--panel);border:1px solid var(--line);border-radius:999px;font:600 .66rem/1.4 var(--mono);padding:0 5px}
+.mh .res b{font-size:1.05rem}.mh.win .res b{color:var(--good)}.mh.lose .res b{color:var(--loss)}.mh .res small{display:block;color:var(--muted);font-size:.78rem;line-height:1.5}
+.mh .res .lp{font-family:var(--mono);font-size:.82rem;margin-left:6px}.mh .res .lp.up{color:var(--good)}.mh .res .lp.dn{color:var(--loss)}
+.mh .st2 b{font-family:var(--mono);font-size:.95rem}.mh .st2 b.hi{color:var(--soon)}.mh .st2 small{display:block;color:var(--muted);font-family:var(--mono);font-size:.76rem;line-height:1.5}
+.mh .sr4{display:grid;grid-template-columns:20px 20px;gap:3px}.mh .sr4 img{width:20px;height:20px;border-radius:4px;background:var(--cool);display:block}.mh .sr4 img.sbrn{border-radius:50%;background:#0006}
+.mh .itm{display:flex;flex-direction:column;gap:6px}.mh .itr{display:flex;gap:3px}.mh .itr span{width:26px;height:26px;border-radius:5px;background:var(--cool);overflow:hidden}.mh .itr img{width:26px;height:26px;display:block}
+.mh .bdg{display:flex;gap:5px;flex-wrap:wrap}.mh .bdg span{font-size:.72rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}.mh .bdg span.gold{border-color:#c8962a;color:#e2c06e}.mh .bdg span.vio{border-color:#7d5ac9;color:#b79cf0}
+.mh .ppl{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:.76rem}.mh .ppl div{display:flex;align-items:center;gap:4px;min-width:0}
+.mh .ppl img{width:16px;height:16px;border-radius:3px;flex:none}.mh .ppl a{text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}.mh .ppl a:hover{color:var(--accent)}.mh .ppl .me a{color:var(--fg);font-weight:700}
+.mhx{margin:-6px 0 12px}
+@media (max-width:1000px){.mh{grid-template-columns:6px 56px 1fr 1fr;row-gap:10px}.mh .sr4,.mh .itm,.mh .ppl{grid-column:2/-1}}
 /* the empty space at both sides of wide windows: champion art and seasonal decoration, behind the page */
 .sideart{position:fixed;top:0;bottom:0;width:calc((100vw - 1120px) / 2 + 40px);z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
   background:var(--bg) center 20% / cover no-repeat}
@@ -61,7 +82,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
 @media (max-width:1400px){.sideart{display:none}}
 #deco{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
 .wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-#viewR,#viewS,#viewA,.tabs,.session,header{width:100%}   /* one width for every part of every tab */
+#viewR,#viewS,#viewA,#viewH,.tabs,.session,header{width:100%}   /* one width for every part of every tab */
 h1{font-family:var(--display);font-size:1.5rem;margin:0;letter-spacing:.02em}
 .sub{color:var(--muted);margin:2px 0 0;font-size:.9rem;max-width:62ch}
 .enemy{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
@@ -316,7 +337,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <div class="me" id="meChip" hidden><div class="meicon"><img id="meImg" alt="" onerror="this.style.opacity=0"><span class="melvl" id="meLvl"></span></div>
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span></div></div>
   </header>
-  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
+  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
   <div class="updbar" id="updBar" hidden></div>
   <div class="session" id="session" hidden></div>
   <div class="view" id="viewT">
@@ -427,6 +448,10 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   </details>
   </div>
     <div class="bar"><button class="b" type="button" id="updCheck">Comprovar si hi ha versió nova</button><button class="b" type="button" id="welcomeShow">Veure la pantalla de benvinguda</button><button class="b" id="quitBtn" title="Atura el programa">Tancar el programa</button></div>
+  </div>
+  <div class="view" id="viewH" hidden>
+    <div id="mhList"><p class="note">Carregant…</p></div>
+    <div class="bar"><button class="b" type="button" id="mhMore" hidden>Carregar-ne més</button></div>
   </div>
   <div class="view" id="viewS" hidden>
     <section class="card rankcard" id="rankCard" hidden></section>
@@ -1087,6 +1112,15 @@ const I18N = {
   "Partida per oblidar: {n} morts. Mira on t'han agafat.": ["Partida para olvidar: {n} muertes. Mira dónde te han pillado.", "One to forget: {n} deaths. Check where you got caught."],
   "Victòria treballada.": ["Victoria trabajada.", "Hard-earned win."], "Derrota: a la pròxima.": ["Derrota: a la próxima.", "A loss: next time."],
   "1r": ["1.º", "1st"], "2n": ["2.º", "2nd"], "3r": ["3.º", "3rd"], "4t": ["4.º", "4th"],
+  "Historial": ["Historial", "Match history"], "Carregar-ne més": ["Cargar más", "Load more"], "Llegint les últimes partides de Riot…": ["Leyendo las últimas partidas de Riot…", "Reading your latest games from Riot…"],
+  "Remake": ["Remake", "Remake"], "Més dany": ["Más daño", "Most damage"], "Sense morir": ["Sin morir", "Deathless"], "ahir": ["ayer", "yesterday"],
+  "fa {n} min": ["hace {n} min", "{n} min ago"], "fa {n} h": ["hace {n} h", "{n} h ago"], "fa {n} dies": ["hace {n} días", "{n} days ago"],
+  "{n} CS/min · {m} or/min": ["{n} CS/min · {m} oro/min", "{n} CS/min · {m} gold/min"], "Altres": ["Otras", "Other"],
+  "Posa la clau de Riot als ajustos per veure l'historial.": ["Pon la clave de Riot en los ajustes para ver el historial.", "Add your Riot key in Settings to see your match history."],
+  "Obre el client del LoL perquè l'app sàpiga quin és el teu compte.": ["Abre el cliente del LoL para que la app sepa cuál es tu cuenta.", "Open the League client so the app knows your account."],
+  "No he pogut llegir l'historial de Riot ({x}).": ["No he podido leer el historial de Riot ({x}).", "Couldn't read your Riot match history ({x})."],
+  "Encara no hi ha partides.": ["Todavía no hay partidas.", "No games yet."],
+  "Últimes partides de totes les cues, de l'historial oficial de Riot. Toca una partida per veure la taula sencera, i un nom per obrir el seu OP.GG. Els LP surten a les partides jugades amb l'app oberta.": ["Últimas partidas de todas las colas, del historial oficial de Riot. Toca una partida para ver la tabla entera, y un nombre para abrir su OP.GG. Los LP salen en las partidas jugadas con la app abierta.", "Latest games of every queue, from Riot's official history. Tap a game for the full scoreboard, and a name to open their OP.GG. LP shows for games played with the app open."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -3223,7 +3257,8 @@ function renderScout(res){
   if (!res) { body.innerHTML = `<p class="note">Analitzant els jugadors…</p>`; return; }
   const row = r => {
     const g = r.wins + r.losses, wr = g ? Math.round(100 * r.wins / g) : null, f = r.ally ? allyFacts(r) : scoutFacts(r);
-    return `<div class="scr"><img src="${champImg(r.champ)}" alt="" onerror="this.style.visibility='hidden'"><b class="sn" data-noi18n>${esc(displayChamp(r.champ))}</b>
+    const [nm, tg] = (r.riotId || "").split("#");
+    return `<div class="scr"><img src="${champImg(r.champ)}" alt="" onerror="this.style.visibility='hidden'"><b class="sn" data-noi18n>${esc(displayChamp(r.champ))}${nm ? ` <a class="opg sm" href="${opgg(nm, tg)}" target="_blank" rel="noopener" title="${esc(r.riotId)} · OP.GG">${esc(nm)}</a>` : ""}</b>
       <span class="sr"><span>${r.tier ? `${tierTxt({tier: r.tier, rank: r.rank})} · ${wr}% (${g})` : "Sense rang"}</span></span>
       ${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="tags">${f.tags.map(x => `<span class="tg ${x.c}">${esc(x.t)}</span>`).join("")}</span></div>`;
   };
@@ -3725,11 +3760,12 @@ if (location.protocol.startsWith("http")) setInterval(pollCS, 2000);
 // tabs: false/"T" timer, true/"R" reports, "S" season
 function showTab(r){
   const v = r === true ? "R" : r === false ? "T" : r;
-  for (const k of ["T", "R", "S", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
+  for (const k of ["T", "R", "H", "S", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
   if (v === "R") loadHistory();
   if (v === "S") { loadRank(false); loadSeason(false); loadHistory(); }
+  if (v === "H" && !mhLoaded) loadMatches(true);
 }
-$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A"));
+$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const mm = t => fmtClock(t);
 const dash = v => v === null || v === undefined ? "—" : v;
@@ -3860,6 +3896,65 @@ function reportCompare(r){
     <p class="note">Dades oficials de Riot. En verd, on vas per davant.</p></section>`;
 }
 
+
+// ---------- OP.GG profile of a player ----------
+const OPGG_REG = {euw1: "euw", eun1: "eune", na1: "na", kr: "kr", br1: "br", la1: "lan", la2: "las", oc1: "oce", tr1: "tr", ru: "ru", jp1: "jp", ph2: "ph", sg2: "sg", th2: "th", tw2: "tw", vn2: "vn", me1: "me"};
+const opgg = (name, tag) => `https://op.gg/lol/summoners/${OPGG_REG[(riotCfg?.platform || "euw1").toLowerCase()] || "euw"}/${encodeURIComponent(name || "")}-${encodeURIComponent(tag || "")}`;
+
+// ---------- Match history tab: latest games from Riot, every queue ----------
+let mhLoaded = false, mhStart = 0, mhOpen = new Set(), mhData = [];
+const agoTxt = s => { const m = Math.max(0, (Date.now() / 1000 - s) / 60);
+  if (m < 60) return `fa ${Math.max(1, Math.round(m))} min`; const h = m / 60; if (h < 24) return `fa ${Math.round(h)} h`; const d = h / 24; return d < 2 ? "ahir" : `fa ${Math.round(d)} dies`; };
+function mhCard(m){
+  const b = m.board, me = b?.players.find(p => p.me); if (!me) return "";
+  const team = b.teams.find(t => t.id === me.team) || {}, win = team.win, rmk = me.remake;
+  const mins = Math.max(1, m.duration / 60), kda = (me.k + me.a) / Math.max(1, me.d);
+  const rep = histCache.find(r => r.map?.match_id === m.id), lp = rep?.lp?.delta;
+  const maxDmg = Math.max(...b.players.map(p => p.dmg));
+  const badges = [];
+  if (me.badge === "MVP") badges.push(`<span class="gold">MVP</span>`); else if (me.badge === "ACE") badges.push(`<span class="vio">ACE</span>`); else badges.push(`<span>${["1r", "2n", "3r", "4t"][me.place - 1] || me.place + "è"}</span>`);
+  if (me.fb) badges.push(`<span>First Blood</span>`);
+  if (me.multi >= 3) badges.push(`<span class="gold">${{3: "Triple kill", 4: "Quadra kill", 5: "Pentakill"}[me.multi] || "Pentakill"}</span>`); else if (me.multi === 2) badges.push(`<span>Double kill</span>`);
+  if (me.dmg === maxDmg) badges.push(`<span class="gold">Més dany</span>`);
+  if (me.d === 0 && !rmk) badges.push(`<span>Sense morir</span>`);
+  const items = me.items.slice(0, 6), it = (id, cls = "") => `<span class="${cls}">${id ? `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">` : ""}</span>`;
+  const side = id => b.players.filter(p => p.team === id).map(p => `<div class="${p.me ? "me" : ""}"><img src="${ddChampImg(p.champ)}" alt="" title="${esc(displayChamp(p.champ))}" onerror="this.style.visibility='hidden'"><a href="${opgg(p.name, p.tag)}" target="_blank" rel="noopener" title="${esc(p.name + "#" + (p.tag || ""))} · OP.GG" data-noi18n>${esc(p.name)}</a></div>`);
+  const L = side(100), R = side(200), ppl = L.map((x, i) => x + (R[i] || "<div></div>")).join("");
+  return `<div class="mh ${rmk ? "rmk" : win ? "win" : "lose"}" data-id="${esc(m.id)}"><span class="bar6"></span>
+    <div class="chp"><img src="${ddChampImg(me.champ)}" alt="" onerror="this.style.visibility='hidden'"><span>${me.level}</span></div>
+    <div class="res"><b>${rmk ? "Remake" : win ? "Victòria" : "Derrota"}</b>${lp != null ? `<span class="lp ${lp >= 0 ? "up" : "dn"}">${lp >= 0 ? "+" : ""}${lp} LP</span>` : ""}
+      <small>${esc(m.queue_txt)} · ${fmtClock(m.duration)}</small><small>${agoTxt(m.end)}</small></div>
+    <div class="st2"><b class="${kda >= 4 ? "hi" : ""}">${kda.toFixed(1).replace(".", ",")} KDA</b><small>${me.k} / ${me.d} / ${me.a}</small><small>${fmt1(me.cs / mins)} CS/min · ${Math.round(me.gold / mins)} or/min</small></div>
+    <div class="sr4">${me.spells.map(x => x ? `<img src="${spellIcon(x)}" alt="" title="${esc(NAMES[x] || x)}" onerror="this.style.visibility='hidden'">` : "<img alt=''>").join("")}<img class="sbrn" data-rune="${me.keystone}" alt=""><img class="sbrn" data-rune="${me.sub}" alt=""></div>
+    <div class="itm"><div class="itr">${items.map(id => it(id)).join("")}${it(me.items[6])}</div><div class="bdg">${badges.join("")}</div></div>
+    <div class="ppl">${ppl}</div></div>` + (mhOpen.has(m.id) ? `<div class="mhx">${reportBoard({map: {board: b}, date: m.id})}</div>` : "");
+}
+function renderMatches(err){
+  const el = $("#mhList");
+  if (err) { el.innerHTML = `<p class="note warn">${err === "no_key" ? "Posa la clau de Riot als ajustos per veure l'historial." : err === "no_riot_id" ? "Obre el client del LoL perquè l'app sàpiga quin és el teu compte." : `No he pogut llegir l'historial de Riot (${esc(err)}).`}</p>`; return; }
+  el.innerHTML = mhData.length ? mhData.map(mhCard).join("") + `<p class="note">Últimes partides de totes les cues, de l'historial oficial de Riot. Toca una partida per veure la taula sencera, i un nom per obrir el seu OP.GG. Els LP surten a les partides jugades amb l'app oberta.</p>` : `<p class="note">Encara no hi ha partides.</p>`;
+  loadRunes(); fillRunes();
+}
+async function loadMatches(reset){
+  if (!location.protocol.startsWith("http")) return;
+  if (reset) { mhStart = 0; mhData = []; $("#mhList").innerHTML = `<p class="note">Llegint les últimes partides de Riot…</p>`; }
+  const btn = $("#mhMore"); btn.disabled = true;
+  if (histCount < 0) await loadHistory();
+  let r; try { r = await (await fetch(`/api/matches?start=${mhStart}&count=10`, {cache: "no-store"})).json(); } catch (e) { r = {error: "connexió"}; }
+  btn.disabled = false;
+  if (r.error) { if (!mhData.length) renderMatches(r.error); return; }
+  mhLoaded = true;
+  const seen = new Set(mhData.map(m => m.id));
+  for (const m of r.matches || []) if (!seen.has(m.id)) mhData.push(m);
+  mhStart += 10; btn.hidden = (r.matches || []).length < 10;
+  renderMatches();
+}
+$("#mhMore").addEventListener("click", () => loadMatches(false));
+$("#mhList").addEventListener("click", e => {
+  if (e.target.closest("a")) return;                 // a name: its OP.GG
+  const c = e.target.closest(".mh"); if (!c) return;
+  const id = c.dataset.id; mhOpen.has(id) ? mhOpen.delete(id) : mhOpen.add(id); renderMatches();
+});
 // ---------- Scoreboard: the 10 players of the game (Riot's match data) ----------
 let RUNES = null; const boardTried = new Set();
 function loadRunes(){
@@ -3905,7 +4000,7 @@ function reportBoard(r){
       <td><div class="sbc"><img src="${ddChampImg(p.champ)}" alt="" title="${esc(displayChamp(p.champ))}" onerror="this.style.visibility='hidden'"><span class="sblv">${p.level}</span></div></td>
       <td><div class="sbs">${p.spells.map(x => x ? `<img src="${spellIcon(x)}" alt="" title="${esc(NAMES[x] || x)}" onerror="this.style.visibility='hidden'">` : "<img alt=''>").join("")}
         <img class="sbrn" data-rune="${p.keystone}" alt=""><img class="sbrn" data-rune="${p.sub}" alt=""></div></td>
-      <td class="sbp" data-noi18n title="${esc(p.name + (p.tag ? "#" + p.tag : ""))}">${esc(p.name)}</td>
+      <td class="sbp" data-noi18n title="${esc(p.name + (p.tag ? "#" + p.tag : ""))} · OP.GG"><a class="opg" href="${opgg(p.name, p.tag)}" target="_blank" rel="noopener">${esc(p.name)}</a></td>
       <td><span class="sbb ${p.badge ? "sb" + p.badge.toLowerCase() : ""}" title="Puntuació de l'app: ${String(p.score).replace(".", ",")}">${p.badge || place(p.place)}</span></td>
       <td>${tier}</td>
       <td><div class="sbi">${items.map(id => `<span>${id ? `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">` : ""}</span>`).join("")}<span class="sbk">${tk ? `<img src="${itemIcon(tk)}" alt="" onerror="this.remove()">` : ""}</span></div></td>
@@ -4028,7 +4123,7 @@ let histCount = -1;
 async function loadHistory(){
   try {
     const h = await (await fetch("/api/history", {cache:"no-store"})).json();
-    if (histCount >= 0 && h.length > histCount) { showTab(true); window.scrollTo({top: 0}); toFront("informe"); if (on("vGame")) speak("Informe de la partida llest."); }
+    if (histCount >= 0 && h.length > histCount) { mhLoaded = false; showTab(true); window.scrollTo({top: 0}); toFront("informe"); if (on("vGame")) speak("Informe de la partida llest."); }
     const fresh = histCount >= 0 && h.length > histCount;
     histCount = h.length; histCache = h; renderTrends(); renderReport(h[0]); if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
   } catch(e) { $("#report").innerHTML = `<section class="card"><p class="note warn">Els informes només funcionen obrint la pàgina des del programa RiftMate.</p></section>`; }

@@ -139,6 +139,8 @@ type matchDTO struct {
 			Neutral       int    `json:"neutralMinionsKilled"`
 			TimeDead      int    `json:"totalTimeSpentDead"`
 			ChampLevel    int    `json:"champLevel"`
+			FirstBlood    bool   `json:"firstBloodKill"`
+			LargestMulti  int    `json:"largestMultiKill"`
 			Summoner1     int    `json:"summoner1Id"`
 			Summoner2     int    `json:"summoner2Id"`
 			Item0         int    `json:"item0"`
