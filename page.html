@@ -2029,8 +2029,10 @@ else setGame(false, NO_HELPER);
 // ---------- Live coach ----------
 const ROLE_NAME = {TOP:"top", JUNGLE:"jungla", MIDDLE:"mid", BOTTOM:"ADC", UTILITY:"suport"};
 function pickRole(me){
-  const forced = $("#role").value;
-  const r = forced !== "AUTO" ? forced : ((me.position || "").toUpperCase() in LANE_OF ? (me.position || "").toUpperCase() : "MIDDLE");
+  // the position the game gives wins (it is the one you were assigned); the setting is for games without one
+  const forced = $("#role").value, pos = (me.position || "").toUpperCase();
+  const r = pos in LANE_OF ? pos : forced !== "AUTO" ? forced : "MIDDLE";
+  if (pos in LANE_OF && forced !== "AUTO" && forced !== pos) plog(`Rol: la partida diu ${pos}, els ajustos ${forced}; faig servir ${pos}`);
   $("#roleNow").textContent = `· aquesta partida: ${ROLE_NAME[r]}`;
   return r;
 }
