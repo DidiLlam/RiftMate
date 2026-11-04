@@ -1,7 +1,7 @@
 {
- "version": "2.0.20",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.20.exe",
- "size": 8267264,
- "sha256": "cebca48d090c122aa25b37c6a0f19eb52d9d93763804063841da9dbc3d114c08",
- "notes": "- Pestanya Historial amb les últimes partides de Riot (totes les cues), estil OP.GG\n- Clicant el nom de qualsevol jugador s'obre el seu OP.GG"
+ "version": "2.0.21",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.21.exe",
+ "size": 8268800,
+ "sha256": "23208eff8d956d6803b09a663213076ff4b82ca2f8c8872891d397e8b5ad72fc",
+ "notes": "- Historial: només partides classificatòries\n- Dades de cada jugador (rang, ratxes, forma i 'Juga amb ell') a la seva fila dels temporitzadors\n- Arreglada la teva fila als temporitzadors, que sortia descol·locada"
 }
