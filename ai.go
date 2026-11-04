@@ -37,7 +37,24 @@ Regles:
 - Els temps d'encanteris i objectius de l'estat són els que porta l'app; tracta'ls com a aproximats.`
 }
 
+// aiReviewSystem: after the game, reading the report (not spoken in the middle of a game)
+func aiReviewSystem(lang string) string {
+	name := map[string]string{"ca": "català", "es": "castellano", "en": "English"}[lang]
+	if name == "" {
+		name = "català"
+	}
+	return `Ets el coach de League of Legends del jugador. La partida s'acaba d'acabar i t'envio el seu informe.
+Regles:
+- Respon en ` + name + ` amb exactament tres lliçons, cadascuna en una frase curta que comenci amb un verb, separades per punt (màxim 70 paraules en total). Res de llistes numerades, emojis ni format: es llegirà en veu alta.
+- Les lliçons han de sortir de les dades de l'informe (morts, farm, visió, objectius, rival, taula), no consells genèrics. Si ha anat bé, una de les tres pot ser què ha de mantenir.
+- No inventis xifres que no siguin a l'informe.`
+}
+
 func aiAsk(question, state, lang string, history []aiTurn) (string, error) {
+	return aiAskMode(question, state, lang, history, "")
+}
+
+func aiAskMode(question, state, lang string, history []aiTurn, mode string) (string, error) {
 	c := loadConfig()
 	if c.AIKey == "" {
 		return "", errors.New("no_key")
@@ -59,7 +76,11 @@ func aiAsk(question, state, lang string, history []aiTurn) (string, error) {
 		}
 	}
 	content := question
-	if strings.TrimSpace(state) != "" {
+	system := aiSystem(lang)
+	if mode == "review" {
+		system = aiReviewSystem(lang)
+		content = "Informe de la partida:\n" + state + "\n\n" + question
+	} else if strings.TrimSpace(state) != "" {
 		content = "Estat de la partida ara mateix:\n" + state + "\n\nPregunta del jugador: " + question
 	}
 	if len(msgs) > 0 && msgs[len(msgs)-1]["role"] == "user" {
@@ -68,13 +89,13 @@ func aiAsk(question, state, lang string, history []aiTurn) (string, error) {
 	msgs = append(msgs, map[string]string{"role": "user", "content": content})
 	// Anthropic keys start with "sk-ant-"; any other key is a (free) Google AI Studio key for Gemini
 	if !strings.HasPrefix(c.AIKey, "sk-ant-") {
-		ans, err := geminiAsk(c.AIKey, aiSystem(lang), msgs)
+		ans, err := geminiAsk(c.AIKey, system, msgs)
 		if err == nil {
 			logf("IA: \"%s\" -> \"%s\"", question, ans)
 		}
 		return ans, err
 	}
-	body, _ := json.Marshal(map[string]any{"model": aiModel, "max_tokens": 200, "system": aiSystem(lang), "messages": msgs})
+	body, _ := json.Marshal(map[string]any{"model": aiModel, "max_tokens": 300, "system": system, "messages": msgs})
 	base := "https://api.anthropic.com"
 	if b := os.Getenv("LT_AI_BASE"); b != "" { // tests
 		base = b
@@ -173,9 +194,19 @@ func aiHandlers(mux *http.ServeMux, send func(http.ResponseWriter, int, string, 
 			State    string   `json:"state"`
 			Lang     string   `json:"lang"`
 			History  []aiTurn `json:"history"`
+			Mode     string   `json:"mode"` // "" question in the game, "review" lessons of a report
+			Date     string   `json:"date"` // review: the report it is saved into
 		}
 		json.NewDecoder(io.LimitReader(req.Body, 64<<10)).Decode(&in)
-		ans, err := aiAsk(strings.TrimSpace(in.Question), in.State, in.Lang, in.History)
+		ans, err := aiAskMode(strings.TrimSpace(in.Question), in.State, in.Lang, in.History, in.Mode)
+		if err == nil && in.Mode == "review" && in.Date != "" {
+			if g, _, e := readGame(in.Date); e == nil {
+				g.Report["ai_review"] = ans
+				if b, e := json.Marshal(g); e == nil {
+					os.WriteFile(gameFile(in.Date), b, 0o644)
+				}
+			}
+		}
 		res := map[string]string{"answer": ans}
 		if err != nil {
 			res["error"] = err.Error()
