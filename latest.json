@@ -1,7 +1,7 @@
 {
- "version": "2.0.17",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.17.exe",
- "size": 8243200,
- "sha256": "45bdf215fd0fdab6e31927cfda1a56d0a111123ef098be6eea1118cf764fb2df",
- "notes": "- La IA comença pel model que va respondre l'últim cop (respon molt abans)\n- El registre apunta si la resposta de la IA s'ha dit per veu"
+ "version": "2.0.18",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.18.exe",
+ "size": 8243712,
+ "sha256": "09b43e798550d6c4d9275656bd2d9031ab5874a268bb55e051bd38c863afb62b",
+ "notes": "- El rol de la partida (el que t'han assignat) mana sobre el dels ajustos: si et toca suport, el coach et parla com a suport"
 }
