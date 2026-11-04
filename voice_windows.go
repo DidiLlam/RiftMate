@@ -73,21 +73,50 @@ try {
     $eng.LoadGrammar((New-Object System.Speech.Recognition.Grammar($gb)))
   }
   $eng.SetInputToDefaultAudioDevice()
+  # end a phrase soon after you stop talking, and never give up on a long one
+  try { $eng.EndSilenceTimeout = [TimeSpan]::FromMilliseconds(400) } catch {}
+  try { $eng.EndSilenceTimeoutAmbiguous = [TimeSpan]::FromMilliseconds(700) } catch {}
+  try { $eng.BabbleTimeout = [TimeSpan]::Zero } catch {}
+  try { $eng.InitialSilenceTimeout = [TimeSpan]::Zero } catch {}
+  function Judge($r) {
+    # the wake word is a single short word the Spanish recognizer scores low: accept it from 0.3
+    $thr = 0.6; $gn = ''; if ($r.Grammar) { $gn = $r.Grammar.Name }
+    if ($gn -eq 'coach') { $thr = 0.3 }
+    # "top jil" / "heal top" is what game noise gets mistaken for: that one needs real certainty
+    elseif ($r.Text -match '\btop\b' -and $r.Text -match '\b(jil|heal|curar)\b' -and $gn -ne 'linies') { $thr = 0.8 }
+    elseif ($r.Text -match '\b(top|jungla|jungle|mid|adc|bot|suport|support|soporte)\b' -and $gn -ne 'linies') { $thr = 0.62 }
+    # a champion of this game: the page still ignores a spell that champion doesn't carry
+    elseif ($gn -like 'partida*') { $thr = 0.5 }
+    if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text) }
+    else { [Console]::Out.WriteLine('LOW ' + [math]::Round($r.Confidence, 2) + ' ' + $r.Text) }
+  }
   [Console]::Out.WriteLine('READY ' + $cul.Name)
-  while ($true) {
-    $r = $eng.Recognize()
-    if ($r) {
-      # the wake word is a single short word the Spanish recognizer scores low: accept it from 0.3
-      $thr = 0.6; $gn = ''; if ($r.Grammar) { $gn = $r.Grammar.Name }
-      if ($gn -eq 'coach') { $thr = 0.3 }
-      # "top jil" / "heal top" is what game noise gets mistaken for: that one needs real certainty
-      elseif ($r.Text -match '\btop\b' -and $r.Text -match '\b(jil|heal|curar)\b' -and $gn -ne 'linies') { $thr = 0.8 }
-      elseif ($r.Text -match '\b(top|jungla|jungle|mid|adc|bot|suport|support|soporte)\b' -and $gn -ne 'linies') { $thr = 0.62 }
-      # a champion of this game: the page still ignores a spell that champion doesn't carry
-      elseif ($gn -like 'partida*') { $thr = 0.5 }
-      if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text) }
-      else { [Console]::Out.WriteLine('LOW ' + [math]::Round($r.Confidence, 2) + ' ' + $r.Text) }
+  # continuous listening: the microphone is never closed between phrases, so the start of "flash Darius"
+  # isn't lost while the previous phrase (or game noise) is being processed
+  $async = $true
+  try {
+    $null = Register-ObjectEvent -InputObject $eng -EventName SpeechRecognized -SourceIdentifier 'vrec'
+    $null = Register-ObjectEvent -InputObject $eng -EventName SpeechRecognitionRejected -SourceIdentifier 'vrej'
+    $eng.RecognizeAsync([System.Speech.Recognition.RecognizeMode]::Multiple)
+    [Console]::Out.WriteLine('INFO escolta continua')
+  } catch { $async = $false; [Console]::Out.WriteLine('INFO escolta frase a frase (' + $_.Exception.Message + ')') }
+  if ($async) {
+    while ($true) {
+      $e = Wait-Event -Timeout 5
+      if (-not $e) { continue }
+      Remove-Event -EventIdentifier $e.EventIdentifier -ErrorAction SilentlyContinue
+      $r = $e.SourceEventArgs.Result
+      if (-not $r) { continue }
+      if ($e.SourceIdentifier -eq 'vrej') {
+        # nothing matched well enough: the best guess goes to the log, to see what was almost understood
+        $a = $null; if ($r.Alternates -and $r.Alternates.Count -gt 0) { $a = $r.Alternates[0] }
+        if ($a -and $a.Text -and $a.Confidence -ge 0.4) { [Console]::Out.WriteLine('LOW ' + [math]::Round($a.Confidence, 2) + ' ' + $a.Text + ' (rebutjat)') }
+        continue
+      }
+      Judge $r
     }
+  } else {
+    while ($true) { $r = $eng.Recognize(); if ($r) { Judge $r } }
   }
 } catch {
   [Console]::Out.WriteLine('ERROR ' + $_.Exception.Message)
