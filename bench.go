@@ -47,10 +47,15 @@ type benchGame struct {
 	First    float64 `json:"fi"` // minute the first completed item was finished
 	Skills   string  `json:"sk"` // order in which Q, W and E were maxed
 	Tier     string  `json:"t"`
+	HasPush  bool    `json:"hp"` // the wave numbers below were measured (games read since 2.0.25)
+	Push     float64 `json:"pu"` // share of minutes 3-13 spent deep in the enemy half of the map
+	DeepD    int     `json:"dd"` // deaths before 14 in the enemy half
+	GankD    int     `json:"gd"` // deaths before 14 with the enemy jungler taking part
 	Player   string  `json:"pl"` // start of the player's puuid (to count players)
 }
 
 type benchCache struct {
+	Ver     int                    `json:"ver"`
 	Updated int64                  `json:"updated"`
 	Champs  []string               `json:"champs"`
 	Players map[string][]string    `json:"players"` // champion -> puuids found
@@ -79,6 +84,12 @@ func loadBench() benchCache {
 	}
 	if b.Scanned == nil {
 		b.Scanned = map[string]bool{}
+	}
+	if b.Seen == nil {
+		b.Seen = map[string]bool{}
+	}
+	if b.Ver < 2 { // games read before the wave numbers existed: read them again (the players found are kept)
+		b.Ver, b.Games, b.Seen, b.Updated = 2, nil, nil, 0
 	}
 	if b.Seen == nil {
 		b.Seen = map[string]bool{}
@@ -338,10 +349,13 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 	if me < 0 || m.Info.GameDuration < 15*60 {
 		return g, false
 	}
-	opp := 0
+	opp, jg := 0, 0
 	for _, p := range m.Info.Participants {
 		if p.TeamID != team && p.TeamPosition == g.Pos {
 			opp = p.ParticipantID
+		}
+		if p.TeamID != team && p.TeamPosition == "JUNGLE" {
+			jg = p.ParticipantID
 		}
 	}
 	var tl timelineDTO
@@ -351,7 +365,17 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 	key, okey := strconv.Itoa(me), strconv.Itoa(opp)
 	lv := map[int]int{}
 	order := ""
+	g.HasPush = true
+	pushN, pushT := 0, 0
 	for _, f := range tl.Info.Frames {
+		if mn := f.Timestamp / 60000; mn >= 3 && mn <= 13 {
+			if a, ok := f.ParticipantFrames[key]; ok {
+				pushT++
+				if deepHalf(a.Position.X, a.Position.Y, team) {
+					pushN++
+				}
+			}
+		}
 		if f.Timestamp >= 600000 && f.Timestamp < 660000 {
 			a := f.ParticipantFrames[key]
 			g.CS10 = a.Minions + a.JungleCS
@@ -365,6 +389,16 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 			case "CHAMPION_KILL":
 				if e.VictimID == me && e.Timestamp < 14*60000 {
 					g.D14++
+					if e.Position != nil && enemyHalf(e.Position.X, e.Position.Y, team) {
+						g.DeepD++
+					}
+					in := jg > 0 && e.KillerID == jg
+					for _, x := range e.AssistingParticipantIDs {
+						in = in || (jg > 0 && x == jg)
+					}
+					if in {
+						g.GankD++
+					}
 				}
 			case "ITEM_PURCHASED":
 				if e.ParticipantID == me && final[e.ItemID] && len(g.Build) < 6 {
@@ -390,8 +424,23 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 		}
 	}
 	g.Skills = order
+	if pushT > 0 {
+		g.Push = float64(pushN) / float64(pushT)
+	}
 	return g, true
 }
+
+// the map is 14870 wide, blue base bottom-left, red top-right; the river is the line where both bases are
+// equally far. "Deep" means well past it: about halfway from the river to the enemy's first tower.
+func halfMargin(x, y float64, team int) float64 {
+	own, en := 0.0, 14870.0
+	if team == 200 {
+		own, en = en, own
+	}
+	return math.Hypot(x-own, y-own) - math.Hypot(x-en, y-en)
+}
+func enemyHalf(x, y float64, team int) bool { return halfMargin(x, y, team) > 0 }
+func deepHalf(x, y float64, team int) bool  { return halfMargin(x, y, team) > 2000 }
 
 // finalItems: ids of completed items (nothing builds out of them)
 func finalItems() map[int]bool {
@@ -434,7 +483,10 @@ type benchSummary struct {
 	Spells   string         `json:"spells"`
 	Build    []int          `json:"build"`
 	Skills   string         `json:"skills"`
-	Share    map[string]int `json:"share"` // how often the most common choice was taken, in %
+	Push     *float64       `json:"push,omitempty"`  // % of minutes 3-13 deep in the enemy half
+	DeepD    *float64       `json:"deepd,omitempty"` // deaths before 14 in the enemy half, per game
+	GankD    *float64       `json:"gankd,omitempty"` // deaths before 14 with the enemy jungler in it, per game
+	Share    map[string]int `json:"share"`           // how often the most common choice was taken, in %
 }
 
 func r1(x float64) float64 { return math.Round(x*10) / 10 }
@@ -478,6 +530,16 @@ func summarize(ch string, gs []benchGame) benchSummary {
 		if len(g.Build) >= 2 {
 			b3[fmt.Sprint(g.Build[:min(3, len(g.Build))])]++
 		}
+	}
+	var pu, dd, gd, np float64
+	for _, g := range gs {
+		if g.HasPush {
+			pu, dd, gd, np = pu+g.Push, dd+float64(g.DeepD), gd+float64(g.GankD), np+1
+		}
+	}
+	if np >= 5 {
+		a, b, c := math.Round(100*pu/np), r1(dd/np), r1(gd/np)
+		s.Push, s.DeepD, s.GankD = &a, &b, &c
 	}
 	nf := float64(len(gs))
 	s.WR = int(math.Round(100 * float64(w) / nf))

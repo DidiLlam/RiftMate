@@ -400,6 +400,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note" id="coachLast">El coach comença sol quan es detecta la partida.</p>
   </section>
   <section class="card" id="helpCard"><h2>Ajuda en partida</h2>
+    <label class="ph-item" for="cWave"><input type="checkbox" id="cWave" checked><span>Onades: quan pots empènyer i quan no, segons on s'ha vist el jungla rival i quan mates el teu rival</span></label>
     <label class="ph-item" for="cGold"><input type="checkbox" id="cGold" checked><span>Or i compres: quan pots comprar el següent objecte i quan tornar a base</span></label>
     <label class="ph-item" for="cObj"><input type="checkbox" id="cObj" checked><span>Objectius: avís un minut abans del drac, les larves, el herald i el baró</span></label>
     <label class="ph-item" for="cSpike"><input type="checkbox" id="cSpike" checked><span>Rival més fort: nivell 6 i objectes acabats del teu rival de línia</span></label>
@@ -1169,6 +1170,29 @@ const I18N = {
   "Per fer servir el coach, posa la clau de Gemini (gratis) als ajustos, a \"Coach amb IA\".": ["Para usar el coach, pon la clave de Gemini (gratis) en los ajustes, en \"Coach con IA\".", "To use the coach, add your (free) Gemini key in Settings, under \"AI coach\"."],
   "Encara no hi ha partides amb l'app per analitzar.": ["Todavía no hay partidas con la app para analizar.", "No games with the app to analyse yet."],
   "Anàlisi del {x}.": ["Análisis del {x}.", "Analysis from {x}."],
+  "Control d'onada": ["Control de oleada", "Wave control"], "control d'onada": ["control de oleada", "wave control"],
+  "Temps a fons al camp rival, min 3-13 (%)": ["Tiempo a fondo en campo rival, min 3-13 (%)", "Time deep in enemy half, min 3-13 (%)"],
+  "Morts a camp rival abans del 14": ["Muertes en campo rival antes del 14", "Deaths in enemy half before 14"],
+  "Morts amb el jungla rival abans del 14": ["Muertes con el jungla rival antes del 14", "Deaths with the enemy jungler before 14"],
+  "1 mort a camp rival abans del 14": ["1 muerte en campo rival antes del 14", "1 death in the enemy half before 14"],
+  "{n} morts a camp rival abans del 14": ["{n} muertes en campo rival antes del 14", "{n} deaths in the enemy half before 14"],
+  "verd amb 0 morts passat el riu abans del minut 14, groc amb 1": ["verde con 0 muertes pasado el río antes del minuto 14, amarillo con 1", "green with 0 deaths past the river before minute 14, yellow with 1"],
+  "cap mort a camp rival abans del minut 14": ["ninguna muerte en campo rival antes del minuto 14", "no deaths in the enemy half before minute 14"],
+  "Onades: quan pots empènyer i quan no, segons on s'ha vist el jungla rival i quan mates el teu rival": ["Oleadas: cuándo puedes empujar y cuándo no, según dónde se ha visto al jungla rival y cuándo matas a tu rival", "Waves: when you can push and when not, from where the enemy jungler was seen and when you kill your laner"],
+  "Objectiu d'aquesta partida: control d'onada. Empeny fins a la torre rival només si saps on és el jungla rival. Si no ho saps, empeny a poc a poc i queda't a prop del riu.": ["Objetivo de esta partida: control de oleada. Empuja hasta la torre rival solo si sabes dónde está el jungla rival. Si no lo sabes, empuja poco a poco y quédate cerca del río.", "Goal for this game: wave control. Only push to the enemy tower if you know where the enemy jungler is. If you don't, push slowly and stay near the river."],
+  "Ha mort el jungla rival: ara pots empènyer l'onada fins a la torre sense por.": ["Ha muerto el jungla rival: ahora puedes empujar la oleada hasta la torre sin miedo.", "The enemy jungler is dead: you can push the wave to the tower safely now."],
+  "Ha mort {x}: empeny l'onada fins a la seva torre i després torna a base o agafa plaques.": ["Ha muerto {x}: empuja la oleada hasta su torre y después vuelve a base o coge placas.", "{x} is dead: push the wave into their tower, then recall or take plates."],
+  "{x} és a la teva línia ({y}).": ["{x} está en tu línea ({y}).", "{x} is in your lane ({y})."],
+  "{x} és {w} ({y}).": ["{x} está {w} ({y}).", "{x} is {w} ({y})."],
+  "a dalt": ["arriba", "top side"], "a baix": ["abajo", "bottom side"], "al mig": ["en medio", "mid"],
+  "ha ajudat a matar {x}": ["ha ayudado a matar a {x}", "helped kill {x}"], "han fet el drac": ["han hecho el dragón", "they took dragon"],
+  "han fet les larves": ["han hecho las larvas", "they took the grubs"], "han fet el herald": ["han hecho el heraldo", "they took herald"],
+  "No empenyis: deixa que l'onada vingui cap a tu fins que el tornis a veure.": ["No empujes: deja que la oleada venga hacia ti hasta que lo vuelvas a ver.", "Don't push: let the wave come to you until you see him again."],
+  "Si l'onada et va bé, ara pots empènyer una mica, però no et quedis sol a fons.": ["Si la oleada te viene bien, ahora puedes empujar un poco, pero no te quedes solo a fondo.", "If the wave suits you, you can push a bit now, but don't stay deep alone."],
+  "Ara pots empènyer l'onada uns trenta segons sense por.": ["Ahora puedes empujar la oleada unos treinta segundos sin miedo.", "You can push the wave for about thirty seconds safely now."],
+  "Fa estona que no se sap on és {x}.": ["Hace rato que no se sabe dónde está {x}.", "Nobody has seen {x} for a while."],
+  "No passis gaire del riu si no tens ward.": ["No pases mucho del río si no tienes ward.", "Don't go far past the river without a ward."],
+  "El jungla rival": ["El jungla rival", "The enemy jungler"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2230,6 +2254,7 @@ function coachTick(data){
       aiProactive("macro", `${q} En dues frases curtes, el pla de macro ara: on ha d'estar el meu equip i quin objectiu forçar o defensar, segons el valor dels objectes, les torres, els dracs, el baró i qui va fort de cada equip.`); }
   if (t >= coach.formAt) { coach.formAt = Infinity; sayForm(playerBy(data, game.me)?.championName, "partida"); }
   visTick(data, t, me);
+  waveTick(data, t, me, opp);
 
   // general reminders, never right after another message
   if ($("#cRem").checked && t >= coach.nextRem) {
@@ -2254,7 +2279,7 @@ function loadItems(){
 const CONTROL_WARD = 2055;
 const itemName = id => ITEMS[id]?.name || ("#" + id);
 const isFinal = id => !!ITEMS[id]?.final;
-for (const id of ["cGold","cObj","cSpike","cWard","cScout","cFocus","cVis","cForm","cFront","cAiAuto"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
+for (const id of ["cWave","cGold","cObj","cSpike","cWard","cScout","cFocus","cVis","cForm","cFront","cAiAuto"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
 const parseMS = s => { const m = String(s || "").trim().match(/^(\d{1,2})(?::(\d{2}))?$/); return m ? (+m[1]) * 60 + (+(m[2] || 0)) : null; };
 for (const id of ["oDrag","oGrubs","oHerald","oBaron"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.value = v;
   el.addEventListener("change", () => { if (parseMS(el.value) == null) el.value = el.defaultValue; store.set(id, el.value); }); }
@@ -2650,8 +2675,25 @@ function aiMemory(exceptDate){
   out.push(`Mitjanes: ${cs != null ? `farm ${fmt1(cs)}/min, ` : ""}${d15 != null ? `${fmt1(d15)} morts abans del minut 15, ` : ""}${kp != null ? `participació ${Math.round(kp)}%, ` : ""}${vis != null ? `visió ${fmt1(vis)}/min` : ""}.`);
   const b = Object.entries(bad).sort((a, b) => b[1] - a[1]).slice(0, 3); if (b.length) out.push("Apartats que surten 'a treballar' més sovint: " + b.map(([a, n]) => `${a} (${n} de ${list.length})`).join(", ") + ".");
   const k = Object.entries(kinds).sort((a, b) => b[1] - a[1]).slice(0, 3); if (k.length) out.push("Com mor més sovint: " + k.map(([a, n]) => `${a} (${n} vegades)`).join(", ") + ".");
+  const pl = list.map(pushStats).filter(Boolean);
+  if (pl.length >= 3) out.push(`Control d'onada (${pl.length} partides amb mapa): ${Math.round(pl.reduce((a, p) => a + p.push, 0) / pl.length)}% del temps a fons al camp rival als minuts 3-13; ${fmt1(pl.reduce((a, p) => a + p.deepd, 0) / pl.length)} morts a camp rival abans del 14 per partida, ${fmt1(pl.reduce((a, p) => a + p.gankd, 0) / pl.length)} d'elles amb el jungla rival.`);
   const prev = list.filter(r => r.ai_review).slice(0, 2).map(r => `${r.date}: ${r.ai_review}`); if (prev.length) out.push("Lliçons que ja li has donat: " + prev.join(" | "));
   return out.join("\n");
+}
+// wave control, from Riot's map: how long you stood deep in the enemy half (minutes 3-13) and how many deaths before
+// 14 happened in the enemy half (overextending). The river is where both bases are equally far; "deep" is 2000 units past it.
+function halfMargin(x, y, side){ const own = side === "red" ? 14870 : 0, en = 14870 - own; return Math.hypot(x - own, y - own) - Math.hypot(x - en, y - en); }
+function pushStats(r){
+  const md = r.map; if (!md?.path?.length || !md.events || r.role === "JUNGLE") return null;
+  const pts = md.path.filter(p => p.t >= 180 && p.t < 840); if (pts.length < 5) return null;
+  const deep = md.events.filter(e => e.kind === "death" && e.t < 840 && halfMargin(e.x, e.y, md.side) > 0);
+  const gank = deep.filter(e => (r.deaths || []).some(d => Math.abs(d.t - e.t) < 8 && d.kind === "gank del jungla"));
+  return {push: Math.round(100 * pts.filter(p => halfMargin(p.x, p.y, md.side) > 2000).length / pts.length), deepd: deep.length, gankd: gank.length,
+    when: deep.map(e => fmtClock(e.t))};
+}
+function pushLine(r){
+  const p = pushStats(r); if (!p) return "";
+  return `Control d'onada (minuts 3-13): ${p.push}% del temps a fons al camp rival; ${p.deepd === 1 ? "1 mort" : `${p.deepd} morts`} a camp rival abans del 14${p.deepd ? ` (${p.when.join(", ")}${p.gankd ? `, ${p.gankd} amb el jungla rival` : ""})` : ""}.`;
 }
 // where each death happened on the map (Riot's timeline) and who was near; positions are once a minute
 function aiZone(x, y, side){
@@ -2696,7 +2738,7 @@ async function aiReview(r, speakIt){
     (r.tips || []).length ? "Consells de l'app: " + r.tips.join(" ") : "",
     me ? `Taula: ${me.place}è de 10, ${me.k}/${me.d}/${me.a}, ${me.cs} CS, ${me.dmg} de dany.` : "",
     (r.deaths || []).length ? "Morts: " + r.deaths.map(d => `${fmtClock(d.t)} ${d.kind} (${d.by.join(", ")})`).join("; ") : "",
-    deathsOnMap(r), aiMemory(r.date), benchText(r.champion)].filter(Boolean).join("\n");
+    deathsOnMap(r), pushLine(r), aiMemory(r.date), benchText(r.champion)].filter(Boolean).join("\n");
   try {
     const res = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({question: "Dona'm les tres lliçons d'aquesta partida. Si un error es repeteix respecte de les partides anteriors, digues-ho; si ha millorat en alguna cosa que li havies dit, reconeix-ho.", state: text, lang: speechChoice().lang, mode: "review", date: r.date})})).json();
@@ -3122,6 +3164,7 @@ loadSeason(true);   // starts a read if the program isn't already doing one
 const FOCUS = {
   "Farm": {name: "farm", say: "Objectiu d'aquesta partida: farm. A les últimes partides et quedes curt. Cada onada, no perdis cap minion als últims cops.", goal: "7 de farm per minut o més"},
   "Supervivència": {name: "no morir", say: "Objectiu d'aquesta partida: cap mort abans del minut quinze. Si no veus el jungla rival, no passis de la meitat del riu.", goal: "0 morts abans del minut 15"},
+  "Control d'onada": {name: "control d'onada", say: "Objectiu d'aquesta partida: control d'onada. Empeny fins a la torre rival només si saps on és el jungla rival. Si no ho saps, empeny a poc a poc i queda't a prop del riu.", goal: "cap mort a camp rival abans del minut 14"},
   "Participació": {name: "participació", say: "Objectiu d'aquesta partida: ajudar l'equip. Quan la teva onada estigui empesa, mou-te cap al drac o cap a la línia del costat.", goal: "55% de participació o més"},
   "Visió": {name: "visió", say: "Objectiu d'aquesta partida: visió. Posa el ward groc cada cop que estigui llest i compra un ward de control a cada tornada.", goal: "1 de visió per minut o més (2 de suport)"},
   "Línia": {name: "guanyar la línia", say: "Objectiu d'aquesta partida: arribar al minut quinze sense anar per darrere en or. Intercanvia només quan el rival gasti habilitats.", goal: "no anar per darrere en or al minut 15"}
@@ -3132,7 +3175,7 @@ function pickFocus(role){
   const same = ok.filter(r => r.role === role);
   const list = (same.length >= 3 ? same : ok).slice(0, 10);
   if (list.length < 3) return null;
-  const pts = {}, order = ["Supervivència", "Farm", "Línia", "Participació", "Visió"];
+  const pts = {}, order = ["Supervivència", "Control d'onada", "Farm", "Línia", "Participació", "Visió"];
   for (const r of list) for (const g of reportGrades(r)) { const k = focusKey(g.area); if (role === "UTILITY" && k === "Farm") continue; pts[k] = (pts[k] || 0) + (g.level === "bad" ? 2 : g.level === "mid" ? 1 : 0); }
   const best = Object.entries(pts).filter(([, v]) => v >= Math.max(3, list.length * 0.5)).sort((a, b) => b[1] - a[1] || order.indexOf(a[0]) - order.indexOf(b[0]))[0];
   return best ? best[0] : null;
@@ -3242,6 +3285,46 @@ function wardSide(v, t){
   if (soon("drag")) return {s: "de baix, cap al drac", why: "el drac surt aviat i el jungla rival hi anirà"};
   if (soon("grubs") || soon("herald") || soon("baron")) return {s: "de dalt, cap al baró", why: "l'objectiu de dalt surt aviat i el jungla rival hi anirà"};
   return null;
+}
+// Waves (laners, until minute 20). The Live Client API doesn't give positions, so the enemy jungler is placed by what he
+// does: kills he takes part in (the lane of the victim), dragon (bottom side), grubs and herald (top side), and his death.
+function waveTick(data, t, me, opp){
+  if (!coach || !me || !$("#cWave").checked) return;
+  const w = coach.wave || (coach.wave = {seenEv: -1, at: -999, seenAt: 0, quietSaid: 0});
+  const role = game.role, laneOf = {TOP: "top", MIDDLE: "mid", BOTTOM: "bot", UTILITY: "bot"}, mine = laneOf[role];
+  const champOf = n => playerNamed(data, n);
+  const jg = data.allPlayers.find(p => p.team !== me.team && (p.position || "").toUpperCase() === "JUNGLE");
+  const isJg = n => jg && champOf(n) && pid(champOf(n)) === pid(jg);
+  let seen = null, said = null;
+  for (const ev of data.events?.Events || []) {
+    const id = ev.EventID ?? -1; if (id <= w.seenEv) continue; w.seenEv = id;
+    if (!mine || t > 1200) continue;
+    const enemyTook = champOf(ev.KillerName) && champOf(ev.KillerName).team !== me.team;
+    if (ev.EventName === "ChampionKill") {
+      const v = champOf(ev.VictimName);
+      if (jg && v && pid(v) === pid(jg)) { said = `Ha mort el jungla rival: ara pots empènyer l'onada fins a la torre sense por.`; w.seenAt = t; continue; }
+      if (opp && v && pid(v) === pid(opp) && (role !== "UTILITY")) { said = `Ha mort ${opp.championName}: empeny l'onada fins a la seva torre i després torna a base o agafa plaques.`; continue; }
+      if (jg && [ev.KillerName, ...(ev.Assisters || [])].some(isJg) && v && pid(v) !== game.me) {
+        const lane = laneOf[(v.position || "").toUpperCase()];
+        if (lane) seen = {lane, why: `ha ajudat a matar ${v.championName}`};
+      }
+    } else if (enemyTook && ev.EventName === "DragonKill") seen = {lane: "bot", why: "han fet el drac"};
+    else if (enemyTook && (ev.EventName === "HordeKill" || ev.EventName === "HeraldKill")) seen = {lane: "top", why: ev.EventName === "HordeKill" ? "han fet les larves" : "han fet el herald"};
+  }
+  if (!mine || t < 150 || t > 1200 || me.isDead) return;
+  const name = jg?.championName || "El jungla rival";
+  if (seen) {
+    w.seenAt = t;
+    const where = {top: "a dalt", bot: "a baix", mid: "al mig"}[seen.lane];
+    if (seen.lane === mine) said = `${name} és a la teva línia (${seen.why}). No empenyis: deixa que l'onada vingui cap a tu fins que el tornis a veure.`;
+    else if (mine === "mid" || seen.lane === "mid") said = `${name} és ${where} (${seen.why}). Si l'onada et va bé, ara pots empènyer una mica, però no et quedis sol a fons.`;
+    else said = `${name} és ${where} (${seen.why}). Ara pots empènyer l'onada uns trenta segons sense por.`;
+  }
+  // a long time without knowing where he is, in the lane phase: the moment people overextend
+  if (!said && t >= 210 && t < 840 && t - Math.max(w.seenAt, 150) > 120 && t - w.quietSaid > 240 && t - coach.lastSaidAt > 20) {
+    w.quietSaid = t; said = `Fa estona que no se sap on és ${name}. No passis gaire del riu si no tens ward.`;
+  }
+  if (said && t - w.at > (seen ? 8 : 25)) { w.at = t; coachSay(said); coach.lastSaidAt = t; }
 }
 function visTick(data, t, me){
   const v = coach?.vis; if (!v || !me || !$("#cVis").checked) return;
@@ -3970,6 +4053,8 @@ function reportGrades(r){
   if (!sup && r.cs_rate?.total != null) g.push({area: "Farm", level: lvl(r.cs_rate.total, jg ? 6 : 7, jg ? 5 : 6), value: `${fmt1(r.cs_rate.total)}/min`, rule: jg ? "verd des de 6/min, groc des de 5" : "verd des de 7/min, groc des de 6"});
   g.push({area: "Supervivència", level: r.deaths15 === 0 ? "good" : r.deaths15 === 1 ? "mid" : "bad", value: r.deaths15 === 1 ? "1 mort abans del 15" : `${r.deaths15} morts abans del 15`, rule: "verd amb 0 morts abans del minut 15, groc amb 1"});
   const kp = kpOf(r);
+  const ps = pushStats(r);
+  if (ps) g.push({area: "Control d'onada", level: ps.deepd === 0 ? "good" : ps.deepd === 1 ? "mid" : "bad", value: ps.deepd === 1 ? "1 mort a camp rival abans del 14" : `${ps.deepd} morts a camp rival abans del 14`, rule: "verd amb 0 morts passat el riu abans del minut 14, groc amb 1"});
   if (kp != null) g.push({area: "Participació", level: lvl(kp, 55, 40), value: `${kp}%`, rule: "verd des del 55%, groc des del 40%"});
   const vis = st?.me?.vision ?? r.vision;
   if (vis != null) { const pm = vis / minutesOf(r); g.push({area: "Visió", level: lvl(pm, sup ? 2 : 1, sup ? 1.5 : 0.6), value: `${fmt1(pm)}/min`, rule: sup ? "verd des de 2/min, groc des d'1,5" : "verd des d'1/min, groc des de 0,6"}); }
@@ -4161,10 +4246,11 @@ function myChampStats(champ){
     g10d: avg(r => r.map?.stats?.diffs?.find(d => d.min === 10)?.gold), d14: avg(r => (r.deaths || []).filter(d => d.t < 840).length),
     kp: avg(r => kpOf(r)), vismin: avg(r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); }),
     cw: avg(r => r.map?.stats?.me?.control), dmg: avg(r => r.map?.stats?.me?.damage_share != null ? r.map.stats.me.damage_share * 100 : null),
-    d: avg(r => r.kda?.[1])};
+    d: avg(r => r.kda?.[1]), push: avg(r => pushStats(r)?.push), deepd: avg(r => pushStats(r)?.deepd), gankd: avg(r => pushStats(r)?.gankd)};
 }
 const BENCH_ROWS = [["Farm al minut 10", "cs10", true, 0], ["Farm per minut", "csmin", true, 1], ["Diferència de farm al 10", "cs10d", true, 0], ["Diferència d'or al 10", "g10d", true, 0],
-  ["Morts abans del 14", "d14", false, 1], ["Morts per partida", "d", false, 1], ["Participació (%)", "kp", true, 0], ["Visió per minut", "vismin", true, 1], ["Wards de control", "cw", true, 1], ["% del dany de l'equip", "dmg", true, 0]];
+  ["Morts abans del 14", "d14", false, 1], ["Morts per partida", "d", false, 1], ["Participació (%)", "kp", true, 0], ["Visió per minut", "vismin", true, 1], ["Wards de control", "cw", true, 1], ["% del dany de l'equip", "dmg", true, 0],
+  ["Temps a fons al camp rival, min 3-13 (%)", "push", null, 0], ["Morts a camp rival abans del 14", "deepd", false, 1], ["Morts amb el jungla rival abans del 14", "gankd", false, 1]];
 function renderBench(){
   const el = $("#benchBody"), b = benchData; if (!el || !b) return;
   if (b.msg === "no_key") { el.innerHTML = `<p class="note warn">Posa la clau de Riot als ajustos.</p>`; return; }
@@ -4177,7 +4263,7 @@ function renderBench(){
     const me = myChampStats(c.champ);
     const rows = BENCH_ROWS.map(([label, k, up, d]) => {
       const pro = c[k], mine = me?.[k];
-      let cls = ""; if (pro != null && mine != null) { const better = up ? mine >= pro * 0.95 : mine <= pro * 1.05 + 0.1; cls = better ? "good" : "bad"; }
+      let cls = ""; if (pro != null && mine != null && up !== null) { const better = up ? mine >= pro * 0.95 : mine <= pro * 1.05 + 0.1; cls = better ? "good" : "bad"; }
       return `<tr><td>${label}</td><td class="${cls}">${f(mine, d)}</td><td>${f(pro, d)}</td></tr>`;
     }).join("");
     const build = (c.build || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
@@ -4200,9 +4286,10 @@ function benchText(onlyChamp){
   for (const c of benchData?.champs || []) {
     if (!c.games || (onlyChamp && norm(c.champ) !== norm(champId(CHAMPS.find(x => norm(x) === norm(onlyChamp)) || onlyChamp)))) continue;
     const me = myChampStats(c.champ), f = v => v == null ? "?" : Math.round(v * 10) / 10;
-    out.push(`${c.name}: Challenger (${c.games} partides) farm ${f(c.cs10)} al minut 10, ${f(c.csmin)}/min, ${f(c.d14)} morts abans del 14, participació ${f(c.kp)}%, visió ${f(c.vismin)}/min, ${f(c.cw)} wards de control, ${f(c.dmg)}% del dany; build ${(c.build || []).map(itemName).join(" > ")}; primer objecte al minut ${f(c.first)}; maximitzen primer la ${c.skills || "?"}; encanteris ${c.spells}.` +
+    out.push(`${c.name}: Challenger (${c.games} partides) farm ${f(c.cs10)} al minut 10, ${f(c.csmin)}/min, ${f(c.d14)} morts abans del 14, participació ${f(c.kp)}%, visió ${f(c.vismin)}/min, ${f(c.cw)} wards de control, ${f(c.dmg)}% del dany${c.push != null ? `; control d'onada: ${f(c.push)}% del temps a fons al camp rival (minuts 3-13), ${f(c.deepd)} morts a camp rival abans del 14, ${f(c.gankd)} morts amb el jungla rival abans del 14` : ""}; build ${(c.build || []).map(itemName).join(" > ")}; primer objecte al minut ${f(c.first)}; maximitzen primer la ${c.skills || "?"}; encanteris ${c.spells}.` +
       (me ? ` El jugador (${me.n} partides): ` + [[me.cs10, v => `farm ${v} al 10`], [me.csmin, v => `${v}/min`], [me.cs10d, v => `diferència de farm al 10 ${v}`], [me.d14, v => `${v} morts abans del 14`], [me.kp, v => `participació ${v}%`],
-        [me.vismin, v => `visió ${v}/min`], [me.cw, v => `${v} wards de control`], [me.dmg, v => `${v}% del dany`]].filter(([v]) => v != null).map(([v, t]) => t(f(v))).join(", ") + "." : ""));
+        [me.vismin, v => `visió ${v}/min`], [me.cw, v => `${v} wards de control`], [me.dmg, v => `${v}% del dany`],
+        [me.push, v => `${v}% del temps a fons al camp rival`], [me.deepd, v => `${v} morts a camp rival abans del 14`], [me.gankd, v => `${v} morts amb el jungla rival abans del 14`]].filter(([v]) => v != null).map(([v, t]) => t(f(v))).join(", ") + "." : ""));
   }
   return out.length ? "Comparació amb jugadors Challenger i Grandmaster:\n" + out.join("\n") : "";
 }

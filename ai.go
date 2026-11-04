@@ -47,7 +47,13 @@ func aiReviewSystem(lang string) string {
 Regles:
 - Respon en ` + name + ` amb exactament tres lliçons, cadascuna en una frase curta que comenci amb un verb, separades per punt (màxim 70 paraules en total). Res de llistes numerades, emojis ni format: es llegirà en veu alta.
 - Les lliçons han de sortir de les dades de l'informe (morts, farm, visió, objectius, rival, taula), no consells genèrics. Si ha anat bé, una de les tres pot ser què ha de mantenir.
-- No inventis xifres que no siguin a l'informe.`
+- No inventis xifres que no siguin a l'informe.
+Control de l'onada (fes-ho servir quan toqui, amb les dades de "Control d'onada" si n'hi ha):
+- Empènyer fins a la torre rival només quan saps que el jungla rival és a l'altra banda del mapa, quan vols tornar a base o abans d'un objectiu. Si no saps on és el jungla rival i no hi ha ward, no passis gaire del riu.
+- Empènyer a poc a poc (només últims cops) perquè s'ajunti una onada gran, estavellar-la a la torre (millor amb l'onada de canó) i llavors tornar a base o moure's: l'onada torna cap a tu i no perds farm.
+- Congelar a prop de la teva torre quan vas per davant o quan el rival és perillós: ell s'ha d'apropar i és fàcil de gankejar.
+- Després de matar el rival de línia: estavellar l'onada i tornar a base o agafar plaques. Després de morir: l'onada anirà cap a la teva torre; no corris a empènyer quan tornis.
+- Les "morts a camp rival abans del 14" són morts per haver-se avançat massa; si en té més que els Challenger, aquest és el problema que ha de treballar.`
 }
 
 // aiCoachSystem: outside the game, with time to read: an analysis of the player's recent games
@@ -62,7 +68,13 @@ Regles:
 - Si et demano una anàlisi: tres parts que comencin exactament per "El que fas bé:", "El que t'està costant:" i "Pla per a les pròximes partides:", màxim 180 paraules en total.
 - Compara amb els Challenger amb xifres concretes quan les tinguis (farm al minut 10, morts abans del 14, visió, build, runes, ordre d'habilitats), i digues què han de copiar exactament.
 - Fes servir només les dades que t'envio i coneixement general i estable del joc; no inventis xifres.
-- Si la pregunta és concreta, respon-la directament, màxim 120 paraules.`
+- Si la pregunta és concreta, respon-la directament, màxim 120 paraules.
+Control de l'onada (fes-ho servir quan toqui, amb les dades de "Control d'onada" si n'hi ha):
+- Empènyer fins a la torre rival només quan saps que el jungla rival és a l'altra banda del mapa, quan vols tornar a base o abans d'un objectiu. Si no saps on és el jungla rival i no hi ha ward, no passis gaire del riu.
+- Empènyer a poc a poc (només últims cops) perquè s'ajunti una onada gran, estavellar-la a la torre (millor amb l'onada de canó) i llavors tornar a base o moure's: l'onada torna cap a tu i no perds farm.
+- Congelar a prop de la teva torre quan vas per davant o quan el rival és perillós: ell s'ha d'apropar i és fàcil de gankejar.
+- Després de matar el rival de línia: estavellar l'onada i tornar a base o agafar plaques. Després de morir: l'onada anirà cap a la teva torre; no corris a empènyer quan tornis.
+- Les "morts a camp rival abans del 14" són morts per haver-se avançat massa; si en té més que els Challenger, aquest és el problema que ha de treballar.`
 }
 
 func aiAsk(question, state, lang string, history []aiTurn) (string, error) {
