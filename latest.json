@@ -1,7 +1,7 @@
 {
- "version": "2.0.21",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.21.exe",
- "size": 8268800,
- "sha256": "23208eff8d956d6803b09a663213076ff4b82ca2f8c8872891d397e8b5ad72fc",
- "notes": "- Historial: només partides classificatòries\n- Dades de cada jugador (rang, ratxes, forma i 'Juga amb ell') a la seva fila dels temporitzadors\n- Arreglada la teva fila als temporitzadors, que sortia descol·locada"
+ "version": "2.0.22",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.22.exe",
+ "size": 8275968,
+ "sha256": "4c1e8814500affab28afb9df1b8c5f1670a09e5743d011839d65f3d1ab5b7457",
+ "notes": "- La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors i tres lliçons a l'informe\n- La veu ja no llegeix el KDA 8/2/11 com una data"
 }
