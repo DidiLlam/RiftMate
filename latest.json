@@ -1,7 +1,7 @@
 {
- "version": "2.0.29",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.29.exe",
- "size": 8407552,
- "sha256": "f725ffa022b5ac1ef195f97385c690b111c4f5c4c480ca69b01377c222135424",
- "notes": "- Onades: ja no repeteix el jungla rival tres cops per les tres larves\n- Si mors a la mateixa baralla, no et diu que empenyis perquè ha mort el jungla rival"
+ "version": "2.0.30",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.30.exe",
+ "size": 8420864,
+ "sha256": "13c9f0a42e2bcc7abff560cc16c15ed73c03866c6049fbf9a3ad01847b69dcc0",
+ "notes": "- Challenger: ara busca primer a Corea (Challenger i GM), després a EUW, i Master només si cal\n- Veu: entén els campions pel nom en anglès encara que el client estigui en castellà (Master Yi / Maestro Yi)\n- Respostes ràpides sense IA: coach, quan surt el drac? / quant li falta al flash de Zed? / qui no té flash? / on és el jungla? / com anem? / repeteix / calla / parla"
 }
