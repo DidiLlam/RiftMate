@@ -1,7 +1,7 @@
 {
- "version": "2.0.36",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.36.exe",
- "size": 8612864,
- "sha256": "bdf01b4161c595a5a125c3822085e1c2f80e4b8ae2478474f5bb7963be335d4e",
- "notes": "- Objectiu: ara mostra la divisió següent i, si és més lluny, també la lliga següent, cadascuna amb el seu escut\n- Es recalcula sol quan puges o baixes"
+ "version": "2.0.37",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.37.exe",
+ "size": 8615424,
+ "sha256": "5daa02cb9e08b134e207f4f4a60bc5304f0e560d80038806c1e4dcfdfc17262c",
+ "notes": "- Xat: en partida, els temporitzadors dels rivals queden sempre copiats; per enviar-los, Enter, Ctrl+V i Enter, sense sortir del joc\n- Informe: el botó de les lliçons de la IA explica què fa"
 }
