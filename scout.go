@@ -121,9 +121,9 @@ func scoutOne(c Config, in scoutIn) scoutOut {
 			out.MasteryOK = true // never played it
 		}
 	}
-	// last 12 ranked games (Solo/Duo and Flex), newest first
+	// last 7 ranked games (fewer calls: the nine players fit in the key's limit and are ready in seconds) (Solo/Duo and Flex), newest first
 	var ids []string
-	if scoutGet(c, "", fmt.Sprintf("/lol/match/v5/matches/by-puuid/%s/ids?type=ranked&start=0&count=12", puuid), &ids) == nil {
+	if scoutGet(c, "", fmt.Sprintf("/lol/match/v5/matches/by-puuid/%s/ids?type=ranked&start=0&count=7", puuid), &ids) == nil {
 		for _, id := range ids {
 			var md matchDTO
 			if scoutGet(c, "", "/lol/match/v5/matches/"+id, &md) != nil {

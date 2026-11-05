@@ -283,7 +283,7 @@ func benchRun() {
 	}
 	ladder := []entry{}
 	tierOf := map[string]string{}
-	for _, q := range []string{"challengerleagues", "grandmasterleagues"} {
+	for _, q := range []string{"challengerleagues", "grandmasterleagues", "masterleagues"} {
 		var l league
 		if err := benchGet(c, true, "/lol/league/v4/"+q+"/by-queue/RANKED_SOLO_5x5", &l); err != nil {
 			logf("Challenger: no he pogut llegir %s: %v", q, err)
@@ -297,25 +297,95 @@ func benchRun() {
 			}
 		}
 	}
+	need := func(ch string) bool { return len(b.Games[ch]) < benchPerChamp }
 	enough := func() bool {
 		for _, ch := range champs {
-			if len(b.Players[ch]) < 10 {
+			if need(ch) {
 				return false
 			}
 		}
 		return true
 	}
-	// 2) players whose top champions include ours
+	goal := benchPerChamp * len(champs)
+	count := func() int {
+		n := 0
+		for _, ch := range champs {
+			n += min(len(b.Games[ch]), benchPerChamp)
+		}
+		return n
+	}
+	// one match already read: also any other player of that lobby with one of our champions in our position (Diana in
+	// the middle is rare up there; this way every match read is ten chances)
+	harvest := func(m *matchDTO, mid, skip string) {
+		for _, p := range m.Info.Participants {
+			if p.PUUID == skip || p.PUUID == "" {
+				continue
+			}
+			for _, ch := range champs {
+				key := mid + ":" + ch
+				if !need(ch) || b.Seen[key] || !strings.EqualFold(p.ChampionName, ch) || (pos[ch] != "" && p.TeamPosition != pos[ch]) {
+					continue
+				}
+				b.Seen[key] = true
+				if g, ok := benchFromMatch(c, m, mid, p.PUUID, ch, pos[ch], items); ok {
+					g.Tier, g.Player = "LOBBY", p.PUUID[:min(12, len(p.PUUID))]
+					b.Games[ch] = append(b.Games[ch], g)
+					benchSet("games", count(), goal)
+					saveBench(b)
+				}
+			}
+		}
+	}
+	// a player's latest Solo/Duo games with that champion (timeline included); gives up on him soon if he isn't playing it
+	readPlayer := func(ch, pu string) {
+		var ids []string
+		if err := benchGet(c, false, "/lol/match/v5/matches/by-puuid/"+pu+"/ids?queue=420&start=0&count=20", &ids); err != nil {
+			return
+		}
+		got, miss := 0, 0
+		for _, mid := range ids {
+			if got >= 5 || !need(ch) || (got == 0 && miss >= 6) {
+				break
+			}
+			if b.Seen[mid] {
+				continue
+			}
+			b.Seen[mid] = true
+			var m matchDTO
+			if err := benchGet(c, false, "/lol/match/v5/matches/"+mid, &m); err != nil {
+				continue
+			}
+			if g, ok := benchFromMatch(c, &m, mid, pu, ch, pos[ch], items); ok {
+				g.Tier, g.Player = tierOf[pu], pu[:min(12, len(pu))]
+				b.Games[ch] = append(b.Games[ch], g)
+				got++
+				benchSet("games", count(), goal)
+				saveBench(b)
+			} else {
+				miss++
+			}
+			harvest(&m, mid, pu)
+		}
+	}
+	// 2) players found in earlier readings first, then the ladder from the top: the ones whose top champions include
+	// ours and who played them in the last 10 days; their games are read straight away
+	for _, ch := range champs {
+		for _, pu := range b.Players[ch] {
+			if need(ch) {
+				readPlayer(ch, pu)
+			}
+		}
+	}
 	scanned := 0
 	for _, e := range ladder {
-		if enough() || scanned >= 300 {
+		if enough() || scanned >= 500 {
 			break
 		}
 		if b.Scanned[e.PUUID] {
 			continue
 		}
 		scanned++
-		benchSet("players", scanned, 300)
+		benchSet("players", scanned, 500)
 		var top []struct {
 			ChampionID int   `json:"championId"`
 			Points     int   `json:"championPoints"`
@@ -329,6 +399,9 @@ func benchRun() {
 			// played it in the last 10 days, and plays it a lot (40,000 points: enough for a new champion)
 			if ch, ok := keys[t.ChampionID]; ok && t.Points >= 40000 && time.Since(time.UnixMilli(t.LastPlay)) < 10*24*time.Hour {
 				b.Players[ch] = append(b.Players[ch], e.PUUID)
+				if need(ch) {
+					readPlayer(ch, e.PUUID)
+				}
 			}
 		}
 		if scanned%20 == 0 {
@@ -336,51 +409,9 @@ func benchRun() {
 		}
 	}
 	saveBench(b)
+	done := count()
 	for _, ch := range champs {
 		logf("Challenger: %d jugadors juguen %s ara mateix", len(b.Players[ch]), ch)
-	}
-	// 3) their latest ranked games with that champion (timeline included)
-	goal := benchPerChamp * len(champs)
-	done := 0
-	for _, ch := range champs {
-		done += min(len(b.Games[ch]), benchPerChamp)
-	}
-	for _, ch := range champs {
-		for _, pu := range b.Players[ch] {
-			if len(b.Games[ch]) >= benchPerChamp {
-				break
-			}
-			var ids []string
-			if err := benchGet(c, false, "/lol/match/v5/matches/by-puuid/"+pu+"/ids?queue=420&start=0&count=20", &ids); err != nil {
-				continue
-			}
-			got, miss := 0, 0
-			for _, mid := range ids {
-				// up to 5 games each; a player whose first 6 games aren't with it isn't playing it now
-				if got >= 5 || len(b.Games[ch]) >= benchPerChamp || (got == 0 && miss >= 6) {
-					break
-				}
-				if b.Seen[mid] {
-					continue
-				}
-				b.Seen[mid] = true
-				var m matchDTO
-				if err := benchGet(c, false, "/lol/match/v5/matches/"+mid, &m); err != nil {
-					continue
-				}
-				g, ok := benchFromMatch(c, &m, mid, pu, ch, pos[ch], items)
-				if !ok {
-					miss++
-					continue
-				}
-				g.Tier, g.Player = tierOf[pu], pu[:min(12, len(pu))]
-				b.Games[ch] = append(b.Games[ch], g)
-				got++
-				done++
-				benchSet("games", done, goal)
-				saveBench(b)
-			}
-		}
 	}
 	b.Updated = time.Now().Unix()
 	saveBench(b)
@@ -575,8 +606,9 @@ type benchSummary struct {
 	Roam     *float64       `json:"roam,omitempty"`  // kills + assists before 14 in other lanes, per game
 	Plates   *float64       `json:"plates,omitempty"`
 	Solo     *float64       `json:"solo,omitempty"`
-	Me       *benchSummary  `json:"me,omitempty"` // the player's own games, measured the same way
-	Share    map[string]int `json:"share"`        // how often the most common choice was taken, in %
+	Tiers    map[string]int `json:"tiers,omitempty"` // games by the player's tier (LOBBY: someone else in one of those games)
+	Me       *benchSummary  `json:"me,omitempty"`    // the player's own games, measured the same way
+	Share    map[string]int `json:"share"`           // how often the most common choice was taken, in %
 }
 
 func r1(x float64) float64 { return math.Round(x*10) / 10 }
@@ -591,8 +623,12 @@ func summarize(ch string, gs []benchGame) benchSummary {
 	var cs10, csmin, cs10d, g10d, k, d, a, d14, kp, vis, cw, dmg, first float64
 	ks, sub, sp, sk, b3 := map[int]int{}, map[int]int{}, map[string]int{}, map[string]int{}, map[string]int{}
 	nFirst := 0
+	s.Tiers = map[string]int{}
 	for _, g := range gs {
 		players[g.Player] = true
+		if g.Tier != "" {
+			s.Tiers[g.Tier]++
+		}
 		if g.Win {
 			w++
 		}

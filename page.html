@@ -4359,6 +4359,11 @@ function benchGaps(c, me){
   if (me?.ks && c.ks && me.ks !== c.ks && (c.share?.ks ?? 0) >= 50) ch.push(`Runa principal: no és la mateixa que porten ells (${c.share.ks}% porten la del dibuix de sota).`);
   return {gaps: out.slice(0, 3), good: good.slice(0, 3), choices: ch};
 }
+function benchTiers(c){
+  const t = c.tiers || {}, names = [["CHALLENGER", "Challenger"], ["GRANDMASTER", "GM"], ["MASTER", "Master"], ["LOBBY", "altres de les seves partides"]];
+  const parts = names.filter(([k]) => t[k]).map(([k, n]) => `${t[k]} ${n}`);
+  return parts.length ? parts.join(", ") : "Challenger/GM";
+}
 const BENCH_POS = {TOP: "al top", JUNGLE: "a la jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"};
 function renderBench(){
   const el = $("#benchBody"), b = benchData; if (!el || !b) return;
@@ -4378,10 +4383,10 @@ function renderBench(){
     }).join("");
     const icons = ids => (ids || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
     const [s1, s2] = (c.spells || "").split("+");
-    const few = c.games < 10 ? `<p class="note warn">Només ${c.games} partides: ara mateix hi ha pocs jugadors Challenger o Grandmaster d'EUW jugant ${esc(c.name)} ${BENCH_POS[c.pos] || ""}. Les xifres són orientatives.</p>` : "";
+    const few = c.games < 10 ? `<p class="note warn">Només ${c.games} partides: ara mateix hi ha pocs jugadors de Master en amunt a EUW jugant ${esc(c.name)} ${BENCH_POS[c.pos] || ""}. Les xifres són orientatives.</p>` : "";
     const gaps = gp.gaps.length || gp.choices.length ? `<div class="bgap"><b>On et falta més</b><ol>${gp.gaps.map(g => `<li>${esc(g.text)}${g.tip ? ` <span class="note">${esc(g.tip)}</span>` : ""}</li>`).join("")}${gp.choices.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
       ${gp.good.length ? `<p class="note">Ja estàs al seu nivell en: ${gp.good.map(x => esc(x.toLowerCase())).join(", ")}.</p>` : ""}</div>` : (me ? "" : `<p class="note">Encara no hi ha partides teves per comparar.</p>`);
-    return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides de ${c.players} jugadors Challenger/GM · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides, ${me.wr}%` : ""}</span></div>
+    return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides de ${c.players} jugadors (${benchTiers(c)}) · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides, ${me.wr}%` : ""}</span></div>
       ${few}${gaps}
       <div class="tbl"><table class="bench"><tr><th></th><th>Tu</th><th>Challenger</th></tr>${rows}</table></div>
       <div class="bhow"><span>Runes: <img class="sbrn" data-rune="${c.ks}" alt=""><img class="sbrn" data-rune="${c.sub}" alt=""> <small class="note">${c.share?.ks ?? 0}%</small></span>
@@ -4389,7 +4394,7 @@ function renderBench(){
         ${c.build?.length ? `<span>Build d'ells: ${icons(c.build)} <small class="note">${c.share?.build ?? 0}%</small></span>` : ""}
         ${me?.build?.length ? `<span>La teva: ${icons(me.build)}</span>` : ""}
         ${c.skills ? `<span>Primer maximitzen la <b>${esc(c.skills)}</b> <small class="note">${c.share?.skills ?? 0}%</small></span>` : ""}</div></div>`;
-  }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo, ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger i Grandmaster que juguen ara aquests campions, a la mateixa posició que tu. "Tu" són les teves últimes partides rankejades amb cada campió, mesurades igual que les seves. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
+  }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo, ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger, Grandmaster i, si cal, Master que juguen ara aquests campions, a la mateixa posició que tu (i d'altres jugadors d'aquestes mateixes partides amb el campió). "Tu" són les teves últimes partides rankejades amb cada campió, mesurades igual que les seves. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
     <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Tornar-ho a llegir</button></div>`;
   $("#benchRun")?.addEventListener("click", () => loadBench(true));
   loadRunes(); fillRunes(); i18nAll();
