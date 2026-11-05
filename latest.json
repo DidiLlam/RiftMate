@@ -1,7 +1,7 @@
 {
- "version": "2.0.38",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.38.exe",
- "size": 8618496,
- "sha256": "4ffb79663283ab480e7d6888099214c0e6aa590c1c1626c79c2edf545b54caf5",
- "notes": "- Challenger: es tornen a llegir sols quan les partides guardades són d'una versió anterior (abans no passava i per això no es posaven les runes)\n- Si a un campió li falten partides (Diana al mig, Mel), també busca a Diamant I de Corea i EUW, i ho torna a provar cada dia"
+ "version": "2.0.39",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.39.exe",
+ "size": 8620544,
+ "sha256": "b873612946b421583edc21506d64cfbde4ca8cb7fdd5464dafb5b5a9d908d0fb",
+ "notes": "- Ajustos reorganitzats en quatre apartats: Veu, Coach, En partida i Compte i app, en dues columnes"
 }
