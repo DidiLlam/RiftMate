@@ -1,7 +1,7 @@
 {
- "version": "2.0.31",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.31.exe",
- "size": 8426496,
- "sha256": "598b30fd2488a4c3a4f76509b6e79352a34b9a4c086f7be315480a5e8bc1f220",
- "notes": "- Coach: les preguntes es poden fer amb naturalitat, en català o castellà (no cal cap frase concreta)\n- Respon sol: objectius, Flash dels rivals, qui no té Flash, on s'ha vist el jungla, com aneu, si un rival és mort, què porta i quin nivell té\n- Pots dir 'Zed ha gastat el flash' i el compta\n- Les preguntes de consell van a la IA, que ara també sap on s'ha vist el jungla rival"
+ "version": "2.0.32",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.32.exe",
+ "size": 8475136,
+ "sha256": "184886376c1b709200fd1fa6e1cbc08da8f8ec822ab0f0d390813e73db315961",
+ "notes": "- Selecció: posa al client la pàgina de runes i el conjunt d'objectes dels Challenger amb el teu campió (només toca els que ha fet RiftMate)\n- Selecció: ban suggerit i com et va contra els rivals que ja han triat\n- Matchup: el teu resultat de la temporada contra el rival i què fan els Challenger en aquest enfrontament\n- Coach: missatges per prioritat, sense repeticions, i opció 'Quant parla el coach' (poc, normal, molt)\n- Coach: gràfics de com evolucionen els teus números setmana a setmana\n- Sessió: LP del dia, l'error que més es repeteix, i pausa després de dues derrotes"
 }
