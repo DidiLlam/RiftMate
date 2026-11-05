@@ -1,7 +1,7 @@
 {
- "version": "2.0.34",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.34.exe",
- "size": 8557568,
- "sha256": "c5a24c0f9f81ae4d0260d923baea5883b442eadb9c41b860d9f380286f26581b",
- "notes": "- Veu: formes de dir tots els campions, també a la castellana i amb sobrenoms (Belcos, Chogat, Kasix, Asol, MF, TF, J4, el sapo...)\n- Ajustos: 'Entrena els noms dels campions': dius cada nom a la teva manera i la veu de Windows l'aprèn\n- El que la veu aprèn de tu queda guardat també per a la veu de Windows\n- LP del dia: ara es calcula amb el teu rang abans de la primera partida i després de l'última (abans en faltaven)\n- Historial: el teu rang a dalt, i el rang de cada jugador quan obres una partida"
+ "version": "2.0.35",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.35.exe",
+ "size": 8611328,
+ "sha256": "d46cceaae0c2897be1d146004609709b170517bd63e1873465641158a2caf4db",
+ "notes": "- Objectiu: LP que et falten per a la lliga següent i quantes victòries, i a la selecció, el teu campió més segur i avís de dodge quan estàs a punt de pujar\n- Coach: què ha canviat al pedaç per als teus campions i les seves builds, i te'l diu a la primera partida\n- Coach al xat: 'coach, al xat' o el botó copia els temporitzadors per enganxar-los amb Ctrl+V\n- Coach: el teu grup de campions i quan jugues millor (hores, dies i primera partida del dia)\n- Informe: moments clau, on es va guanyar i on es va perdre la partida\n- Historial i informes: arreglat un error amb partides sense dades d'equip"
 }
