@@ -357,6 +357,30 @@ func benchRun() {
 			}
 		}
 	}
+	// Diamond I, only when a champion is short of games (a rare pick in your position, like Diana in the middle):
+	// two pages of each server, about 400 players more
+	short := false
+	for _, ch := range champs {
+		short = short || len(b.Games[ch]) < 10
+	}
+	if short {
+		for _, plat := range []string{"kr", home} {
+			for page := 1; page <= 2; page++ {
+				var list []entry
+				if err := benchGet(c, plat, fmt.Sprintf("/lol/league-exp/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=%d", page), &list); err != nil {
+					break
+				}
+				for _, e := range list {
+					if e.PUUID != "" && tierOf[e.PUUID] == "" {
+						e.plat = plat
+						ladder = append(ladder, e)
+						tierOf[e.PUUID] = strings.ToUpper(plat) + ":DIAMOND"
+						b.Plat[e.PUUID] = plat
+					}
+				}
+			}
+		}
+	}
 	need := func(ch string) bool { return len(b.Games[ch]) < benchPerChamp }
 	enough := func() bool {
 		for _, ch := range champs {
@@ -438,14 +462,14 @@ func benchRun() {
 	}
 	scanned := 0
 	for _, e := range ladder {
-		if enough() || scanned >= 500 {
+		if enough() || scanned >= 800 {
 			break
 		}
 		if b.Scanned[e.PUUID] {
 			continue
 		}
 		scanned++
-		benchSet("players", scanned, 500)
+		benchSet("players", scanned, 800)
 		var top []struct {
 			ChampionID int   `json:"championId"`
 			Points     int   `json:"championPoints"`
@@ -1001,7 +1025,7 @@ func benchHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 // benchAuto: once at start (after the season) and again when the data is a week old
 func benchAuto() {
 	for {
-		if loadConfig().RiotKey != "" && time.Since(time.Unix(loadBench().Updated, 0)) > 7*24*time.Hour {
+		if b := loadBench(); loadConfig().RiotKey != "" && benchStale(b) {
 			benchRun()
 		}
 		time.Sleep(6 * time.Hour)
@@ -1014,4 +1038,25 @@ func spellPair(a, b int) string {
 		return ""
 	}
 	return spellNames[a] + "+" + spellNames[b]
+}
+
+// benchStale: a week old; or games read by an older version (no rune page, rival or jungle numbers); or one of your
+// champions with fewer than 10 games and no reading for a day
+func benchStale(b benchCache) bool {
+	age := time.Since(time.Unix(b.Updated, 0))
+	if age > 7*24*time.Hour {
+		return true
+	}
+	champs, _ := benchTargets()
+	for _, ch := range champs {
+		for _, g := range b.Games[ch] {
+			if !g.V6 {
+				return true
+			}
+		}
+		if len(b.Games[ch]) < 10 && age > 24*time.Hour {
+			return true
+		}
+	}
+	return false
 }

@@ -4909,7 +4909,7 @@ function benchGaps(c, me){
   return {gaps: out.slice(0, 3), good: good.slice(0, 3), choices: ch};
 }
 function benchTiers(c){
-  const T = {CHALLENGER: "Challenger", GRANDMASTER: "GM", MASTER: "Master", LOBBY: "d'altres jugadors"}, R = {KR: "de Corea", EUW1: "d'EUW", EUN1: "d'EUNE", NA1: "de NA"};
+  const T = {CHALLENGER: "Challenger", GRANDMASTER: "GM", MASTER: "Master", DIAMOND: "Diamant I", LOBBY: "d'altres jugadors"}, R = {KR: "de Corea", EUW1: "d'EUW", EUN1: "d'EUNE", NA1: "de NA"};
   const order = k => { const [r, t] = k.includes(":") ? k.split(":") : ["", k]; return (r === "KR" ? 0 : 10) + Object.keys(T).indexOf(t); };
   const parts = Object.entries(c.tiers || {}).sort((a, b) => order(a[0]) - order(b[0])).map(([k, n]) => { const [r, t] = k.includes(":") ? k.split(":") : ["", k]; return `${n} ${T[t] || t}${r ? " " + (R[r] || r) : ""}`; });
   return parts.length ? parts.join(", ") : "Challenger/GM";
