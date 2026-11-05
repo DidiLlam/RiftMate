@@ -431,6 +431,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="cGold"><input type="checkbox" id="cGold" checked><span>Or i compres: quan pots comprar el següent objecte i quan tornar a base</span></label>
     <label class="ph-item" for="cObj"><input type="checkbox" id="cObj" checked><span>Objectius: avís un minut abans del drac, les larves, el herald i el baró</span></label>
     <label class="ph-item" for="cSpike"><input type="checkbox" id="cSpike" checked><span>Rival més fort: nivell 6 i objectes acabats del teu rival de línia</span></label>
+    <label class="ph-item" for="cClip"><input type="checkbox" id="cClip" checked><span>Xat: en partida, tenir sempre copiats els temporitzadors dels rivals, per enviar-los al xat amb Enter, Ctrl+V i Enter sense sortir del joc</span></label>
     <label class="ph-item" for="cRunes"><input type="checkbox" id="cRunes" checked><span>Runes i objectes dels Challenger: en acabar la selecció, crear al client la pàgina de runes i el conjunt d'objectes que fan servir amb el teu campió (només es substitueixen els que ha fet RiftMate)</span></label>
     <label class="ph-item" for="cFront"><input type="checkbox" id="cFront" checked><span>Posar RiftMate al davant quan entris a la selecció de campions i quan l'informe estigui llest</span></label>
     <label class="ph-item" for="cScout"><input type="checkbox" id="cScout" checked><span>Rivals: analitzar-los a la pantalla de càrrega i avisar dels perillosos</span></label>
@@ -1347,6 +1348,9 @@ const I18N = {
   "{x}: et falten {n} LP · {y}, o unes {m} partides al teu {k}%": ["{x}: te faltan {n} LP · {y}, o unas {m} partidas a tu {k}%", "{x}: {n} LP to go · {y}, or about {m} games at your {k}%"],
   "{x}: et falten {n} LP · {y}": ["{x}: te faltan {n} LP · {y}", "{x}: {n} LP to go · {y}"], "et falten {n} LP · {y}, o unes {m} partides al teu {k}%": ["te faltan {n} LP · {y}, o unas {m} partidas a tu {k}%", "{n} LP to go · {y}, or about {m} games at your {k}%"], "et falten {n} LP · {y}": ["te faltan {n} LP · {y}", "{n} LP to go · {y}"],
   "Guanyes {n} LP i en perds {m} de mitjana.": ["Ganas {n} LP y pierdes {m} de media.", "You win {n} LP and lose {m} on average."],
+  "Xat: en partida, tenir sempre copiats els temporitzadors dels rivals, per enviar-los al xat amb Enter, Ctrl+V i Enter sense sortir del joc": ["Chat: en partida, tener siempre copiados los temporizadores de los rivales, para enviarlos al chat con Enter, Ctrl+V y Enter sin salir del juego", "Chat: in game, always keep the enemy timers copied, to send them with Enter, Ctrl+V, Enter without leaving the game"],
+  "Que la IA em digui les tres lliçons": ["Que la IA me diga las tres lecciones", "Have the AI give me the three lessons"],
+  "La IA llegeix aquest informe (morts, farm, visió, moments clau) i et diu les tres coses més importants a millorar d'aquesta partida. Normalment ho fa sola en acabar; si no hi ha sortit (la IA estava saturada o és una partida antiga), demana-les aquí.": ["La IA lee este informe (muertes, farm, visión, momentos clave) y te dice las tres cosas más importantes a mejorar de esta partida. Normalmente lo hace sola al acabar; si no ha salido (la IA estaba saturada o es una partida antigua), pídelas aquí.", "The AI reads this report (deaths, farm, vision, key moments) and tells you the three most important things to improve from this game. It usually does it by itself when the game ends; if it didn't (the AI was busy or it's an old game), ask here."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -1815,7 +1819,18 @@ ROWS.forEach(({label: lane, def: def2, team}, i) => {
   bind("s1", () => sel1.value); bind("s2", () => sel.value); bind("Zhonya", () => "Zhonya"); bind("R", () => "R");
 });
 
-function cancel(key){ delete timers[key]; render(); }
+function cancel(key){ delete timers[key]; render(); clipSoon(); }
+// in game, the enemy timers are kept on the clipboard as a chat line: Enter, Ctrl+V, Enter sends them, without leaving the game
+let clipTimer = 0, clipLast = "";
+function clipSoon(){
+  clearTimeout(clipTimer);
+  clipTimer = setTimeout(() => {
+    if (!game || !$("#cClip")?.checked) return;
+    const txt = chatTimers(); if (!txt || txt === clipLast) return;
+    clipLast = txt;
+    fetch("/api/clipboard", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: txt})}).catch(() => {});
+  }, 300);
+}
 // fromVoice: always (re)start; from a tap: a second tap cancels
 function startTimer(i, slot, spell, fromVoice){
   const key = `${i}-${slot}`;
@@ -1827,7 +1842,7 @@ function startTimer(i, slot, spell, fromVoice){
   const lag = fromVoice ? Math.min(Math.max(0, +store.get("voiceLag", 10) || 0), 30, total - 1) : 0;
   const left = total - lag;
   timers[key] = {end: Date.now() + left*1000, total, warned: left <= 35, spell, started: Date.now(), who: () => $(`#name${i}`).value.trim() || rowLabel(i)};
-  render();
+  render(); clipSoon();
 }
 $("#resetAll").addEventListener("click", () => { for (const k in timers) delete timers[k]; render(); });
 
@@ -2510,7 +2525,7 @@ function loadItems(){
 const CONTROL_WARD = 2055;
 const itemName = id => ITEMS[id]?.name || ("#" + id);
 const isFinal = id => !!ITEMS[id]?.final;
-for (const id of ["cRunes","cWave","cGold","cObj","cSpike","cWard","cScout","cFocus","cVis","cForm","cFront","cAiAuto"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
+for (const id of ["cClip","cRunes","cWave","cGold","cObj","cSpike","cWard","cScout","cFocus","cVis","cForm","cFront","cAiAuto"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.checked = v; el.addEventListener("change", () => store.set(id, el.checked)); }
 const parseMS = s => { const m = String(s || "").trim().match(/^(\d{1,2})(?::(\d{2}))?$/); return m ? (+m[1]) * 60 + (+(m[2] || 0)) : null; };
 for (const id of ["oDrag","oGrubs","oHerald","oBaron"]) { const el = $("#"+id), v = store.get(id, null); if (v !== null) el.value = v;
   el.addEventListener("change", () => { if (parseMS(el.value) == null) el.value = el.defaultValue; store.set(id, el.value); }); }
@@ -5199,7 +5214,7 @@ function reportTop(r){
     ${(v => v ? `<p class="rpverdict ${v.c}">${esc(v.t)}</p>` : "")(reportVerdict(r))}
     <div class="kv"><div><span>KDA</span><b>${r.kda.join(" / ")}</b></div><div><span>Participació</span><b>${dash(kpOf(r))}${kpOf(r) != null ? "%" : ""}</b></div><div><span>CS/min</span><b>${dash(r.cs_rate.total)}</b></div><div><span>Morts abans del 15</span><b class="${r.deaths15 >= 2 ? "bad" : ""}">${r.deaths15}</b></div>${lpCell(r)}</div>
   </section>
-  ${r.ai_review ? `<section class="card"><h2>Lliçons de la IA</h2><p class="ailes">${esc(r.ai_review)}</p></section>` : aiHasKey ? `<section class="card"><h2>Lliçons de la IA</h2><button class="b" type="button" id="aiRevBtn">Demanar les tres lliçons d'aquesta partida</button></section>` : ""}
+  ${r.ai_review ? `<section class="card"><h2>Lliçons de la IA</h2><p class="ailes">${esc(r.ai_review)}</p></section>` : aiHasKey ? `<section class="card"><h2>Lliçons de la IA</h2><p class="note">La IA llegeix aquest informe (morts, farm, visió, moments clau) i et diu les tres coses més importants a millorar d'aquesta partida. Normalment ho fa sola en acabar; si no hi ha sortit (la IA estava saturada o és una partida antiga), demana-les aquí.</p><button class="b" type="button" id="aiRevBtn">Que la IA em digui les tres lliçons</button></section>` : ""}
   ${reportBoard(r)}
   ${focusHtml(r)}
   <section class="card"><h2>Nota per apartats</h2>
@@ -5285,7 +5300,7 @@ setInterval(() => {
   for (const [key, t] of Object.entries(timers)) {
     const left = (t.end - Date.now())/1000;
     if (!t.warned && left <= 30) { t.warned = true; if (on("vTimer30")) { tone([660], .25); speak(`${NAMES[t.spell]} ${de(t.who())} en 30 segons.`); } }
-    if (left <= 0) { delete timers[key]; tone([660,990,1320], .35); if (on("vReady")) speak(`${NAMES[t.spell]} ${de(t.who())} disponible.`); }
+    if (left <= 0) { delete timers[key]; clipSoon(); tone([660,990,1320], .35); if (on("vReady")) speak(`${NAMES[t.spell]} ${de(t.who())} disponible.`); }
   }
   render();
 }, 250);
