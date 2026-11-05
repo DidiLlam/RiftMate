@@ -1,7 +1,7 @@
 {
- "version": "2.0.28",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.28.exe",
+ "version": "2.0.29",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.29.exe",
  "size": 8407552,
- "sha256": "b0c893466c458cf0ac450a17b267e1c3acd768b559c6bdf97c9fb3e286102f3d",
- "notes": "- Challenger: si no troba prou partides d'un campió a la teva posició (Diana al mig, Mel), també busca a Master i agafa altres jugadors d'aquestes mateixes partides que el portin\n- Llegeix les partides de cada jugador tan bon punt el troba, i para quan ja en té prou\n- Diu de quin nivell són les partides (Challenger, GM, Master)\n- L'anàlisi dels rivals torna a ser ràpida (llegeix 7 partides de cadascú en lloc de 12)"
+ "sha256": "f725ffa022b5ac1ef195f97385c690b111c4f5c4c480ca69b01377c222135424",
+ "notes": "- Onades: ja no repeteix el jungla rival tres cops per les tres larves\n- Si mors a la mateixa baralla, no et diu que empenyis perquè ha mort el jungla rival"
 }
