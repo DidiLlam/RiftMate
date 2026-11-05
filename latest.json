@@ -1,7 +1,7 @@
 {
- "version": "2.0.37",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.37.exe",
- "size": 8615424,
- "sha256": "5daa02cb9e08b134e207f4f4a60bc5304f0e560d80038806c1e4dcfdfc17262c",
- "notes": "- Xat: en partida, els temporitzadors dels rivals queden sempre copiats; per enviar-los, Enter, Ctrl+V i Enter, sense sortir del joc\n- Informe: el botó de les lliçons de la IA explica què fa"
+ "version": "2.0.38",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.38.exe",
+ "size": 8618496,
+ "sha256": "4ffb79663283ab480e7d6888099214c0e6aa590c1c1626c79c2edf545b54caf5",
+ "notes": "- Challenger: es tornen a llegir sols quan les partides guardades són d'una versió anterior (abans no passava i per això no es posaven les runes)\n- Si a un campió li falten partides (Diana al mig, Mel), també busca a Diamant I de Corea i EUW, i ho torna a provar cada dia"
 }
