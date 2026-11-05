@@ -69,6 +69,25 @@ type benchCache struct {
 	Seen    map[string]bool        `json:"seen"`    // match ids already read
 	Games   map[string][]benchGame `json:"games"`   // champion -> games
 	Mine    map[string][]benchGame `json:"mine"`    // champion -> the player's own games, measured the same way
+	Plat    map[string]string      `json:"plat"`    // puuid -> platform (kr, euw1...)
+}
+
+// the regional host of a platform, and of a match id ("KR_123" -> asia)
+func platRegion(c Config, plat string) string {
+	switch strings.ToLower(plat) {
+	case "kr", "jp1":
+		return "asia"
+	case "euw1", "eun1", "tr1", "ru", "me1":
+		return "europe"
+	case "na1", "br1", "la1", "la2":
+		return "americas"
+	case "":
+		return c.Region
+	}
+	return c.Region
+}
+func matchRegion(c Config, mid string) string {
+	return platRegion(c, strings.SplitN(mid, "_", 2)[0])
 }
 
 var (
@@ -95,8 +114,11 @@ func loadBench() benchCache {
 	if b.Seen == nil {
 		b.Seen = map[string]bool{}
 	}
-	if b.Ver < 3 { // 2.0.27: players chosen by recent play, more numbers per game: everything is read again
-		b = benchCache{Ver: 3, Players: map[string][]string{}, Scanned: map[string]bool{}}
+	if b.Ver < 4 { // 2.0.30: Korea too; everything but your own games is read again
+		b = benchCache{Ver: 4, Players: map[string][]string{}, Scanned: map[string]bool{}, Mine: b.Mine}
+	}
+	if b.Plat == nil {
+		b.Plat = map[string]string{}
 	}
 	if b.Mine == nil {
 		b.Mine = map[string][]benchGame{}
@@ -168,7 +190,8 @@ func champKeyOf(id string) int {
 }
 
 // one call, spaced and polite: waits while a game, the scouting or the season reading need the key
-func benchGet(c Config, platform bool, path string, out any) error {
+// benchGet: host is a platform (euw1, kr) or a region (europe, asia)
+func benchGet(c Config, host string, path string, out any) error {
 	for i := 0; i < 600 && (liveNow.Load() || time.Now().Unix()-selectAt.Load() < 20 || func() bool { scoutMu.Lock(); defer scoutMu.Unlock(); return scoutBusy }() ||
 		func() bool { seasonMu.Lock(); defer seasonMu.Unlock(); return seasonBusy }()); i++ {
 		time.Sleep(2 * time.Second)
@@ -176,15 +199,11 @@ func benchGet(c Config, platform bool, path string, out any) error {
 	if os.Getenv("LT_TEST_FAST") == "" {
 		// about half of the key's 100 calls every 2 minutes on the match host (shared with the season and the
 		// scouting); the ladder and mastery host is nearly free, so a bit faster there
-		if platform {
-			time.Sleep(1500 * time.Millisecond)
-		} else {
+		if host == c.Region {
 			time.Sleep(2500 * time.Millisecond)
+		} else {
+			time.Sleep(1300 * time.Millisecond)
 		}
-	}
-	host := c.Region
-	if platform {
-		host = platformHost(c)
 	}
 	err := riotGetHostQ(c, host, path, out, true)
 	for tries := 0; err != nil && err.Error() == "rate_limited" && tries < 5; tries++ {
@@ -260,7 +279,7 @@ func benchRun() {
 					continue
 				}
 				var m matchDTO
-				if err := benchGet(c, false, "/lol/match/v5/matches/"+x.id, &m); err != nil {
+				if err := benchGet(c, c.Region, "/lol/match/v5/matches/"+x.id, &m); err != nil {
 					continue
 				}
 				if g, ok := benchFromMatch(c, &m, x.id, sc.PUUID, ch, pos[ch], items); ok {
@@ -276,6 +295,7 @@ func benchRun() {
 	type entry struct {
 		PUUID string `json:"puuid"`
 		LP    int    `json:"leaguePoints"`
+		plat  string
 	}
 	type league struct {
 		Tier    string  `json:"tier"`
@@ -283,17 +303,22 @@ func benchRun() {
 	}
 	ladder := []entry{}
 	tierOf := map[string]string{}
-	for _, q := range []string{"challengerleagues", "grandmasterleagues", "masterleagues"} {
+	// Korea first (the strongest server), then yours; Master only after both Challenger and Grandmaster
+	home := platformHost(c)
+	order := [][2]string{{"kr", "challengerleagues"}, {"kr", "grandmasterleagues"}, {home, "challengerleagues"}, {home, "grandmasterleagues"}, {"kr", "masterleagues"}, {home, "masterleagues"}}
+	for _, o := range order {
 		var l league
-		if err := benchGet(c, true, "/lol/league/v4/"+q+"/by-queue/RANKED_SOLO_5x5", &l); err != nil {
-			logf("Challenger: no he pogut llegir %s: %v", q, err)
+		if err := benchGet(c, o[0], "/lol/league/v4/"+o[1]+"/by-queue/RANKED_SOLO_5x5", &l); err != nil {
+			logf("Challenger: no he pogut llegir %s de %s: %v", o[1], o[0], err)
 			continue
 		}
 		sort.Slice(l.Entries, func(i, j int) bool { return l.Entries[i].LP > l.Entries[j].LP })
 		for _, e := range l.Entries {
 			if e.PUUID != "" {
+				e.plat = o[0]
 				ladder = append(ladder, e)
-				tierOf[e.PUUID] = l.Tier
+				tierOf[e.PUUID] = strings.ToUpper(o[0]) + ":" + l.Tier
+				b.Plat[e.PUUID] = o[0]
 			}
 		}
 	}
@@ -328,7 +353,7 @@ func benchRun() {
 				}
 				b.Seen[key] = true
 				if g, ok := benchFromMatch(c, m, mid, p.PUUID, ch, pos[ch], items); ok {
-					g.Tier, g.Player = "LOBBY", p.PUUID[:min(12, len(p.PUUID))]
+					g.Tier, g.Player = strings.ToUpper(strings.SplitN(mid, "_", 2)[0])+":LOBBY", p.PUUID[:min(12, len(p.PUUID))]
 					b.Games[ch] = append(b.Games[ch], g)
 					benchSet("games", count(), goal)
 					saveBench(b)
@@ -339,7 +364,7 @@ func benchRun() {
 	// a player's latest Solo/Duo games with that champion (timeline included); gives up on him soon if he isn't playing it
 	readPlayer := func(ch, pu string) {
 		var ids []string
-		if err := benchGet(c, false, "/lol/match/v5/matches/by-puuid/"+pu+"/ids?queue=420&start=0&count=20", &ids); err != nil {
+		if err := benchGet(c, platRegion(c, b.Plat[pu]), "/lol/match/v5/matches/by-puuid/"+pu+"/ids?queue=420&start=0&count=20", &ids); err != nil {
 			return
 		}
 		got, miss := 0, 0
@@ -352,7 +377,7 @@ func benchRun() {
 			}
 			b.Seen[mid] = true
 			var m matchDTO
-			if err := benchGet(c, false, "/lol/match/v5/matches/"+mid, &m); err != nil {
+			if err := benchGet(c, matchRegion(c, mid), "/lol/match/v5/matches/"+mid, &m); err != nil {
 				continue
 			}
 			if g, ok := benchFromMatch(c, &m, mid, pu, ch, pos[ch], items); ok {
@@ -391,7 +416,7 @@ func benchRun() {
 			Points     int   `json:"championPoints"`
 			LastPlay   int64 `json:"lastPlayTime"` // ms
 		}
-		if err := benchGet(c, true, "/lol/champion-mastery/v4/champion-masteries/by-puuid/"+e.PUUID+"/top?count=10", &top); err != nil {
+		if err := benchGet(c, e.plat, "/lol/champion-mastery/v4/champion-masteries/by-puuid/"+e.PUUID+"/top?count=10", &top); err != nil {
 			continue
 		}
 		b.Scanned[e.PUUID] = true
@@ -462,7 +487,7 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 		}
 	}
 	var tl timelineDTO
-	if err := benchGet(c, false, "/lol/match/v5/matches/"+mid+"/timeline", &tl); err != nil {
+	if err := benchGet(c, matchRegion(c, mid), "/lol/match/v5/matches/"+mid+"/timeline", &tl); err != nil {
 		return g, true // the game counts without the timeline numbers
 	}
 	key, okey := strconv.Itoa(me), strconv.Itoa(opp)

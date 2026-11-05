@@ -439,6 +439,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de preguntes per minut i per dia que en una partida no s'arriba a tocar.</p>
     <div class="keyrow"><input type="password" id="aiKey" placeholder="Clau de Google AI Studio" autocomplete="off"><button class="b" id="aiSave" type="button">Desar</button><button class="b" id="aiTest" type="button">Provar</button></div>
     <p class="note" id="aiState"></p>
+    <p class="note">Respostes ràpides, sense IA (funcionen també sense clau): "coach, quan surt el drac?" (o el baró, el herald, les larves), "coach, quant li falta al flash de Zed?", "coach, qui no té flash?", "coach, on és el jungla?", "coach, com anem?", "coach, repeteix", "coach, calla" i "coach, parla".</p>
     <div class="keyrow"><input type="text" id="aiTyped" placeholder="O escriu-hi una pregunta"><button class="b" id="aiSend" type="button">Preguntar</button></div>
   </section>
   <section class="card"><h2>Mapa de l'informe (clau de Riot)</h2>
@@ -1231,6 +1232,23 @@ const I18N = {
   "Tornar-ho a llegir": ["Volver a leerlo", "Read again"], "Encara no hi ha partides teves per comparar.": ["Todavía no hay partidas tuyas para comparar.", "No games of yours to compare yet."],
   "Llegint les teves partides": ["Leyendo tus partidas", "Reading your games"], "Buscant jugadors Challenger i Grandmaster que juguin ara els teus campions": ["Buscando jugadores Challenger y Grandmaster que jueguen ahora tus campeones", "Looking for Challenger and Grandmaster players currently playing your champions"],
   "Llegint les seves partides": ["Leyendo sus partidas", "Reading their games"],
+  "{x} surt d'aquí a {y}, al minut {z}.": ["{x} sale dentro de {y}, en el minuto {z}.", "{x} spawns in {y}, at {z}."],
+  "Les larves surten d'aquí a {y}, al minut {z}.": ["Las larvas salen dentro de {y}, en el minuto {z}.", "The grubs spawn in {y}, at {z}."],
+  "{x} ja hi és.": ["{x} ya está.", "{x} is up."], "Les larves ja hi són.": ["Las larvas ya están.", "The grubs are up."],
+  "{x} ja no surt més en aquesta partida.": ["{x} ya no sale más en esta partida.", "{x} won't spawn again this game."], "Les larves ja no surten més en aquesta partida.": ["Las larvas ya no salen más en esta partida.", "The grubs won't spawn again this game."],
+  "El drac": ["El dragón", "Dragon"], "El drac ancià": ["El dragón ancestral", "Elder dragon"], "El baró": ["El barón", "Baron"], "El herald": ["El heraldo", "Herald"],
+  "{n} segons": ["{n} segundos", "{n} seconds"], "{n} minut i {m} segons": ["{n} minuto y {m} segundos", "{n} minute and {m} seconds"], "{n} minuts i {m} segons": ["{n} minutos y {m} segundos", "{n} minutes and {m} seconds"],
+  "Sense {x}: {y}.": ["Sin {x}: {y}.", "No {x}: {y}."], "Tots els rivals tenen el {x}, que jo sàpiga.": ["Todos los rivales tienen el {x}, que yo sepa.", "All enemies have {x}, as far as I know."],
+  "El {x} {de:y} torna en {z}.": ["El {x} de {y} vuelve en {z}.", "{y}'s {x} is back in {z}."],
+  "No tinc el {x} {de:y} comptant: si no l'has marcat, el deu tenir.": ["No tengo el {x} de {y} contando: si no lo has marcado, debe de tenerlo.", "I'm not timing {y}'s {x}: if you didn't call it, they have it."],
+  "{x} es va veure {w} fa {n} segons ({y}).": ["{x} se vio {w} hace {n} segundos ({y}).", "{x} was seen {w} {n} seconds ago ({y})."], "Des de llavors, no se sap.": ["Desde entonces, no se sabe.", "Nothing since then."],
+  "{x} és mort: torna en {n} segons.": ["{x} está muerto: vuelve en {n} segundos.", "{x} is dead: back in {n} seconds."],
+  "No sé on és {x}: encara no ha aparegut en cap kill ni objectiu.": ["No sé dónde está {x}: todavía no ha aparecido en ninguna kill ni objetivo.", "I don't know where {x} is: he hasn't shown up in any kill or objective yet."],
+  "Kills {n} a {m}.": ["Kills {n} a {m}.", "Kills {n} to {m}."], "Dracs {n} a {m}.": ["Dragones {n} a {m}.", "Dragons {n} to {m}."], "En objectes aneu igualats.": ["En objetos vais igualados.", "Items are even."],
+  "En objectes aneu {n} d'or per davant.": ["En objetos vais {n} de oro por delante.", "You're {n} gold ahead in items."], "En objectes aneu {n} d'or per darrere.": ["En objetos vais {n} de oro por detrás.", "You're {n} gold behind in items."],
+  "D'acord, callo tres minuts. Els encanteris rivals te'ls continuo dient.": ["Vale, me callo tres minutos. Los hechizos rivales te los sigo diciendo.", "OK, quiet for three minutes. I'll still tell you the enemy spells."],
+  "Torno a parlar.": ["Vuelvo a hablar.", "I'm back."], "Encara no t'he dit res.": ["Todavía no te he dicho nada.", "I haven't said anything yet."], "el jungla rival": ["el jungla rival", "the enemy jungler"],
+  "Respostes ràpides, sense IA (funcionen també sense clau): \"coach, quan surt el drac?\" (o el baró, el herald, les larves), \"coach, quant li falta al flash de Zed?\", \"coach, qui no té flash?\", \"coach, on és el jungla?\", \"coach, com anem?\", \"coach, repeteix\", \"coach, calla\" i \"coach, parla\".": ["Respuestas rápidas, sin IA (funcionan también sin clave): \"coach, ¿cuándo sale el dragón?\" (o el barón, el heraldo, las larvas), \"coach, ¿cuánto le falta al flash de Zed?\", \"coach, ¿quién no tiene flash?\", \"coach, ¿dónde está el jungla?\", \"coach, ¿cómo vamos?\", \"coach, repite\", \"coach, calla\" y \"coach, habla\".", "Quick answers, no AI (they work without a key too): \"coach, when is dragon?\" (or baron, herald, grubs), \"coach, how long for Zed's flash?\", \"coach, who has no flash?\", \"coach, where is the jungler?\", \"coach, how are we doing?\", \"coach, repeat\", \"coach, shut up\" and \"coach, talk\"."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -1853,10 +1871,17 @@ function champDistance(words, used, name){
   }
   return best;
 }
+// a row's champion in English too: a client in Spanish says "Maestro Yi", you may say "Master Yi"
+function rowEnglish(i){
+  const p = game && lastData && game.ids[i] && playerBy(lastData, game.ids[i]);
+  const id = ((p?.rawChampionName || "").match(/_([A-Za-z]+)$/) || [])[1];
+  return id ? CHAMPS.find(c => champId(c) === id) : null;
+}
 function findEnemy(words, used){
   let bi = -1, bd = Infinity;
   for (let i = 0; i < NROWS; i++) { const n = $(`#name${i}`).value.trim(); if (!n) continue;
-    const d = champDistance(words, used, CHAMPS.find(c => norm(c) === norm(n)) || n);
+    const names = [CHAMPS.find(c => norm(c) === norm(n)) || n, rowEnglish(i)].filter(Boolean);
+    const d = Math.min(...names.map(x => champDistance(words, used, x)));
     if (d < bd) { bd = d; bi = i; } }
   if (bi >= 0) return bi;
   for (let i = 0; i < 5; i++) if (words.some(w => w !== used && LANE_WORDS[i].includes(w))) return i;
@@ -1994,7 +2019,7 @@ async function startNative(){
     const st = await (await fetch("/api/voice", {cache: "no-store", headers: {"X-RiftMate": "2"}})).json();
     voiceSince = st.lines.length ? st.lines[st.lines.length - 1].seq : voiceSince;
     if (!st.supported) return fallbackWeb("aquest sistema no té veu de Windows");
-    const champs = [...Array(NROWS).keys()].map(i => $(`#name${i}`).value.trim()).filter(Boolean).map(n => CHAMPS.find(c => norm(c) === norm(n)) || n);
+    const champs = [...new Set([...Array(NROWS).keys()].flatMap(i => { const n = $(`#name${i}`).value.trim(); return n ? [CHAMPS.find(c => norm(c) === norm(n)) || n, rowEnglish(i)] : []; }).filter(Boolean))];
     const r = await (await fetch("/api/voice/start", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({champs, lanes: !game})})).json();
     if (r.error) return fallbackWeb(r.error);
   } catch (e) { return fallbackWeb("no hi ha connexió amb el programa"); }
@@ -2207,7 +2232,10 @@ for (const id of ["cRem","cData","cMin","cMax","cGuide"]) { const el = $("#"+id)
   if (v !== null) { if (el.type === "checkbox") el.checked = v; else el.value = v; }
   el.addEventListener("change", () => store.set(id, el.type === "checkbox" ? el.checked : el.value)); }
 const coachPhase = t => t < 840 ? "linia" : t < 1500 ? "mitja" : "final";
-function coachSay(text){ $("#coachLast").textContent = "Coach: " + text; plog("Coach: " + text); speak(text); }
+function coachSay(text){
+  if (Date.now() < coachMuteUntil) { plog("Coach (callat): " + text); return; }
+  coachLastText = text; $("#coachLast").textContent = "Coach: " + text; plog("Coach: " + text); speak(text);
+}
 function nextReminder(){ const a = Math.max(30, +$("#cMin").value || 70), b = Math.max(a, +$("#cMax").value || 110); return a + Math.random() * (b - a); }
 function coachStart(data){
   const t = data.gameData.gameTime;
@@ -2650,8 +2678,62 @@ function aiShow(q, a, warn){
   if (a != null) el.innerHTML += `${q ? "<br>" : ""}<span class="who">Coach:</span> <span data-noi18n>${esc(a)}</span>`;
   log.prepend(el); while (log.children.length > 6) log.lastChild.remove();
 }
+// ---------- Quick answers in game, without the AI: instant, and they work without the Gemini key ----------
+// "coach, quan surt el drac?", "coach, quant li falta al flash de Zed?", "coach, qui no té flash?", "coach, on és el jungla?",
+// "coach, com anem?", "coach, repeteix", "coach, calla" / "coach, parla"
+let coachMuteUntil = 0, coachLastText = "";
+const durTxt = sec => sec < 60 ? `${sec} segons` : `${Math.floor(sec / 60)} minut${sec >= 120 ? "s" : ""} i ${sec % 60} segons`;
+function localAnswer(q){
+  const n = norm(q), words = n.split(" "), has = re => re.test(n);
+  if (has(/^(calla|callat|silenci|silencio|shut up|para de parlar|no parlis)\b/)) { coachMuteUntil = Date.now() + 180000; return "D'acord, callo tres minuts. Els encanteris rivals te'ls continuo dient."; }
+  if (has(/^(parla|habla|talk|torna a parlar|vuelve a hablar|ja pots parlar)\b/)) { coachMuteUntil = 0; return "Torno a parlar."; }
+  if (has(/^(repeteix|repite|repeat|que has dit|que has dicho|com\b|como\b)$/) || has(/^(repeteix|repite|repeat)\b/)) return coachLastText || "Encara no t'he dit res.";
+  const d = lastData, t = d?.gameData?.gameTime; if (!d || !game || t == null) return null;
+  const me = playerBy(d, game.me);
+  // objectives
+  const OBJ = [["drag", /\b(drac|drag|dragon|drake)\b/, "El drac"], ["baron", /\b(baro|baron|nashor)\b/, "El baró"], ["herald", /\b(herald|heraldo)\b/, "El herald"], ["grubs", /\b(larves|larvas|grubs|vacios|cucs)\b/, "Les larves"]];
+  const when = has(/\b(quan|cuando|when|falta|queda|surt|sale|spawn|temps|tiempo|minut|minuto|quant|cuanto)\b/);
+  for (const [k, re, name] of OBJ) if (when && has(re) && help?.obj) {
+    const at = help.obj[k], nm = k === "drag" && help.elderNext ? "El drac ancià" : name, pl = k === "grubs";
+    if (!isFinite(at)) return `${nm} ja no ${pl ? "surten" : "surt"} més en aquesta partida.`;
+    if (t >= at) return `${nm} ja ${pl ? "hi són" : "hi és"}.`;
+    const left = Math.round(at - t);
+    return `${nm} ${pl ? "surten" : "surt"} d'aquí a ${durTxt(left)}, al minut ${fmtClock(at)}.`;
+  }
+  // who has no flash (or another spell) now
+  const sp = findSpell(words);
+  if (sp && has(/\b(qui|quien|who|quins|cuales|algu|alguien)\b/)) {
+    const list = Object.values(timers).filter(x => x.spell === sp.sp && x.end > Date.now()).map(x => `${x.who()} (${fmtClock(Math.ceil((x.end - Date.now()) / 1000))})`);
+    return list.length ? `Sense ${NAMES[sp.sp]}: ${list.join(", ")}.` : `Tots els rivals tenen el ${NAMES[sp.sp]}, que jo sàpiga.`;
+  }
+  // how long for a spell of one rival
+  if (sp && has(/\b(quant|cuanto|falta|queda|torna|vuelve|te|tiene|has|ja|ya|when|quan|cuando|how|long)\b/)) {
+    const i = findEnemy(words, sp.w); if (i < 0) return null;
+    const who = $(`#name${i}`).value.trim() || rowLabel(i);
+    const x = Object.values(timers).find(y => y.spell === sp.sp && y.who() === who && y.end > Date.now());
+    return x ? `El ${NAMES[sp.sp]} ${de(who)} torna en ${durTxt(Math.ceil((x.end - Date.now()) / 1000))}.` : `No tinc el ${NAMES[sp.sp]} ${de(who)} comptant: si no l'has marcat, el deu tenir.`;
+  }
+  // the enemy jungler
+  if (has(/\b(jungla|jungler|jungle|jungla rival)\b/) && has(/\b(on|donde|where|vist|visto)\b/)) {
+    const w = coach?.wave, jg = d.allPlayers.find(p => me && p.team !== me.team && (p.position || "").toUpperCase() === "JUNGLE"), name = jg?.championName || "el jungla rival";
+    if (jg?.isDead) return `${name} és mort: torna en ${Math.ceil(jg.respawnTimer || 0)} segons.`;
+    if (w?.lastSeen) { const ago = Math.round(t - w.lastSeen.t); return `${name} es va veure ${w.lastSeen.where} fa ${ago} segons (${w.lastSeen.why}).${ago > 60 ? " Des de llavors, no se sap." : ""}`; }
+    return `No sé on és ${name}: encara no ha aparegut en cap kill ni objectiu.`;
+  }
+  // the score
+  if (has(/\b(com anem|como vamos|como va|com va|how are we|marcador|qui guanya|quien gana)\b/) && me) {
+    const mine = me.team, other = mine === "ORDER" ? "CHAOS" : "ORDER", ev = d.events?.Events || [], teamOf = x => playerNamed(d, x)?.team;
+    let km = 0, ko = 0; for (const e of ev) if (e.EventName === "ChampionKill") { const tm = teamOf(e.KillerName); if (tm === mine) km++; else if (tm === other) ko++; }
+    const val = tm => d.allPlayers.filter(p => p.team === tm).reduce((a, p) => a + (p.items || []).reduce((b, x) => b + (ITEMS[x.itemID]?.total || 0) * (x.count || 1), 0), 0);
+    const diff = val(mine) - val(other), dr = help?.drakes || {};
+    return `Kills ${km} a ${ko}. Dracs ${dr[mine] ?? 0} a ${dr[other] ?? 0}. En objectes ${Math.abs(diff) < 500 ? "aneu igualats" : diff > 0 ? `aneu ${Math.round(diff / 100) * 100} d'or per davant` : `aneu ${Math.round(-diff / 100) * 100} d'or per darrere`}.`;
+  }
+  return null;
+}
 async function askAI(q){
   q = (q || "").trim(); if (!q) return;
+  const local = localAnswer(q);
+  if (local) { plog(`Coach (sense IA): "${q}" -> ${local}`); aiShow(q, local); sayCancel(); speak(local); $("#status").textContent = "Coach: " + local; return; }
   if (!aiHasKey) { aiShow(q, null); speak("Per parlar amb la IA, posa la clau de Gemini als ajustos."); return; }
   if (aiBusy) return;
   aiBusy = true; $("#status").textContent = "Pensant…"; $("#status").className = "note";
@@ -3337,7 +3419,7 @@ function waveTick(data, t, me, opp){
   let seen = null, said = null;
   for (const ev of data.events?.Events || []) {
     const id = ev.EventID ?? -1; if (id <= w.seenEv) continue; w.seenEv = id;
-    if (!mine || t > 1200) continue;
+    if (!mine) continue;
     const enemyTook = champOf(ev.KillerName) && champOf(ev.KillerName).team !== me.team;
     if (ev.EventName === "ChampionKill") {
       const v = champOf(ev.VictimName);
@@ -3352,6 +3434,8 @@ function waveTick(data, t, me, opp){
     } else if (enemyTook && ev.EventName === "DragonKill") seen = {lane: "bot", why: "han fet el drac"};
     else if (enemyTook && (ev.EventName === "HordeKill" || ev.EventName === "HeraldKill")) seen = {lane: "top", why: ev.EventName === "HordeKill" ? "han fet les larves" : "han fet el herald"};
   }
+  if (seen && mine) w.lastSeen = {t, why: seen.why, where: {top: "a dalt", bot: "a baix", mid: "al mig"}[seen.lane]};   // for "coach, on és el jungla?"
+  if (t > 1200) { said = null; seen = null; }
   if (t >= 840) waveLate(data, t, me, w);
   if (!mine || t < 150 || t > 1200 || me.isDead) return;
   const name = jg?.championName || "El jungla rival";
@@ -4363,8 +4447,9 @@ function benchGaps(c, me){
   return {gaps: out.slice(0, 3), good: good.slice(0, 3), choices: ch};
 }
 function benchTiers(c){
-  const t = c.tiers || {}, names = [["CHALLENGER", "Challenger"], ["GRANDMASTER", "GM"], ["MASTER", "Master"], ["LOBBY", "altres de les seves partides"]];
-  const parts = names.filter(([k]) => t[k]).map(([k, n]) => `${t[k]} ${n}`);
+  const T = {CHALLENGER: "Challenger", GRANDMASTER: "GM", MASTER: "Master", LOBBY: "d'altres jugadors"}, R = {KR: "de Corea", EUW1: "d'EUW", EUN1: "d'EUNE", NA1: "de NA"};
+  const order = k => { const [r, t] = k.includes(":") ? k.split(":") : ["", k]; return (r === "KR" ? 0 : 10) + Object.keys(T).indexOf(t); };
+  const parts = Object.entries(c.tiers || {}).sort((a, b) => order(a[0]) - order(b[0])).map(([k, n]) => { const [r, t] = k.includes(":") ? k.split(":") : ["", k]; return `${n} ${T[t] || t}${r ? " " + (R[r] || r) : ""}`; });
   return parts.length ? parts.join(", ") : "Challenger/GM";
 }
 const BENCH_POS = {TOP: "al top", JUNGLE: "a la jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"};
@@ -4386,10 +4471,10 @@ function renderBench(){
     }).join("");
     const icons = ids => (ids || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
     const [s1, s2] = (c.spells || "").split("+");
-    const few = c.games < 10 ? `<p class="note warn">Només ${c.games} partides: ara mateix hi ha pocs jugadors de Master en amunt a EUW jugant ${esc(c.name)} ${BENCH_POS[c.pos] || ""}. Les xifres són orientatives.</p>` : "";
+    const few = c.games < 10 ? `<p class="note warn">Només ${c.games} partides: ara mateix hi ha pocs jugadors de Master en amunt a Corea i EUW jugant ${esc(c.name)} ${BENCH_POS[c.pos] || ""}. Les xifres són orientatives.</p>` : "";
     const gaps = gp.gaps.length || gp.choices.length ? `<div class="bgap"><b>On et falta més</b><ol>${gp.gaps.map(g => `<li>${esc(g.text)}${g.tip ? ` <span class="note">${esc(g.tip)}</span>` : ""}</li>`).join("")}${gp.choices.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
       ${gp.good.length ? `<p class="note">Ja estàs al seu nivell en: ${gp.good.map(x => esc(x.toLowerCase())).join(", ")}.</p>` : ""}</div>` : (me ? "" : `<p class="note">Encara no hi ha partides teves per comparar.</p>`);
-    return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides de ${c.players} jugadors (${benchTiers(c)}) · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides, ${me.wr}%` : ""}</span></div>
+    return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides (${benchTiers(c)}) de ${c.players} jugadors · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides, ${me.wr}%` : ""}</span></div>
       ${few}${gaps}
       <div class="tbl"><table class="bench"><tr><th></th><th>Tu</th><th>Challenger</th></tr>${rows}</table></div>
       <div class="bhow"><span>Runes: <img class="sbrn" data-rune="${c.ks}" alt=""><img class="sbrn" data-rune="${c.sub}" alt=""> <small class="note">${c.share?.ks ?? 0}%</small></span>
@@ -4397,7 +4482,7 @@ function renderBench(){
         ${c.build?.length ? `<span>Build d'ells: ${icons(c.build)} <small class="note">${c.share?.build ?? 0}%</small></span>` : ""}
         ${me?.build?.length ? `<span>La teva: ${icons(me.build)}</span>` : ""}
         ${c.skills ? `<span>Primer maximitzen la <b>${esc(c.skills)}</b> <small class="note">${c.share?.skills ?? 0}%</small></span>` : ""}</div></div>`;
-  }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo, ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger, Grandmaster i, si cal, Master que juguen ara aquests campions, a la mateixa posició que tu (i d'altres jugadors d'aquestes mateixes partides amb el campió). "Tu" són les teves últimes partides rankejades amb cada campió, mesurades igual que les seves. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
+  }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo de Corea i ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger, Grandmaster i, si cal, Master que juguen ara aquests campions, a la mateixa posició que tu (i d'altres jugadors d'aquestes mateixes partides amb el campió). "Tu" són les teves últimes partides rankejades amb cada campió, mesurades igual que les seves. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
     <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Tornar-ho a llegir</button></div>`;
   $("#benchRun")?.addEventListener("click", () => loadBench(true));
   loadRunes(); fillRunes(); i18nAll();
