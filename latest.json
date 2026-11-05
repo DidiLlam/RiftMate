@@ -1,7 +1,7 @@
 {
- "version": "2.0.40",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.40.exe",
+ "version": "2.0.41",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.41.exe",
  "size": 8627712,
- "sha256": "0f81d7ac322e7740a8700f71fe431f879ec36731ec16a8caf3fef28c3a71a76e",
- "notes": "- LP: si tanques o actualitzes l'app just després d'una partida, ara no es perden (abans per això faltaven alguns +20)\n- LP: espera Riot fins a 20 minuts i, si una partida no en té, els calcula amb la partida anterior\n- Avui: els LP del dia es calculen amb el teu rang actual i s'actualitzen sols als 2, 5 i 10 minuts d'acabar\n- Objectiu: les partides que et falten es calculen amb el teu % de les últimes 20 partides"
+ "sha256": "a02b1ea47a543965fa0cedb22f5ecb303e739473b62883a03a1d5f15e738fd76",
+ "notes": "- Objectiu: només els LP que falten"
 }
