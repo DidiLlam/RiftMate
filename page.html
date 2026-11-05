@@ -81,7 +81,8 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom b{display:block}.kmom.bad b{color:var(--loss)}.kmom.good b{color:var(--good)}
 .trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}#trainChamp{flex:1 1 160px;min-width:140px}
 .poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
-.rbgoal{flex-basis:100%;font-size:.85rem;color:var(--muted);margin-top:4px}
+.rbgoal{flex-basis:100%;font-size:.88rem;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center}
+.rbstep{display:inline-flex;align-items:center;gap:8px}.rankbadge img.rbemb{width:34px;height:34px}
 .csban.goal{font-weight:600}.csban.bad{color:var(--loss)}
 .csban{margin:0 0 8px;font-size:.92rem}.csban .good b{color:var(--good)}.csban .bad b{color:var(--loss)}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px 24px}.pchart svg{width:100%;height:auto;display:block}
@@ -1343,6 +1344,9 @@ const I18N = {
   "Diumenge": ["Domingo", "Sunday"], "Dilluns": ["Lunes", "Monday"], "Dimarts": ["Martes", "Tuesday"], "Dimecres": ["Miércoles", "Wednesday"], "Dijous": ["Jueves", "Thursday"], "Divendres": ["Viernes", "Friday"], "Dissabte": ["Sábado", "Saturday"],
   "Encara no hi ha prou partides d'aquesta temporada.": ["Todavía no hay suficientes partidas de esta temporada.", "Not enough games this season yet."],
   "Pedaç nou: han tocat {x}. {y}.": ["Parche nuevo: han tocado a {x}. {y}.", "New patch: {x} was changed. {y}."],
+  "{x}: et falten {n} LP · {y}, o unes {m} partides al teu {k}%": ["{x}: te faltan {n} LP · {y}, o unas {m} partidas a tu {k}%", "{x}: {n} LP to go · {y}, or about {m} games at your {k}%"],
+  "{x}: et falten {n} LP · {y}": ["{x}: te faltan {n} LP · {y}", "{x}: {n} LP to go · {y}"], "et falten {n} LP · {y}, o unes {m} partides al teu {k}%": ["te faltan {n} LP · {y}, o unas {m} partidas a tu {k}%", "{n} LP to go · {y}, or about {m} games at your {k}%"], "et falten {n} LP · {y}": ["te faltan {n} LP · {y}", "{n} LP to go · {y}"],
+  "Guanyes {n} LP i en perds {m} de mitjana.": ["Ganas {n} LP y pierdes {m} de media.", "You win {n} LP and lose {m} on average."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -3216,7 +3220,7 @@ async function loadRank(force){
   { const so = qs.find(q => q.queue === "RANKED_SOLO_5x5"); if (so) { myRankAbs = absRank(so.tier, so.rank, so.lp); mySolo = so; } }
   badge.hidden = false;
   badge.innerHTML = `${emblemImg(solo.tier, "")}<div class="rbt"><b data-noi18n>${tierTxt(solo)}</b><span>${solo.lp} LP · ${queueTxt(solo.queue)}</span></div>
-    <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${esc(g.text)}</div>` : ""; })()}`;
+    <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${g.steps.map(x => `<span class="rbstep">${emblemImg(x.tier, "rbemb")}<span><b data-noi18n>${esc(x.name)}</b> ${esc(x.text.slice(x.name.length + 2))}</span></span>`).join("")}<span class="note">Guanyes ${g.gain} LP i en perds ${g.lose} de mitjana.</span></div>` : ""; })()}`;
   { const h = $("#rankBadgeH"); if (h) { h.innerHTML = badge.innerHTML; h.hidden = false; } }
 }
 loadRank(false);
@@ -3865,16 +3869,19 @@ let mySolo = null;
 const TIER_ORDER = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER"];
 function lpGoal(){
   const q = mySolo; if (!q) return null;
-  const ti = TIER_ORDER.indexOf(q.tier); if (ti < 0 || ti >= 7) return null;
-  const div = {IV: 0, III: 1, II: 2, I: 3}[q.rank] ?? 0, need = (3 - div) * 100 + (100 - q.lp), next = TIER_ORDER[ti + 1];
+  const ti = TIER_ORDER.indexOf(q.tier); if (ti < 0 || ti >= 7) return null;   // Master and above: no divisions
+  const div = {IV: 0, III: 1, II: 2, I: 3}[q.rank] ?? 0;
   const d = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && r.lp.delta != null).slice(0, 20).map(r => r.lp.delta);
   const win = d.filter(x => x > 0), loss = d.filter(x => x < 0);
   const gain = win.length >= 3 ? win.reduce((a, b) => a + b, 0) / win.length : 25, lose = loss.length >= 3 ? -loss.reduce((a, b) => a + b, 0) / loss.length : 22;
-  const wr = (q.wr || 50) / 100, per = wr * gain - (1 - wr) * lose, straight = Math.ceil(need / gain);
-  const games = per > 0.5 ? Math.ceil(need / per) : null;
-  const name = tierTxt({tier: next, rank: "IV"});
-  return {need, next, name, gain: Math.round(gain), lose: Math.round(lose), straight, games,
-    text: `${name}: et falten ${need} LP · ${straight === 1 ? "1 victòria" : `${straight} victòries seguides`}${games ? `, o unes ${games} partides al teu ${Math.round(wr * 100)}%` : ""} (guanyes ${Math.round(gain)} i perds ${Math.round(lose)} de mitjana)`};
+  const wr = (q.wr || 50) / 100, per = wr * gain - (1 - wr) * lose;
+  const plan = (need, e) => { const straight = Math.ceil(need / gain), games = per > 0.5 ? Math.ceil(need / per) : null, name = tierTxt(e);
+    return {need, tier: e.tier, name, straight, games, text: `${name}: et falten ${need} LP · ${straight === 1 ? "1 victòria" : `${straight} victòries seguides`}${games && games > straight && games <= 60 ? `, o unes ${games} partides al teu ${Math.round(wr * 100)}%` : ""}`}; };
+  // the next division (Platinum 1 -> Emerald 4, Emerald 4 -> Emerald 3...), and the next league when it isn't that same step
+  const nextDiv = div === 3 ? {tier: TIER_ORDER[ti + 1], rank: ti + 1 >= 7 ? "I" : "IV"} : {tier: q.tier, rank: ["IV", "III", "II", "I"][div + 1]};
+  const steps = [plan(100 - q.lp, nextDiv)];
+  if (div < 3) steps.push(plan((3 - div) * 100 + (100 - q.lp), {tier: TIER_ORDER[ti + 1], rank: ti + 1 >= 7 ? "I" : "IV"}));
+  return {steps, gain: Math.round(gain), lose: Math.round(lose), need: steps[steps.length - 1].need, name: steps[steps.length - 1].name, text: steps.map(x => x.text).join(" · ")};
 }
 let myRankAbs = null, scoutTimer = null, scoutSaid = false, lastScout = null;
 const TIER_IDX = {IRON: 0, BRONZE: 1, SILVER: 2, GOLD: 3, PLATINUM: 4, EMERALD: 5, DIAMOND: 6, MASTER: 7, GRANDMASTER: 7, CHALLENGER: 7};
@@ -4469,10 +4476,11 @@ function csExtra(cs){
   const vs = cs.their_team.map(p => [p.name, opps[p.name] || Object.entries(opps).find(([k]) => norm(k) === norm(p.name))?.[1]]).filter(([, r]) => r && r.w + r.l >= 2);
   const g = lpGoal(), me = cs.my_team.find(p => p.me);
   let goal = "";
-  if (g && g.need <= 40) {
+  const close = g?.steps.find(x => x.need <= 40 && x.tier !== mySolo?.tier) || (g?.steps[0]?.need <= 25 ? g.steps[0] : null);
+  if (g && close) {
     const solo = seasonData?.queues?.RANKED_SOLO_5x5?.champions || [], best = solo.filter(c => c.games >= 8).sort((a, b) => b.wr - a.wr)[0];
     const mine = me?.name && solo.find(c => norm(c.name) === norm(me.name) || norm(c.champ) === norm(me.champ || ""));
-    goal = `<p class="csban goal">Estàs a ${g.need} LP de ${esc(g.name)}${best ? `: el teu campió més segur és <b data-noi18n>${esc(best.name)}</b> (${best.wr}% en ${best.games} partides)` : ""}.</p>`;
+    goal = `<p class="csban goal">Estàs a ${close.need} LP de ${esc(close.name)}${best ? `: el teu campió més segur és <b data-noi18n>${esc(best.name)}</b> (${best.wr}% en ${best.games} partides)` : ""}.</p>`;
     if (me?.locked && mine && mine.games >= 5 && mine.wr < 40) goal += `<p class="csban bad">Amb ${esc(mine.name)} vas ${mine.wins}V – ${mine.losses}D aquesta temporada. Tan a prop de pujar, si no et ve de gust, valora el dodge: costa menys LP que una derrota.</p>`;
   }
   return goal + (ban.length && !cs.their_team.length ? `<p class="csban">Ban suggerit: ${ban.map(([n, r]) => fmt(n, r)).join(" · ")} <span class="note">(els rivals de línia que més et guanyen aquesta temporada)</span></p>` : "")
