@@ -439,7 +439,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de preguntes per minut i per dia que en una partida no s'arriba a tocar.</p>
     <div class="keyrow"><input type="password" id="aiKey" placeholder="Clau de Google AI Studio" autocomplete="off"><button class="b" id="aiSave" type="button">Desar</button><button class="b" id="aiTest" type="button">Provar</button></div>
     <p class="note" id="aiState"></p>
-    <p class="note">Respostes ràpides, sense IA (funcionen també sense clau): "coach, quan surt el drac?" (o el baró, el herald, les larves), "coach, quant li falta al flash de Zed?", "coach, qui no té flash?", "coach, on és el jungla?", "coach, com anem?", "coach, repeteix", "coach, calla" i "coach, parla".</p>
+    <p class="note">Després de dir "coach", parla amb naturalitat, en català o en castellà. El que es pot saber de la partida (quan surt el drac o el baró, quant li falta al Flash d'un rival, qui no té Flash, on s'ha vist el jungla rival, com aneu, si un rival és mort, què porta o quin nivell té) et respon a l'instant i sense IA. També pots dir "Zed ha gastat el flash", "repeteix" o "calla". La resta de preguntes, i les que demanen un consell, van a la IA.</p>
     <div class="keyrow"><input type="text" id="aiTyped" placeholder="O escriu-hi una pregunta"><button class="b" id="aiSend" type="button">Preguntar</button></div>
   </section>
   <section class="card"><h2>Mapa de l'informe (clau de Riot)</h2>
@@ -1249,6 +1249,10 @@ const I18N = {
   "D'acord, callo tres minuts. Els encanteris rivals te'ls continuo dient.": ["Vale, me callo tres minutos. Los hechizos rivales te los sigo diciendo.", "OK, quiet for three minutes. I'll still tell you the enemy spells."],
   "Torno a parlar.": ["Vuelvo a hablar.", "I'm back."], "Encara no t'he dit res.": ["Todavía no te he dicho nada.", "I haven't said anything yet."], "el jungla rival": ["el jungla rival", "the enemy jungler"],
   "Respostes ràpides, sense IA (funcionen també sense clau): \"coach, quan surt el drac?\" (o el baró, el herald, les larves), \"coach, quant li falta al flash de Zed?\", \"coach, qui no té flash?\", \"coach, on és el jungla?\", \"coach, com anem?\", \"coach, repeteix\", \"coach, calla\" i \"coach, parla\".": ["Respuestas rápidas, sin IA (funcionan también sin clave): \"coach, ¿cuándo sale el dragón?\" (o el barón, el heraldo, las larvas), \"coach, ¿cuánto le falta al flash de Zed?\", \"coach, ¿quién no tiene flash?\", \"coach, ¿dónde está el jungla?\", \"coach, ¿cómo vamos?\", \"coach, repite\", \"coach, calla\" y \"coach, habla\".", "Quick answers, no AI (they work without a key too): \"coach, when is dragon?\" (or baron, herald, grubs), \"coach, how long for Zed's flash?\", \"coach, who has no flash?\", \"coach, where is the jungler?\", \"coach, how are we doing?\", \"coach, repeat\", \"coach, shut up\" and \"coach, talk\"."],
+  "Comptant el {x} {de:y}.": ["Contando el {x} de {y}.", "Timing {y}'s {x}."], "{x} torna en {n} segons.": ["{x} vuelve en {n} segundos.", "{x} is back in {n} seconds."],
+  "{x} és viu.": ["{x} está vivo.", "{x} is alive."], "{x} porta {y}.": ["{x} lleva {y}.", "{x} has {y}."], "{x} encara no té cap objecte gran.": ["{x} todavía no tiene ningún objeto grande.", "{x} has no big item yet."],
+  "{x} és nivell {n}, i tu {m}.": ["{x} es nivel {n}, y tú {m}.", "{x} is level {n}, you're {m}."], "{x} és nivell {n}.": ["{x} es nivel {n}.", "{x} is level {n}."],
+  "Després de dir \"coach\", parla amb naturalitat, en català o en castellà. El que es pot saber de la partida (quan surt el drac o el baró, quant li falta al Flash d'un rival, qui no té Flash, on s'ha vist el jungla rival, com aneu, si un rival és mort, què porta o quin nivell té) et respon a l'instant i sense IA. També pots dir \"Zed ha gastat el flash\", \"repeteix\" o \"calla\". La resta de preguntes, i les que demanen un consell, van a la IA.": ["Después de decir \"coach\", habla con naturalidad, en catalán o en castellano. Lo que se puede saber de la partida (cuándo sale el dragón o el barón, cuánto le falta al Flash de un rival, quién no tiene Flash, dónde se ha visto al jungla rival, cómo vais, si un rival está muerto, qué lleva o qué nivel tiene) te lo responde al instante y sin IA. También puedes decir \"Zed ha gastado el flash\", \"repite\" o \"calla\". El resto de preguntas, y las que piden un consejo, van a la IA.", "After saying \"coach\", just talk naturally. What can be known from the game (when dragon or baron spawns, how long an enemy's Flash has left, who has no Flash, where the enemy jungler was seen, how you're doing, whether an enemy is dead, what they have or their level) is answered at once without AI. You can also say \"Zed used flash\", \"repeat\" or \"shut up\". Other questions, and requests for advice, go to the AI."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2666,6 +2670,7 @@ function aiState(){
     out.push(`Marcador: kills ${T[mine].k} a ${T[other].k}. Torres perdudes: el meu equip ${T[mine].tw}, el rival ${T[other].tw}. Inhibidors perduts: el meu equip ${T[mine].inh}, el rival ${T[other].inh}. Barons: ${T[mine].bar} a ${T[other].bar}. Herald: ${T[mine].her} a ${T[other].her}.`);
     if (vm && vo) out.push(`Valor dels objectes (mesura de l'or): el meu equip ${vm}, el rival ${vo} (${vm >= vo ? "+" : ""}${vm - vo}).`);
   }
+  if (coach?.wave?.lastSeen) out.push(`Jungla rival vist per última vegada ${coach.wave.lastSeen.where} fa ${Math.round(t - coach.wave.lastSeen.t)} s (${coach.wave.lastSeen.why}).`);
   const kills = (d.events?.Events || []).filter(e => e.EventName === "ChampionKill").slice(-6).map(e => `${fmtClock(e.EventTime)} ${e.KillerName} mata ${e.VictimName}`);
   if (kills.length) out.push("Últimes kills: " + kills.join("; ") + ".");
   return out.join("\n");
@@ -2683,50 +2688,78 @@ function aiShow(q, a, warn){
 // "coach, com anem?", "coach, repeteix", "coach, calla" / "coach, parla"
 let coachMuteUntil = 0, coachLastText = "";
 const durTxt = sec => sec < 60 ? `${sec} segons` : `${Math.floor(sec / 60)} minut${sec >= 120 ? "s" : ""} i ${sec % 60} segons`;
+// The question is said freely: it's read by its words (any order, Catalan, Spanish or English), not as fixed phrases.
+// What these can answer exactly from the game is answered here at once; everything else, and any question asking for
+// advice ("què faig...", "per què..."), goes to the AI, which also receives all of this in the state of the game.
+const Q = {
+  mute: /\b(calla|callat|callate|silenci|silencio|shut up|deixa de parlar|deja de hablar|no parlis|no hables|para de parlar|para de hablar|prou|basta)\b/,
+  unmute: /\b(parla|parlam|habla|hablame|talk|ja pots parlar|ya puedes hablar|torna a parlar|vuelve a hablar)\b/,
+  repeat: /\b(repeteix|repetir|repite|repeat|que has dit|que m has dit|que has dicho|que me has dicho|que deies|que decias|que dius|que dices|no t he entes|no te he entendido|no t entes|otra vez|un altre cop|una altra vegada|perdona|com dius|como dices)\b/,
+  advice: /\b(que faig|que hago|que hem de fer|que hacemos|que fem|hauria|hauriem|deberia|deberiamos|millor|mejor|consell|consejo|com puc|como puedo|per que|por que|perque|porque|com jugo|como juego|recomanes|recomiendas|ajuda m|ayudame|explica|should|what do i|why|how do i)\b/,
+  ask: /\b(quan|cuando|when|falta|faltan|queda|quedan|surt|sale|spawn|temps|tiempo|minut|minuto|quant|cuanto|cuantos|quants|ja|ya|encara|todavia|still|aviat|pronto|torna|vuelve|reapareix|reaparece|esta|hi es|up|viu|vivo|te|tiene|tenen|tienen|has|porta|lleva|how|long|segons|segundos)\b/,
+  who: /\b(qui|quien|quienes|who|quins|quines|cuales|algu|alguien|rivals|rivales|enemics|enemigos|ells|ellos)\b/,
+  used: /\b(gastat|gastado|usat|usado|tirat|tirado|fet servir|ha fet|ha hecho|used|burned|burnt|cremat|quemado|sense|sin)\b/,
+  jungle: /\b(jungla|jungler|jungle|jg|jungla rival|jungla enemic|jungla enemigo)\b/,
+  where: /\b(on|donde|where|vist|visto|sap|sabe|apareix|aparece|esta|para|anda|es|ha anat|ha ido)\b/,
+  score: /\b(com anem|como vamos|com va|como va|how are we|marcador|qui guanya|quien gana|qui va guanyant|quien va ganando|anem guanyant|vamos ganando|anem perdent|vamos perdiendo|per davant|por delante|per darrere|por detras|resultat|resultado|com estem|como estamos)\b/,
+  items: /\b(objectes|objetos|items|objecte|objeto|porta|lleva|build|compra|comprat|comprado|equip|equipo)\b/,
+  dead: /\b(mort|muerto|muerta|morta|dead|reviu|revive|reapareix|reaparece|torna|vuelve|respawn)\b/,
+  level: /\b(nivell|nivel|level|lvl)\b/
+};
 function localAnswer(q){
-  const n = norm(q), words = n.split(" "), has = re => re.test(n);
-  if (has(/^(calla|callat|silenci|silencio|shut up|para de parlar|no parlis)\b/)) { coachMuteUntil = Date.now() + 180000; return "D'acord, callo tres minuts. Els encanteris rivals te'ls continuo dient."; }
-  if (has(/^(parla|habla|talk|torna a parlar|vuelve a hablar|ja pots parlar)\b/)) { coachMuteUntil = 0; return "Torno a parlar."; }
-  if (has(/^(repeteix|repite|repeat|que has dit|que has dicho|com\b|como\b)$/) || has(/^(repeteix|repite|repeat)\b/)) return coachLastText || "Encara no t'he dit res.";
+  const n = norm(q), words = n.split(" "), has = re => re.test(n), short = words.length <= 6;
+  if (short && has(Q.mute)) { coachMuteUntil = Date.now() + 180000; return "D'acord, callo tres minuts. Els encanteris rivals te'ls continuo dient."; }
+  if (short && has(Q.unmute) && !has(Q.ask)) { coachMuteUntil = 0; return "Torno a parlar."; }
+  if (short && has(Q.repeat)) return coachLastText || "Encara no t'he dit res.";
+  if (has(Q.advice) && aiHasKey) return null;   // advice: the AI
   const d = lastData, t = d?.gameData?.gameTime; if (!d || !game || t == null) return null;
   const me = playerBy(d, game.me);
   // objectives
-  const OBJ = [["drag", /\b(drac|drag|dragon|drake)\b/, "El drac"], ["baron", /\b(baro|baron|nashor)\b/, "El baró"], ["herald", /\b(herald|heraldo)\b/, "El herald"], ["grubs", /\b(larves|larvas|grubs|vacios|cucs)\b/, "Les larves"]];
-  const when = has(/\b(quan|cuando|when|falta|queda|surt|sale|spawn|temps|tiempo|minut|minuto|quant|cuanto)\b/);
-  for (const [k, re, name] of OBJ) if (when && has(re) && help?.obj) {
+  const OBJ = [["drag", /\b(drac|drag|dragon|drake|drac ancia|elder|ancia|ancestral)\b/, "El drac"], ["baron", /\b(baro|baron|nashor|barón)\b/, "El baró"], ["herald", /\b(herald|heraldo|heraldi)\b/, "El herald"], ["grubs", /\b(larves|larvas|larva|grubs|vacios|cucs|voidgrubs)\b/, "Les larves"]];
+  for (const [k, re, name] of OBJ) if (has(re) && has(Q.ask) && help?.obj) {
     const at = help.obj[k], nm = k === "drag" && help.elderNext ? "El drac ancià" : name, pl = k === "grubs";
     if (!isFinite(at)) return `${nm} ja no ${pl ? "surten" : "surt"} més en aquesta partida.`;
     if (t >= at) return `${nm} ja ${pl ? "hi són" : "hi és"}.`;
-    const left = Math.round(at - t);
-    return `${nm} ${pl ? "surten" : "surt"} d'aquí a ${durTxt(left)}, al minut ${fmtClock(at)}.`;
+    return `${nm} ${pl ? "surten" : "surt"} d'aquí a ${durTxt(Math.round(at - t))}, al minut ${fmtClock(at)}.`;
   }
-  // who has no flash (or another spell) now
   const sp = findSpell(words);
-  if (sp && has(/\b(qui|quien|who|quins|cuales|algu|alguien)\b/)) {
-    const list = Object.values(timers).filter(x => x.spell === sp.sp && x.end > Date.now()).map(x => `${x.who()} (${fmtClock(Math.ceil((x.end - Date.now()) / 1000))})`);
-    return list.length ? `Sense ${NAMES[sp.sp]}: ${list.join(", ")}.` : `Tots els rivals tenen el ${NAMES[sp.sp]}, que jo sàpiga.`;
-  }
-  // how long for a spell of one rival
-  if (sp && has(/\b(quant|cuanto|falta|queda|torna|vuelve|te|tiene|has|ja|ya|when|quan|cuando|how|long)\b/)) {
-    const i = findEnemy(words, sp.w); if (i < 0) return null;
-    const who = $(`#name${i}`).value.trim() || rowLabel(i);
+  const rival = (used) => { const i = findEnemy(words, used); return i >= 0 && i < 5 && $(`#name${i}`).value.trim() ? i : -1; };
+  if (sp) {
+    const i = rival(sp.w), who = i >= 0 ? $(`#name${i}`).value.trim() : "";
+    // "Zed ha gastat el flash" said as a sentence: start the timer, as if you'd said "flash Zed"
+    if (i >= 0 && has(Q.used) && !has(/\b(quan|cuando|quant|cuanto|falta|queda|torna|vuelve)\b/)) {
+      handle(`${sp.w} ${words.filter(w => w !== sp.w).join(" ")}`);
+      return `Comptant el ${NAMES[sp.sp]} ${de(who)}.`;
+    }
+    if (i < 0 || has(Q.who)) {
+      const list = Object.values(timers).filter(x => x.spell === sp.sp && x.end > Date.now()).map(x => `${x.who()} (${fmtClock(Math.ceil((x.end - Date.now()) / 1000))})`);
+      return list.length ? `Sense ${NAMES[sp.sp]}: ${list.join(", ")}.` : `Tots els rivals tenen el ${NAMES[sp.sp]}, que jo sàpiga.`;
+    }
     const x = Object.values(timers).find(y => y.spell === sp.sp && y.who() === who && y.end > Date.now());
     return x ? `El ${NAMES[sp.sp]} ${de(who)} torna en ${durTxt(Math.ceil((x.end - Date.now()) / 1000))}.` : `No tinc el ${NAMES[sp.sp]} ${de(who)} comptant: si no l'has marcat, el deu tenir.`;
   }
   // the enemy jungler
-  if (has(/\b(jungla|jungler|jungle|jungla rival)\b/) && has(/\b(on|donde|where|vist|visto)\b/)) {
-    const w = coach?.wave, jg = d.allPlayers.find(p => me && p.team !== me.team && (p.position || "").toUpperCase() === "JUNGLE"), name = jg?.championName || "el jungla rival";
+  const jg = d.allPlayers.find(p => me && p.team !== me.team && (p.position || "").toUpperCase() === "JUNGLE");
+  if (has(Q.jungle) && (has(Q.where) || short)) {
+    const w = coach?.wave, name = jg?.championName || "el jungla rival";
     if (jg?.isDead) return `${name} és mort: torna en ${Math.ceil(jg.respawnTimer || 0)} segons.`;
     if (w?.lastSeen) { const ago = Math.round(t - w.lastSeen.t); return `${name} es va veure ${w.lastSeen.where} fa ${ago} segons (${w.lastSeen.why}).${ago > 60 ? " Des de llavors, no se sap." : ""}`; }
     return `No sé on és ${name}: encara no ha aparegut en cap kill ni objectiu.`;
   }
   // the score
-  if (has(/\b(com anem|como vamos|como va|com va|how are we|marcador|qui guanya|quien gana)\b/) && me) {
+  if (has(Q.score) && me) {
     const mine = me.team, other = mine === "ORDER" ? "CHAOS" : "ORDER", ev = d.events?.Events || [], teamOf = x => playerNamed(d, x)?.team;
     let km = 0, ko = 0; for (const e of ev) if (e.EventName === "ChampionKill") { const tm = teamOf(e.KillerName); if (tm === mine) km++; else if (tm === other) ko++; }
     const val = tm => d.allPlayers.filter(p => p.team === tm).reduce((a, p) => a + (p.items || []).reduce((b, x) => b + (ITEMS[x.itemID]?.total || 0) * (x.count || 1), 0), 0);
     const diff = val(mine) - val(other), dr = help?.drakes || {};
     return `Kills ${km} a ${ko}. Dracs ${dr[mine] ?? 0} a ${dr[other] ?? 0}. En objectes ${Math.abs(diff) < 500 ? "aneu igualats" : diff > 0 ? `aneu ${Math.round(diff / 100) * 100} d'or per davant` : `aneu ${Math.round(-diff / 100) * 100} d'or per darrere`}.`;
+  }
+  // one rival: dead or alive, items, level ("quan torna Zed?", "què porta Hwei?", "quin nivell té Samira?")
+  const i = rival(null), p = i >= 0 && game.ids[i] ? playerBy(d, game.ids[i]) : null;
+  if (p) {
+    if (has(Q.dead)) return p.isDead ? `${p.championName} torna en ${Math.ceil(p.respawnTimer || 0)} segons.` : `${p.championName} és viu.`;
+    if (has(Q.items)) { const its = (p.items || []).filter(x => isFinal(x.itemID) || ITEMS[x.itemID]?.total >= 1000).map(x => itemName(x.itemID)); return its.length ? `${p.championName} porta ${its.join(", ")}.` : `${p.championName} encara no té cap objecte gran.`; }
+    if (has(Q.level)) return `${p.championName} és nivell ${p.level}${me ? `, i tu ${me.level}` : ""}.`;
   }
   return null;
 }
