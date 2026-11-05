@@ -1357,6 +1357,7 @@ const I18N = {
   "Veu": ["Voz", "Voice"], "En partida": ["En partida", "In game"], "Compte i app": ["Cuenta y app", "Account and app"],
   "et falten {n} LP · {y}, o unes {m} partides al teu {k}% actual": ["te faltan {n} LP · {y}, o unas {m} partidas a tu {k}% actual", "{n} LP to go · {y}, or about {m} games at your current {k}%"],
   "{x}: et falten {n} LP · {y}, o unes {m} partides al teu {k}% actual": ["{x}: te faltan {n} LP · {y}, o unas {m} partidas a tu {k}% actual", "{x}: {n} LP to go · {y}, or about {m} games at your current {k}%"],
+  "et falten {n} LP": ["te faltan {n} LP", "{n} LP to go"], "{x}: et falten {n} LP": ["{x}: te faltan {n} LP", "{x}: {n} LP to go"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -3241,7 +3242,7 @@ async function loadRank(force){
   { const so = qs.find(q => q.queue === "RANKED_SOLO_5x5"); if (so) { myRankAbs = absRank(so.tier, so.rank, so.lp); mySolo = so; } }
   badge.hidden = false;
   badge.innerHTML = `${emblemImg(solo.tier, "")}<div class="rbt"><b data-noi18n>${tierTxt(solo)}</b><span>${solo.lp} LP · ${queueTxt(solo.queue)}</span></div>
-    <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${g.steps.map(x => `<span class="rbstep">${emblemImg(x.tier, "rbemb")}<span><b data-noi18n>${esc(x.name)}</b> ${esc(x.text.slice(x.name.length + 2))}</span></span>`).join("")}<span class="note">Guanyes ${g.gain} LP i en perds ${g.lose} de mitjana.</span></div>` : ""; })()}`;
+    <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${g.steps.map(x => `<span class="rbstep">${emblemImg(x.tier, "rbemb")}<span><b data-noi18n>${esc(x.name)}</b> ${esc(x.text.slice(x.name.length + 2))}</span></span>`).join("")}</div>` : ""; })()}`;
   { const h = $("#rankBadgeH"); if (h) { h.innerHTML = badge.innerHTML; h.hidden = false; } }
 }
 loadRank(false);
@@ -3899,7 +3900,7 @@ function lpGoal(){
   const rec = histCache.filter(r => !r.error && r.result && (!r.lp || r.lp.queue === "RANKED_SOLO_5x5")).slice(0, 20);
   const wr = rec.length >= 10 ? rec.filter(r => r.result === "Victòria").length / rec.length : (q.wr || 50) / 100, per = wr * gain - (1 - wr) * lose;
   const plan = (need, e) => { const straight = Math.ceil(need / gain), games = per > 0.5 ? Math.ceil(need / per) : null, name = tierTxt(e);
-    return {need, tier: e.tier, name, straight, games, text: `${name}: et falten ${need} LP · ${straight === 1 ? "1 victòria" : `${straight} victòries seguides`}${games && games > straight && games <= 60 ? `, o unes ${games} partides al teu ${Math.round(wr * 100)}%${rec.length >= 10 ? " actual" : ""}` : ""}`}; };
+    return {need, tier: e.tier, name, straight, games, text: `${name}: et falten ${need} LP`}; };
   // the next division (Platinum 1 -> Emerald 4, Emerald 4 -> Emerald 3...), and the next league when it isn't that same step
   const nextDiv = div === 3 ? {tier: TIER_ORDER[ti + 1], rank: ti + 1 >= 7 ? "I" : "IV"} : {tier: q.tier, rank: ["IV", "III", "II", "I"][div + 1]};
   const steps = [plan(100 - q.lp, nextDiv)];
