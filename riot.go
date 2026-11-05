@@ -150,8 +150,10 @@ func riotGetHostQ(c Config, host, path string, out any, quiet bool) error {
 	}
 	switch r.StatusCode {
 	case 200:
+		setPart("riot", true, "")
 		return json.Unmarshal(body, out)
 	case 401, 403:
+		setPart("riot", false, "bad_key")
 		return errors.New("bad_key")
 	case 404:
 		return errors.New("not_found")

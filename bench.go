@@ -58,6 +58,14 @@ type benchGame struct {
 	Perks    []int   `json:"pk"` // the 9 perks in the client's order: 4 primary, 2 secondary, offense, flex, defense
 	Start    []int   `json:"st"` // items bought before 1:30
 	Opp      string  `json:"o"`  // lane opponent's champion
+	V6       bool    `json:"v6"` // jungle numbers below (since 2.0.33)
+	JFirst   float64 `json:"jf"` // minute of the first kill or assist (a jungler's first gank)
+	JTop     int     `json:"jt"` // kills + assists before 14 on each side
+	JMid     int     `json:"jm"`
+	JBot     int     `json:"jb"`
+	JSide    string  `json:"js"` // where he was at 1:30: "top" or "bot" side (the start of the clear)
+	Drakes   int     `json:"dr"` // dragons he killed
+	Grubs    int     `json:"gr"` // void grubs he killed
 	Back     float64 `json:"bk"` // minute of the first recall (first purchase after minute 1:30)
 	Roam     int     `json:"ro"` // kills and assists before 14 on players of another lane
 	Plates   int     `json:"pt"` // tower plates
@@ -279,7 +287,7 @@ func benchRun() {
 			out := []benchGame{}
 			for i, x := range list {
 				benchSet("mine", i+1, len(list))
-				if g, ok := have[x.id]; ok && g.V5 {
+				if g, ok := have[x.id]; ok && g.V6 {
 					out = append(out, g)
 					continue
 				}
@@ -299,7 +307,7 @@ func benchRun() {
 	// games read before the full rune pages: read again by id (one match and one timeline each, no searching)
 	for _, ch := range champs {
 		for i, g := range b.Games[ch] {
-			if g.V5 && g.Opp != "" {
+			if g.V6 && g.Opp != "" {
 				continue
 			}
 			benchSet("update", i+1, len(b.Games[ch]))
@@ -529,9 +537,18 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 	key, okey := strconv.Itoa(me), strconv.Itoa(opp)
 	lv := map[int]int{}
 	order := ""
-	g.HasPush, g.V3, g.V5 = true, true, true
+	g.HasPush, g.V3, g.V5, g.V6 = true, true, true, true
 	pushN, pushT := 0, 0
 	for _, f := range tl.Info.Frames {
+		if f.Timestamp >= 80000 && f.Timestamp < 110000 && g.JSide == "" {
+			if a, ok := f.ParticipantFrames[key]; ok {
+				if a.Position.Y > a.Position.X {
+					g.JSide = "top"
+				} else {
+					g.JSide = "bot"
+				}
+			}
+		}
 		if mn := f.Timestamp / 60000; mn >= 3 && mn <= 13 {
 			if a, ok := f.ParticipantFrames[key]; ok {
 				pushT++
@@ -550,7 +567,35 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 		}
 		for _, e := range f.Events {
 			switch e.Type {
+			case "ELITE_MONSTER_KILL":
+				if e.KillerID == me {
+					switch e.MonsterType {
+					case "DRAGON":
+						g.Drakes++
+					case "HORDE":
+						g.Grubs++
+					}
+				}
 			case "CHAMPION_KILL":
+				if e.Timestamp < 14*60000 && e.VictimID != me && posOf[e.VictimID] != "" {
+					in := e.KillerID == me
+					for _, x := range e.AssistingParticipantIDs {
+						in = in || x == me
+					}
+					if in {
+						if g.JFirst == 0 {
+							g.JFirst = math.Round(float64(e.Timestamp)/6000) / 10
+						}
+						switch posOf[e.VictimID] {
+						case "TOP":
+							g.JTop++
+						case "MIDDLE":
+							g.JMid++
+						case "BOTTOM", "UTILITY":
+							g.JBot++
+						}
+					}
+				}
 				if e.Timestamp < 14*60000 && e.VictimID != me && posOf[e.VictimID] != g.Pos && posOf[e.VictimID] != "" {
 					in := e.KillerID == me
 					for _, x := range e.AssistingParticipantIDs {
@@ -674,7 +719,14 @@ type benchSummary struct {
 	Start    []int               `json:"start,omitempty"` // the most common starting items
 	Items    []int               `json:"items,omitempty"` // completed items they build most, by how often
 	Tiers    map[string]int      `json:"tiers,omitempty"`
-	VS       map[string]*benchVs `json:"vs,omitempty"` // by lane opponent // games by the player's tier (LOBBY: someone else in one of those games)
+	VS       map[string]*benchVs `json:"vs,omitempty"`     // by lane opponent // games by the player's tier (LOBBY: someone else in one of those games)
+	JFirst   *float64            `json:"jfirst,omitempty"` // jungle: first gank minute
+	JTop     *float64            `json:"jtop,omitempty"`
+	JMid     *float64            `json:"jmid,omitempty"`
+	JBot     *float64            `json:"jbot,omitempty"`
+	JSide    string              `json:"jside,omitempty"`
+	Drakes   *float64            `json:"drakes,omitempty"`
+	Grubs    *float64            `json:"grubs,omitempty"`
 	Me       *benchSummary       `json:"me,omitempty"` // the player's own games, measured the same way
 	Share    map[string]int      `json:"share"`        // how often the most common choice was taken, in %
 }
@@ -815,6 +867,37 @@ func summarize(ch string, gs []benchGame) benchSummary {
 				break
 			}
 		}
+	}
+	// jungle: only when these are jungle games
+	var jn, jf, jfn, jt, jm, jb, dr, gr float64
+	sides := map[string]int{}
+	for _, g := range gs {
+		if g.V6 && g.Pos == "JUNGLE" {
+			jn++
+			jt, jm, jb, dr, gr = jt+float64(g.JTop), jm+float64(g.JMid), jb+float64(g.JBot), dr+float64(g.Drakes), gr+float64(g.Grubs)
+			if g.JFirst > 0 {
+				jf, jfn = jf+g.JFirst, jfn+1
+			}
+			if g.JSide != "" {
+				sides[g.JSide]++
+			}
+		}
+	}
+	if jn >= 3 && jn*2 >= float64(len(gs)) {
+		a, b, c, d, e := r1(jt/jn), r1(jm/jn), r1(jb/jn), r1(dr/jn), r1(gr/jn)
+		s.JTop, s.JMid, s.JBot, s.Drakes, s.Grubs = &a, &b, &c, &d, &e
+		if jfn > 0 {
+			f := r1(jf / jfn)
+			s.JFirst = &f
+		}
+		if sides["top"]+sides["bot"] > 0 {
+			if sides["top"] >= sides["bot"] {
+				s.JSide, s.Share["jside"] = "top", int(math.Round(100*float64(sides["top"])/float64(sides["top"]+sides["bot"])))
+			} else {
+				s.JSide, s.Share["jside"] = "bot", int(math.Round(100*float64(sides["bot"])/float64(sides["top"]+sides["bot"])))
+			}
+		}
+		s.Roam, s.Push, s.DeepD = nil, nil, nil // lane numbers that mean nothing for a jungler
 	}
 	s.VS = map[string]*benchVs{}
 	firsts := map[string]map[int]int{}

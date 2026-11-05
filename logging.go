@@ -34,4 +34,5 @@ func logf(format string, args ...any) {
 	}
 	defer f.Close()
 	fmt.Fprintf(f, "%s  %s\r\n", time.Now().Format("2006-01-02 15:04:05"), line)
+	go noteLogLine(line)
 }

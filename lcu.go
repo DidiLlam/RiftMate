@@ -76,6 +76,7 @@ func lcuDo(method, path string, in, out any) (int, error) {
 	if r.StatusCode >= 200 && r.StatusCode < 300 && out != nil && len(body) > 0 {
 		return r.StatusCode, json.Unmarshal(body, out)
 	}
+	setPart("client", true, "")
 	if r.StatusCode >= 400 && method != "GET" {
 		logf("Client: %s %s -> %d %s", method, path, r.StatusCode, strings.TrimSpace(string(body)))
 	}

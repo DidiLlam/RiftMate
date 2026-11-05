@@ -160,31 +160,60 @@ func geminiAsk(key, system string, msgs []map[string]string) (string, error) {
 	if len(order) > 4 {
 		order = order[:4]
 	}
-	deadline := time.Now().Add(20 * time.Second)
+	// hedged: the next model starts when the current one fails or hasn't answered in 3 seconds; the first answer wins
+	type res struct {
+		m   string
+		ans string
+		err error
+	}
+	ch := make(chan res, len(order))
+	start := func(m string) { go func() { a, e := geminiOnce(key, m, system, msgs); ch <- res{m, a, e} }() }
+	next, running := 1, 1
+	start(order[0])
+	deadline := time.After(16 * time.Second)
 	var last error
-	for i, m := range order {
-		if i > 0 && time.Now().After(deadline) {
-			break
-		}
-		ans, err := geminiOnce(key, m, system, msgs)
-		if err == nil {
-			gemMu.Lock()
-			if gemModel != m {
-				logf("IA: ara faig servir %s", m)
+	for running > 0 {
+		var r res
+		select {
+		case r = <-ch:
+		case <-time.After(3 * time.Second):
+			if next < len(order) {
+				logf("IA: %s triga, provo també %s", order[next-1], order[next])
+				start(order[next])
+				next++
+				running++
 			}
-			gemModel = m
-			if c := loadConfig(); c.AIModel != m {
-				c.AIModel = m
+			continue
+		case <-deadline:
+			if last == nil {
+				last = errors.New("Timeout: cap model ha respost")
+			}
+			return "", last
+		}
+		running--
+		if r.err == nil {
+			gemMu.Lock()
+			if gemModel != r.m {
+				logf("IA: ara faig servir %s", r.m)
+			}
+			gemModel = r.m
+			if c := loadConfig(); c.AIModel != r.m {
+				c.AIModel = r.m
 				saveConfig(c)
 			}
 			gemMu.Unlock()
-			return ans, nil
+			return r.ans, nil
 		}
-		last = err
-		if !gemRetryable(err) {
-			return "", err
+		last = r.err
+		if !gemRetryable(r.err) {
+			return "", r.err
 		}
-		logf("IA: %s no respon (%v), provo el següent", m, err)
+		logf("IA: %s no respon (%v), provo el següent", r.m, r.err)
+		if next < len(order) {
+			start(order[next])
+			next++
+			running++
+		}
 	}
 	return "", last
 }

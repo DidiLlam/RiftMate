@@ -25,6 +25,12 @@ func voicePush(kind, text string) {
 	voiceMu.Lock()
 	defer voiceMu.Unlock()
 	voiceSeq++
+	switch kind {
+	case "ready":
+		setPart("voice", true, text)
+	case "error":
+		setPart("voice", false, text)
+	}
 	voiceLines = append(voiceLines, voiceLine{voiceSeq, kind, text})
 	if len(voiceLines) > 200 {
 		voiceLines = voiceLines[len(voiceLines)-200:]

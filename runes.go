@@ -109,6 +109,7 @@ func applyChallenger(champ string) (map[string]any, error) {
 		}
 	}
 	logf("Client: runes i objectes dels Challenger per a %s: %v", sm.Name, out)
+	setPart("runes", out["runes"] == true || out["items"] == true, fmt.Sprintf("%s: runes %v, objectes %v", sm.Name, out["runes"] == true, out["items"] == true))
 	return out, nil
 }
 

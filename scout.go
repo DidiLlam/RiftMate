@@ -41,7 +41,11 @@ type scoutOut struct {
 	ChampWins  int         `json:"champWins"`
 	LastPlay   int64       `json:"lastPlay"`
 	Games      []scoutGame `json:"games"`
+	Premade    []string    `json:"premade,omitempty"` // champions (Data Dragon ids) of this game who played their last games with him
+	WithMe     int         `json:"withMe,omitempty"`  // of his last games, how many with you on his team
 	Error      string      `json:"error,omitempty"`
+	puuid      string
+	mates      map[string]int // puuid -> games on his team, in his last games
 }
 
 type scoutGame struct {
@@ -94,12 +98,13 @@ func champKeyByID(id string) int {
 }
 
 func scoutOne(c Config, in scoutIn) scoutOut {
-	out := scoutOut{Champ: in.Champ, Pos: in.Pos, Ally: in.Ally, RiotID: in.RiotID}
+	out := scoutOut{Champ: in.Champ, Pos: in.Pos, Ally: in.Ally, RiotID: in.RiotID, mates: map[string]int{}}
 	puuid, err := puuidLookup(c, in.RiotID)
 	if err != nil {
 		out.Error = err.Error()
 		return out
 	}
+	out.puuid = puuid
 	var list []leagueEntry
 	if scoutGet(c, platformHost(c), "/lol/league/v4/entries/by-puuid/"+puuid, &list) == nil {
 		for _, e := range list {
@@ -128,6 +133,17 @@ func scoutOne(c Config, in scoutIn) scoutOut {
 			var md matchDTO
 			if scoutGet(c, "", "/lol/match/v5/matches/"+id, &md) != nil {
 				continue
+			}
+			team := 0
+			for _, p := range md.Info.Participants {
+				if p.PUUID == puuid {
+					team = p.TeamID
+				}
+			}
+			for _, p := range md.Info.Participants {
+				if p.TeamID == team && p.PUUID != puuid && p.PUUID != "" {
+					out.mates[p.PUUID]++
+				}
 			}
 			for _, p := range md.Info.Participants {
 				if p.PUUID == puuid && !p.EarlySurr {
@@ -174,6 +190,7 @@ func runScout(key string, players []scoutIn) {
 		}(i, p)
 	}
 	wg.Wait()
+	markPremades(res, c.PUUIDs[c.MyRiotID])
 	scoutMu.Lock()
 	if scoutKey == key {
 		scoutRes, scoutBusy = res, false
@@ -205,5 +222,49 @@ func scoutHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 		b, _ := json.Marshal(map[string]any{"busy": scoutBusy, "results": scoutRes, "has_key": loadConfig().RiotKey != ""})
 		scoutMu.Unlock()
 		send(w, 200, "application/json", b)
+	}
+}
+
+// markPremades: two players of the same team who were teammates in 2 or more of each other's last games queued
+// together (a duo, or a flex group). Groups are joined: A with B and B with C is a group of three.
+func markPremades(res []scoutOut, me string) {
+	n := len(res)
+	group := make([]int, n)
+	for i := range group {
+		group[i] = i
+	}
+	var find func(int) int
+	find = func(i int) int {
+		if group[i] != i {
+			group[i] = find(group[i])
+		}
+		return group[i]
+	}
+	for i := 0; i < n; i++ {
+		if me != "" && res[i].Ally {
+			res[i].WithMe = res[i].mates[me]
+		}
+		for j := i + 1; j < n; j++ {
+			if res[i].Ally != res[j].Ally || res[i].puuid == "" || res[j].puuid == "" {
+				continue
+			}
+			if res[i].mates[res[j].puuid] >= 2 || res[j].mates[res[i].puuid] >= 2 {
+				group[find(i)] = find(j)
+			}
+		}
+	}
+	var found []string
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			if i != j && find(i) == find(j) {
+				res[i].Premade = append(res[i].Premade, res[j].Champ)
+			}
+		}
+		if len(res[i].Premade) > 0 {
+			found = append(found, res[i].Champ)
+		}
+	}
+	if len(found) > 0 {
+		logf("Premades: %s", strings.Join(found, ", "))
 	}
 }

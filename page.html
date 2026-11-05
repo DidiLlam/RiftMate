@@ -76,6 +76,9 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 /* coach tab */
 .coachtxt p{margin:0 0 10px;line-height:1.55}.coachtxt p b{color:var(--accent)}
 .bgap{background:var(--cool);border-radius:10px;padding:10px 14px;margin:4px 0 10px;font-size:.92rem}.bgap ol{margin:6px 0 4px;padding-left:20px}.bgap li{margin:4px 0;line-height:1.45}.bgap li .note{display:block}
+.stlist{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}.stlist li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.stlist .dot{width:9px;height:9px;border-radius:50%;background:var(--cool);flex:0 0 auto;transform:translateY(1px)}
+.stlist .dot.good{background:var(--good)}.stlist .dot.bad{background:var(--loss)}.sterr{font-family:var(--mono);font-size:.78rem;white-space:pre-wrap;max-height:220px;overflow:auto;background:var(--cool);padding:8px;border-radius:8px}
+td.why{min-width:220px;line-height:1.4}
 .csban{margin:0 0 8px;font-size:.92rem}.csban .good b{color:var(--good)}.csban .bad b{color:var(--loss)}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px 24px}.pchart svg{width:100%;height:auto;display:block}
 .phead{display:flex;justify-content:space-between;align-items:baseline;font-size:.92rem;margin-bottom:2px}.phead .good{color:var(--good)}.phead .bad{color:var(--loss)}
@@ -387,12 +390,15 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   </div>
   </div>
   <div class="view" id="viewA" hidden>
+  <section class="card" id="statusCard"><h2>Estat de l'app</h2><div id="statusBody"><p class="note">Carregant…</p></div>
+    <div class="bar"><button class="b" type="button" id="statusCopy">Copiar el diagnòstic</button><span class="note">Si alguna cosa no va, copia això i envia-ho.</span></div></section>
   <div class="settings">
   <section class="card" id="micCard"><h2>Micròfon i so</h2>
     <div class="row2"><label for="engine">Reconeixement de veu</label><select id="engine"><option value="win">Veu de Windows (recomanat)</option><option value="web">Veu del navegador</option></select></div>
     <div class="row2"><label for="lang">Idioma en què parles</label><select id="lang"><option value="es-ES">Castellà</option><option value="ca-ES">Català</option><option value="en-US">Anglès</option></select></div>
     <div class="bar"><button class="b" id="micTest" type="button" title="Per provar les ordres de veu sense entrar en partida">Provar el micro</button><button class="b" id="test" type="button">Provar so</button></div>
     <p class="note">El micròfon s'activa sol quan comença la partida. "Provar el micro" serveix per provar les ordres sense entrar en partida.</p>
+    <p class="note" id="learnedList" hidden></p>
   </section>
   <section class="card" id="coachCard"><h2>Coach de veu</h2>
     <div class="row2"><label for="pool">Els meus campions</label><input type="text" id="pool" placeholder="p. ex. Diana, LeBlanc" style="width:16em"></div>
@@ -1277,6 +1283,31 @@ const I18N = {
   "farm": ["farm", "farming"], "supervivència": ["supervivencia", "survival"], "visió": ["visión", "vision"], "participació": ["participación", "participation"], "línia": ["línea", "laning"], "control d'onada": ["control de oleada", "wave control"],
   "Ban suggerit:": ["Ban sugerido:", "Suggested ban:"], "(els rivals de línia que més et guanyen aquesta temporada)": ["(los rivales de línea que más te ganan esta temporada)", "(the lane opponents who beat you most this season)"],
   "Contra els que han triat:": ["Contra los que han elegido:", "Against the ones picked:"],
+  "Estat de l'app": ["Estado de la app", "App status"], "Copiar el diagnòstic": ["Copiar el diagnóstico", "Copy diagnostics"], "Si alguna cosa no va, copia això i envia-ho.": ["Si algo no va, copia esto y envíalo.", "If something isn't working, copy this and send it."],
+  "Clau de Riot": ["Clave de Riot", "Riot key"], "Veu de Windows": ["Voz de Windows", "Windows voice"], "Client de LoL": ["Cliente de LoL", "LoL client"], "Runes dels Challenger": ["Runas de los Challenger", "Challenger runes"], "Partides dels Challenger": ["Partidas de los Challenger", "Challenger games"],
+  "Cap error recent.": ["Ningún error reciente.", "No recent errors."], "Últims errors ({n})": ["Últimos errores ({n})", "Latest errors ({n})"],
+  "Paraules que la veu ha après de tu: {x}.": ["Palabras que la voz ha aprendido de ti: {x}.", "Words the voice has learnt from you: {x}."], "Oblidar-les": ["Olvidarlas", "Forget them"],
+  "premade amb {x}": ["premade con {x}", "premade with {x}"], "Al teu equip, {x} juguen junts.": ["En tu equipo, {x} juegan juntos.", "On your team, {x} are playing together."],
+  "Atenció: {x} són premade, juguen junts.": ["Atención: {x} son premade, juegan juntos.", "Heads up: {x} are premade, playing together."],
+  "On": ["Dónde", "Where"], "Què ha fallat": ["Qué ha fallado", "What went wrong"], "cap aliat a prop": ["ningún aliado cerca", "no ally nearby"], "aliats a prop: {x}": ["aliados cerca: {x}", "allies nearby: {x}"],
+  "T'has avançat passat el riu i t'ha agafat el jungla: abans d'empènyer, cal saber on és.": ["Te has adelantado pasado el río y te ha pillado el jungla: antes de empujar, hay que saber dónde está.", "You went past the river and the jungler caught you: know where he is before pushing."],
+  "Eres a camp rival amb {n} rivals a prop: massa avançat per a la fase de línia.": ["Estabas en campo rival con {n} rivales cerca: demasiado adelantado para la fase de línea.", "You were in the enemy half with {n} enemies nearby: too far up for the laning phase."],
+  "Gank del jungla tot i tenir ajuda a prop: cal sortir abans, no quedar-se a lluitar.": ["Gank del jungla aun teniendo ayuda cerca: hay que salir antes, no quedarse a pelear.", "Jungle gank even with help nearby: leave earlier instead of staying to fight."],
+  "Gank del jungla sense ningú a prop: un ward al riu t'hauria avisat.": ["Gank del jungla sin nadie cerca: un ward en el río te habría avisado.", "Jungle gank with nobody nearby: a river ward would have warned you."],
+  "Has perdut l'u contra u: mira quan tenia les habilitats i el nivell per davant.": ["Has perdido el uno contra uno: mira cuándo tenía las habilidades y el nivel por delante.", "You lost the 1v1: check when he had his abilities and a level lead."],
+  "Baralla de {n} contra {m}: has entrat sense l'equip.": ["Pelea de {n} contra {m}: has entrado sin el equipo.", "{n}v{m} fight: you went in without your team."],
+  "Sol a camp rival a la segona meitat: sense visió, és on t'esperen.": ["Solo en campo rival en la segunda mitad: sin visión, es donde te esperan.", "Alone in the enemy half late in the game: without vision, that's where they wait."],
+  "T'ha matat la torre o els minions: has entrat sota torre amb poca vida.": ["Te ha matado la torre o los minions: has entrado bajo torre con poca vida.", "The tower or minions killed you: you dived with low health."],
+  "Posicions del mapa de Riot (un cop per minut): \"a prop\" vol dir a menys d'un terç de línia.": ["Posiciones del mapa de Riot (una vez por minuto): \"cerca\" quiere decir a menos de un tercio de línea.", "Positions from Riot's map (once a minute): \"nearby\" means within a third of a lane."],
+  "Minut del primer gank (primera kill o assistència)": ["Minuto del primer gank (primera kill o asistencia)", "First gank minute (first kill or assist)"],
+  "Kills i assistències a dalt abans del 14": ["Kills y asistencias arriba antes del 14", "Kills and assists top before 14"], "Kills i assistències al mig abans del 14": ["Kills y asistencias en medio antes del 14", "Kills and assists mid before 14"], "Kills i assistències a baix abans del 14": ["Kills y asistencias abajo antes del 14", "Kills and assists bot before 14"],
+  "Dracs que mata ell": ["Dragones que mata él", "Dragons he kills"], "Larves que mata ell": ["Larvas que mata él", "Grubs he kills"],
+  "Planifica el primer gank des del principi: comença la ruta pel costat contrari a la línia que vols gankejar.": ["Planifica el primer gank desde el principio: empieza la ruta por el lado contrario a la línea que quieres gankear.", "Plan the first gank from the start: begin your clear on the side opposite the lane you want to gank."],
+  "Cada vegada que el drac surti, mira si la línia de baix i el mig tenen prioritat: si la tenen, ves-hi.": ["Cada vez que salga el dragón, mira si la línea de abajo y el medio tienen prioridad: si la tienen, ve.", "Every time dragon spawns, check if bot and mid have priority: if they do, go."],
+  "Les larves donen força a tot l'equip: prepara-les amb el top i el mig empenyent.": ["Las larvas dan fuerza a todo el equipo: prepáralas con el top y el medio empujando.", "Grubs power up the whole team: set them up with top and mid pushing."],
+  "Comencen la jungla per": ["Empiezan la jungla por", "They start their clear"], "dalt": ["arriba", "top side"], "baix": ["abajo", "bot side"],
+  "Vas {n} de farm per sota del que fas a les partides que guanyes: a aquest minut hi sols portar uns {m}.": ["Vas {n} de farm por debajo de lo que haces en las partidas que ganas: a este minuto sueles llevar unos {m}.", "You're {n} CS below your won games: at this minute you usually have about {m}."],
+  "Portes {n} de visió; a les partides que guanyes, a aquest minut en tens uns {m}. Posa el ward groc i compra'n un de control.": ["Llevas {n} de visión; en las partidas que ganas, a este minuto tienes unos {m}. Pon el ward amarillo y compra uno de control.", "Your vision score is {n}; in your won games you have about {m} at this minute. Place your yellow ward and buy a control ward."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -1905,7 +1936,24 @@ function rowEnglish(i){
   const id = ((p?.rawChampionName || "").match(/_([A-Za-z]+)$/) || [])[1];
   return id ? CHAMPS.find(c => champId(c) === id) : null;
 }
+// what your voice says for a champion, learnt when a command wasn't understood and you said it again right after
+let voiceLearned = store.get("voiceLearned", {}), learnPending = null;
+const VOICE_NOISE = new Map();
+function renderLearned(){
+  const el = $("#learnedList"), e = Object.entries(voiceLearned); if (!el) return;
+  el.hidden = !e.length;
+  el.innerHTML = e.length ? `Paraules que la veu ha après de tu: ${e.map(([p, c]) => `"${esc(p)}" → ${esc(c)}`).join(", ")}. <button class="b" type="button" id="learnedClear">Oblidar-les</button>` : "";
+  $("#learnedClear")?.addEventListener("click", () => { voiceLearned = {}; store.set("voiceLearned", {}); renderLearned(); });
+}
+setTimeout(renderLearned, 0);
+function learnedRow(words, used){
+  const said = words.filter(w => w !== used && !FILLER.has(w)).join(" ");
+  for (const [ph, champ] of Object.entries(voiceLearned)) if ((" " + said + " ").includes(" " + ph + " "))
+    for (let i = 0; i < NROWS; i++) { const n = $(`#name${i}`).value.trim(); if (n && (norm(n) === norm(champ) || norm(rowEnglish(i) || "") === norm(champ))) return i; }
+  return -1;
+}
 function findEnemy(words, used){
+  const li = learnedRow(words, used); if (li >= 0) return li;
   let bi = -1, bd = Infinity;
   for (let i = 0; i < NROWS; i++) { const n = $(`#name${i}`).value.trim(); if (!n) continue;
     const names = [CHAMPS.find(c => norm(c) === norm(n)) || n, rowEnglish(i)].filter(Boolean);
@@ -1941,7 +1989,16 @@ function handle(text, final = true){
   }
   const isCancel = saidCancel || Date.now() < pendingCancel;
   const i = findEnemy(words, s.w);
-  if (i < 0) { if (final && s.exact) { plog(`Veu: "${text}" -> ${s.sp} sense rival`); $("#status").textContent = `${NAMES[s.sp]}: no sé de quin rival. Digues el campió o la línia.`; $("#status").className="note warn"; } return false; }
+  if (i < 0) {
+    if (final && s.exact) {
+      plog(`Veu: "${text}" -> ${s.sp} sense rival`);
+      const rest = words.filter(w => w !== s.w && !FILLER.has(w) && !SPELL_WORDS[s.sp]?.includes(w));
+      if (rest.length && rest.length <= 3) learnPending = {sp: s.sp, phrase: rest.join(" "), at: Date.now()};
+      const k = norm(text), nn = (VOICE_NOISE.get(k) || 0) + 1; VOICE_NOISE.set(k, nn);
+      if (nn < 3) { $("#status").textContent = `${NAMES[s.sp]}: no sé de quin rival. Digues el campió o la línia.`; $("#status").className = "note warn"; }   // the same noise a third time: only in the log
+    }
+    return false;
+  }
   const who = $(`#name${i}`).value.trim() || rowLabel(i);
   // false alarms: a spell the game says this player doesn't carry, or the same timer said again within 20 s
   const known = game?.spells?.[i];
@@ -1949,7 +2006,13 @@ function handle(text, final = true){
   const slot = slotFor(i, s.sp), key = `${i}-${slot}`;
   if (!isCancel && timers[key] && Date.now() - (timers[key].started || 0) < 20000) { if (final) plog(`Veu: "${text}" -> ignorat: ja comptava fa menys de 20 s`); return true; }
   if (isCancel) { pendingCancel = 0; cancel(key); confirmTone(false); $("#status").textContent = `Anul·lat: ${NAMES[s.sp]} ${de(who)}.`; plog(`Veu: "${text}" -> anul·lat ${s.sp} ${who}`); }
-  else { startTimer(i, slot, s.sp, true); confirmTone(true); $("#status").textContent = `Comptant: ${NAMES[s.sp]} ${de(who)}.`; plog(`Veu: "${text}" -> ${s.sp} ${who}`); }
+  else {
+    if (learnPending && learnPending.sp === s.sp && Date.now() - learnPending.at < 10000) {   // you said it again and this time it was understood
+      const champ = rowEnglish(i) || $(`#name${i}`).value.trim(), ph = learnPending.phrase;
+      if (champ && ph && !norm(champ).includes(ph)) { voiceLearned[ph] = champ; store.set("voiceLearned", voiceLearned); renderLearned(); plog(`Veu: après que "${ph}" és ${champ}`); }
+    }
+    learnPending = null;
+    startTimer(i, slot, s.sp, true); confirmTone(true); $("#status").textContent = `Comptant: ${NAMES[s.sp]} ${de(who)}.`; plog(`Veu: "${text}" -> ${s.sp} ${who}`); }
   $("#status").className = "note";
   return true;
 }
@@ -2242,20 +2305,39 @@ const ROLE_PHRASES = {
         final: ["Si fas split, mira on són els cinc rivals.", "No et quedis sol a una línia lateral si no veus almenys tres rivals al mapa.", "A partir del minut 25 totes les onades porten canó: una onada sense recollir es menja una torre."]},
   JUNGLE: {linia: ["Quina línia té l'onada a favor per gankejar?", "Mira on va el jungla rival i juga a l'altra banda.", "No et saltis camps: el farm també és poder.", "Avisa les línies on és el jungla rival quan el vegis."],
         mitja: ["Control de visió abans de l'objectiu.", "Busca el jungla rival: pots robar-li camps?", "Prepara el següent objectiu amb les línies empeses.", "Abans d'un objectiu, demana a les línies del costat que empenyin la seva onada."], final: ["Guarda el Càstig per a l'objectiu.", "No entris a la jungla rival sense visió."]},
-  MIDDLE: {linia: ["Per fer un slow push, mata primer els casters rivals i deixa els melee.", "Per congelar, fes només últims cops just fora de la teva torre.", "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.", "Últims cops: cada minion compta.", "Si el rival desapareix, segueix-lo o pressiona la torre.", "Empeny l'onada abans de tornar a la base.", "Intercanvis curts quan gasti una habilitat clau."],
+  MIDDLE: {linia: ["Per fer un slow push, mata primer els casters rivals i deixa els melee.", "Per congelar, fes només últims cops just fora de la teva torre.", "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.", "Si el rival desapareix, segueix-lo o pressiona la torre.", "Empeny l'onada abans de tornar a la base.", "Intercanvis curts quan gasti una habilitat clau."],
         mitja: ["Recull l'onada lateral.", "Onada empesa abans de moure't.", "A partir del minut 15, una de cada dues onades porta canó.", "Farmeja a prop del teu equip.", "Mou-te només si hi arribes a temps."], final: ["Busca el carry rival.", "Espera que gastin el control abans d'entrar.", "Abans del baró o del drac, empeny les línies laterals que tinguis a prop.", "No et quedis sol a una línia lateral si no veus almenys tres rivals al mapa."]},
-  BOTTOM: {linia: ["Per fer un slow push, mata primer els casters rivals i deixa els melee.", "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.", "Últims cops: cada minion compta.", "Posa't darrere dels minions per evitar el gancho.", "Mira on és el suport rival abans d'avançar."],
+  BOTTOM: {linia: ["Per fer un slow push, mata primer els casters rivals i deixa els melee.", "Sota torre: als casters, un cop teu abans del cop de la torre; als melee, deixa'n dos de torre i remata.", "Posa't darrere dels minions per evitar el gancho.", "Mira on és el suport rival abans d'avançar."],
         mitja: ["No vagis sol a una línia lateral sense visió.", "Agafa l'onada de mid quan l'equip es reagrupi."], final: ["Posiciona't darrere el teu equip.", "Pega al que tinguis més a prop, no et llancis.", "Abans del baró o del drac, empeny la línia lateral que tinguis a prop, però mai sol sense visió."]},
   UTILITY: {linia: ["Posa un ward al riu.", "Si el teu ADC torna a la base, fes roam a mid.", "Mira on és el jungla rival."],
         mitja: ["Visió abans del següent objectiu.", "Compra un ward de control.", "Acompanya el jungla a posar visió."], final: ["Protegeix el teu carry.", "No vagis a posar visió sol a la jungla rival."]}
 };
 const PHRASES = {
-  sempre: ["Mira el minimapa.", "On és el jungla rival?"],
-  linia: ["Últims cops: cada minion compta.", "Si el rival desapareix, segueix-lo o pressiona la torre.", "Empeny l'onada abans de tornar a la base.", "Intercanvis curts quan gasti una habilitat clau."],
-  mitja: ["Recull l'onada lateral.", "Quant falta per al proper objectiu?", "Onada empesa abans de moure't.", "Farmeja a prop del teu equip.", "Mou-te només si hi arribes a temps."],
+  sempre: [],
+  linia: ["Si el rival desapareix, segueix-lo o pressiona la torre.", "Empeny l'onada abans de tornar a la base.", "Intercanvis curts quan gasti una habilitat clau."],
+  mitja: ["Recull l'onada lateral.", "Onada empesa abans de moure't.", "Farmeja a prop del teu equip.", "Mou-te només si hi arribes a temps."],
   final: ["No et quedis sol sense visió.", "Espera que gastin el control abans d'entrar.", "Busca el carry rival."]
 };
 let coach = null;
+// a reminder made from your own numbers: how you're doing now against your won games at this same minute
+function dataReminder(t, me){
+  if (!me || !game) return null;
+  const wins = histCache.filter(r => !r.error && r.result === "Victòria" && r.role === game.role);
+  if (wins.length < 3) return null;
+  const avg = f => { const v = wins.map(f).filter(x => x != null && !isNaN(x)); return v.length >= 3 ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const said = coach.dataSaid || (coach.dataSaid = {});
+  const cs = me.scores?.creepScore ?? null, rate = game.role === "UTILITY" ? null : avg(r => r.cs_rate?.total);
+  if (rate && cs != null && t >= 300 && t <= 1500 && t - (said.cs || 0) > 240) {
+    const exp = Math.round(rate * Math.max(0, t - 85) / 60);
+    if (exp - cs >= 15) { said.cs = t; return `Vas ${exp - cs} de farm per sota del que fas a les partides que guanyes: a aquest minut hi sols portar uns ${exp}.`; }
+  }
+  const ward = me.scores?.wardScore ?? null, vis = avg(r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); });
+  if (vis && ward != null && t >= 600 && t - (said.vis || 0) > 300) {
+    const exp = Math.round(vis * t / 60);
+    if (ward < exp * 0.6 && exp - ward >= 5) { said.vis = t; return `Portes ${Math.round(ward)} de visió; a les partides que guanyes, a aquest minut en tens uns ${exp}. Posa el ward groc i compra'n un de control.`; }
+  }
+  return null;
+}
 for (const id of ["cRem","cData","cMin","cMax","cGuide","cTalk"]) { const el = $("#"+id), v = store.get(id, null);
   if (v !== null) { if (el.type === "checkbox") el.checked = v; else el.value = v; }
   el.addEventListener("change", () => store.set(id, el.type === "checkbox" ? el.checked : el.value)); }
@@ -2367,9 +2449,11 @@ function coachTick(data){
   if ($("#cRem").checked && t >= coach.nextRem) {
     if (t - coach.lastSaidAt < 20) coach.nextRem = t + 20;
     else {
+      const dr = dataReminder(t, me);
       const pool = [...PHRASES.sempre, ...PHRASES[coachPhase(t)]].filter(x => x !== coach.lastRem);
-      const x = pool[Math.floor(Math.random() * pool.length)];
-      coach.lastRem = x; coachSay(x, 3); coach.lastSaidAt = t; coach.nextRem = t + nextReminder();
+      const x = dr || pool[Math.floor(Math.random() * pool.length)];
+      if (x) { coach.lastRem = x; coachSay(x, dr ? 2 : 3); coach.lastSaidAt = t; }
+      coach.nextRem = t + nextReminder();
     }
   }
 }
@@ -2672,7 +2756,9 @@ const WAKE = ["coach", "oye coach", "escolta coach", "pregunta", "pregunta coach
 function aiState(){
   const d = lastData; if (!d || !game) return "";
   const me = playerBy(d, game.me); if (!me) return "";
-  const t = d.gameData.gameTime, its = p => (p.items || []).filter(x => isFinal(x.itemID) || ITEMS[x.itemID]?.total >= 900).map(x => itemName(x.itemID)).join(", ") || "cap objecte gran";
+  // completed items apart from components, so the AI doesn't count a component as a finished item
+  const t = d.gameData.gameTime, its = p => { const it = p.items || [], fin = it.filter(x => isFinal(x.itemID)).map(x => itemName(x.itemID)), comp = it.filter(x => !isFinal(x.itemID) && ITEMS[x.itemID]?.total >= 900).map(x => itemName(x.itemID));
+    return `${fin.length} acabats${fin.length ? ` (${fin.join(", ")})` : ""}${comp.length ? `, components: ${comp.join(", ")}` : ""}`; };
   const kda = p => `${p.scores?.kills ?? 0}/${p.scores?.deaths ?? 0}/${p.scores?.assists ?? 0}`;
   const pos = p => ({TOP: "top", JUNGLE: "jungla", MIDDLE: "mid", BOTTOM: "ADC", UTILITY: "suport"})[(p.position || "").toUpperCase()] || "?";
   const line = p => `${p.championName} (${pos(p)}), nivell ${p.level}, KDA ${kda(p)}, farm ${p.scores?.creepScore ?? 0}, objectes: ${its(p)}${p.isDead ? `, MORT (reapareix en ${Math.ceil(p.respawnTimer || 0)} s)` : ""}`;
@@ -2813,7 +2899,9 @@ async function askAI(q){
       body: JSON.stringify({question: q, state: aiState(), lang, history: aiHistory})})).json();
     if (r.error) {
       const msg = r.error === "no_key" ? "Per parlar amb la IA, posa la clau de Gemini als ajustos." : r.error === "limit_gratuit" ? "Has arribat al límit gratuït per ara. Torna-ho a provar d'aquí a un minut." : /HTTP 50|demand|Timeout|deadline/i.test(r.error) ? "Google té la IA saturada ara mateix. Torna-ho a provar d'aquí a una estona." : "La IA no ha pogut respondre. Mira la connexió o la clau.";
-      aiShow(q, null, true); speak(msg); plog(`IA: error ${r.error}`);
+      // the AI didn't answer: at least what the game itself says
+      const fb = [localAnswer("com anem"), help?.obj ? (() => { const tt = lastData?.gameData?.gameTime ?? 0; const nx = [["drag", "El drac"], ["baron", "El baró"], ["herald", "El herald"]].map(([k, n]) => [n, help.obj[k]]).filter(([, a]) => isFinite(a) && a > tt).sort((a, b) => a[1] - b[1])[0]; return nx ? `${nx[0]} surt d'aquí a ${durTxt(Math.round(nx[1] - tt))}, al minut ${fmtClock(nx[1])}.` : ""; })() : ""].filter(Boolean).join(" ");
+      aiShow(q, fb || null, true); speak(fb && game ? `${msg} ${fb}` : msg); plog(`IA: error ${r.error}`);
     } else {
       aiHistory.push({role: "user", text: q}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
       aiShow(q, r.answer);
@@ -2886,6 +2974,24 @@ function pushLine(r){
   const p = pushStats(r); if (!p) return "";
   return `Control d'onada (minuts 3-13): ${p.push}% del temps a fons al camp rival; ${p.deepd === 1 ? "1 mort" : `${p.deepd} morts`} a camp rival abans del 14${p.deepd ? ` (${p.when.join(", ")}${p.gankd ? `, ${p.gankd} amb el jungla rival` : ""})` : ""}.`;
 }
+// each death read on Riot's map: where, who was near, and what most likely went wrong (a rule, not the AI)
+function deathReview(r, d){
+  const md = r.map; if (!md?.events) return null;
+  const e = md.events.filter(x => x.kind === "death").find(x => Math.abs(x.t - d.t) < 8); if (!e) return null;
+  const f = (md.frames || []).reduce((a, b) => Math.abs(b.t - e.t) < Math.abs((a?.t ?? 1e9) - e.t) ? b : a, null);
+  const near = foe => !f ? [] : (md.players || []).filter(p => !p.me && (foe ? p.team !== md.side : p.team === md.side)).filter(p => { const q = f.pos?.[p.id]; return q && Math.hypot(q[0] - e.x, q[1] - e.y) < 2600; }).map(p => displayChamp(p.champ));
+  const foes = near(true), mates = near(false), deep = halfMargin(e.x, e.y, md.side) > 0, zone = aiZone(e.x, e.y, md.side), early = d.t < 840;
+  const nf = Math.max(foes.length + (e.champ && !foes.includes(displayChamp(e.champ)) ? 1 : 0), (d.by || []).length);
+  let why = "";
+  if (early && deep && d.kind === "gank del jungla") why = "T'has avançat passat el riu i t'ha agafat el jungla: abans d'empènyer, cal saber on és.";
+  else if (early && deep && nf >= 2) why = `Eres a camp rival amb ${nf} rivals a prop: massa avançat per a la fase de línia.`;
+  else if (d.kind === "gank del jungla") why = mates.length ? "Gank del jungla tot i tenir ajuda a prop: cal sortir abans, no quedar-se a lluitar." : "Gank del jungla sense ningú a prop: un ward al riu t'hauria avisat.";
+  else if (/^1v1 contra el rival/.test(d.kind)) why = "Has perdut l'u contra u: mira quan tenia les habilitats i el nivell per davant.";
+  else if (nf >= 3 && mates.length <= 1) why = `Baralla de ${nf} contra ${mates.length + 1}: has entrat sense l'equip.`;
+  else if (!early && deep && !mates.length) why = "Sol a camp rival a la segona meitat: sense visió, és on t'esperen.";
+  else if (d.kind === "torre o minions") why = "T'ha matat la torre o els minions: has entrat sota torre amb poca vida.";
+  return {zone, foes, mates, why};
+}
 // where each death happened on the map (Riot's timeline) and who was near; positions are once a minute
 function aiZone(x, y, side){
   const s = x + y, d = y - x;
@@ -2907,7 +3013,8 @@ function deathsOnMap(r){
   };
   return "On ha mort (mapa de Riot, posicions aproximades de minut en minut): " + deaths.map(e => {
     const foes = near(e, true), mates = near(e, false);
-    return `${fmtClock(e.t)} a ${aiZone(e.x, e.y, md.side)}${e.champ ? `, l'ha matat ${displayChamp(e.champ)}` : ""}; rivals a prop: ${foes.join(", ") || "cap més"}; aliats a prop: ${mates.join(", ") || "cap"}`;
+    const dd = (r.deaths || []).find(x => Math.abs(x.t - e.t) < 8), why = dd ? deathReview(r, dd)?.why : "";
+    return `${fmtClock(e.t)} a ${aiZone(e.x, e.y, md.side)}${e.champ ? `, l'ha matat ${displayChamp(e.champ)}` : ""}; rivals a prop: ${foes.join(", ") || "cap més"}; aliats a prop: ${mates.join(", ") || "cap"}${why ? ` (lectura de l'app: ${why})` : ""}`;
   }).join(" | ") + ".";
 }
 // the lessons of the game just finished: once Riot's map is in the report (it arrives a minute or two
@@ -3737,11 +3844,11 @@ function renderScout(res){
     const [nm, tg] = (r.riotId || "").split("#");
     return `<div class="scr"><img src="${champImg(r.champ)}" alt="" onerror="this.style.visibility='hidden'"><b class="sn" data-noi18n>${esc(displayChamp(r.champ))}${nm ? ` <a class="opg sm" href="${opgg(nm, tg)}" target="_blank" rel="noopener" title="${esc(r.riotId)} · OP.GG">${esc(nm)}</a>` : ""}</b>
       <span class="sr"><span>${r.tier ? `${tierTxt({tier: r.tier, rank: r.rank})} · ${wr}% (${g})` : "Sense rang"}</span></span>
-      ${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="tags">${f.tags.map(x => `<span class="tg ${x.c}">${esc(x.t)}</span>`).join("")}</span></div>`;
+      ${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="tags">${[...premadeTag(r), ...f.tags].map(x => `<span class="tg ${x.c}">${esc(x.t)}</span>`).join("")}</span></div>`;
   };
   const foes = res.filter(r => !r.ally), mates = res.filter(r => r.ally).sort((a, b) => allyFacts(b).score - allyFacts(a).score);
   body.innerHTML = `<p class="scgrp">Rivals</p>` + foes.map(row).join("") + (mates.length ? `<p class="scgrp">El teu equip (del més fiable al que menys)</p>` + mates.map(row).join("") : "") +
-    `<p class="note">Dades públiques de Riot: rang de Solo/Duo, maestria amb el campió i les seves últimes 12 partides classificatòries. Al teu equip, en verd el que suma i en vermell el que resta.</p>`;
+    `<p class="note">Dades públiques de Riot: rang de Solo/Duo, maestria amb el campió i les seves últimes 7 partides classificatòries (dos jugadors del mateix equip que hi coincideixen 2 cops o més són premade). Al teu equip, en verd el que suma i en vermell el que resta.</p>`;
 }
 async function pollScout(){
   let r; try { r = await (await fetch("/api/scout", {cache: "no-store"})).json(); } catch (e) { return; }
@@ -3755,6 +3862,7 @@ async function pollScout(){
   const facts = r.results.filter(x => !x.ally).map(x => ({x, f: scoutFacts(x)}));
   facts.sort((a, b) => ((b.x.pos === game?.role) * 100 + b.f.score) - ((a.x.pos === game?.role) * 100 + a.f.score));
   for (const {f} of facts) for (const l of f.say.slice(0, 2)) if (lines.length < 5) lines.push(l);
+  const pm = premadeLines(r.results); if (pm.length) { plog(`Premades: ${pm.join(" ")}`); pm.forEach(l => speak(l)); }
   plog(`Rivals: ${lines.join(" ") || "cap avís"}`);
   if (lines.length) { speak("Rivals."); lines.forEach(l => speak(l)); } else speak("Rivals analitzats: cap no destaca especialment.");
   // your team: the one to play around and the one not to count on, a sentence each
@@ -3764,6 +3872,19 @@ async function pollScout(){
   if (team.length) { plog(`El teu equip: ${team.join(" ")}`); speak("El teu equip."); team.forEach(l => speak(l)); }
   aiPlan();
 }
+// premades: groups of the same team who played their last games together (the scouting compares their games)
+function premadeTag(x){ return x.premade?.length ? [{t: `premade amb ${x.premade.map(displayChamp).join(", ")}`, c: x.ally ? "" : "bad"}] : []; }
+function premadeLines(res){
+  const seen = new Set(), out = [];
+  for (const x of res) {
+    if (!x.premade?.length || seen.has(x.champ)) continue;
+    const grp = [x.champ, ...x.premade]; grp.forEach(c => seen.add(c));
+    const and = {es: " y ", en: " and "}[speechChoice().lang] || " i ";   // the names are put inside the translated sentence
+    const names = grp.map(displayChamp), list = names.slice(0, -1).join(", ") + and + names[names.length - 1];
+    out.push(x.ally ? `Al teu equip, ${list} juguen junts.` : `Atenció: ${list} són premade, juguen junts.`);
+  }
+  return out.sort((a, b) => a.startsWith("Atenció") ? -1 : 1);
+}
 // the same data on each row of the timers, so it is still there in the middle of the game
 function scoutRows(res){
   if (!game) return;
@@ -3772,7 +3893,7 @@ function scoutRows(res){
     const el = $(`#pinfo${i}`); if (!el) continue;
     const f = x.ally ? allyFacts(x) : scoutFacts(x), g = x.wins + x.losses;
     const rank = x.tier ? `${tierTxt({tier: x.tier, rank: x.rank})} · ${g ? Math.round(100 * x.wins / g) : 0}%` : "Sense rang";
-    el.innerHTML = `${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="pr">${esc(rank)}</span>${f.tags.slice(0, 3).map(t => `<span class="tg ${t.c}">${esc(t.t)}</span>`).join("")}`;
+    el.innerHTML = `${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="pr">${esc(rank)}</span>${[...premadeTag(x), ...f.tags].slice(0, 3).map(t => `<span class="tg ${t.c}">${esc(t.t)}</span>`).join("")}`;
     el.title = [rank, ...f.tags.map(t => t.t)].join(" · ");
   }
   i18nAll();
@@ -4297,6 +4418,33 @@ async function pollCS(){
 }
 if (location.protocol.startsWith("http")) setInterval(pollCS, 2000);
 
+// ---------- App status (Ajustos) ----------
+const PARTS = [["riot", "Clau de Riot"], ["ai", "IA (Gemini)"], ["voice", "Veu de Windows"], ["client", "Client de LoL"], ["runes", "Runes dels Challenger"]];
+let statusData = null;
+async function loadStatus(){
+  if (!location.protocol.startsWith("http")) return;
+  try { statusData = await (await fetch("/api/status", {cache: "no-store"})).json(); } catch (e) { return; }
+  const s = statusData, el = $("#statusBody"); if (!el) return;
+  const ago = at => at ? agoTxt(at) : "";
+  const msgOf = (k, p) => {
+    if (!p) return {cls: "", txt: k === "client" ? "encara no s'hi ha connectat (s'hi connecta quan el client està obert)" : k === "runes" ? "encara no s'han posat" : k === "voice" ? (s.voice ? "escoltant" : "s'engega quan comença la partida") : "encara no s'ha fet servir"};
+    if (p.msg === "no_key") return {cls: "bad", txt: "no hi ha clau: posa-la als ajustos"};
+    if (p.msg === "bad_key") return {cls: "bad", txt: "Riot no l'accepta: les claus personals caduquen cada 24 hores, genera'n una de nova"};
+    return {cls: p.ok ? "good" : "bad", txt: (p.ok ? "funciona" : "error") + (p.msg ? `: ${p.msg}` : "") + (p.at ? ` · ${ago(p.at)}` : "")};
+  };
+  const b = s.bench || {}, games = Object.entries(b.games || {}).map(([c, n]) => `${displayChamp(c)} ${n}`).join(", ");
+  el.innerHTML = `<ul class="stlist">${PARTS.map(([k, name]) => { const m = msgOf(k, s.parts?.[k]); return `<li><span class="dot ${m.cls}"></span><b>${name}</b> <span class="note">${esc(m.txt)}</span></li>`; }).join("")}
+    <li><span class="dot ${b.busy ? "" : games ? "good" : ""}"></span><b>Partides dels Challenger</b> <span class="note">${b.busy ? `llegint (${esc(b.msg)} ${b.done} de ${b.goal})` : games ? `${esc(games)}${b.updated ? ` · ${ago(b.updated)}` : ""}` : "encara no s'han llegit"}</span></li></ul>`
+    + (s.errors?.length ? `<details><summary>Últims errors (${s.errors.length})</summary><pre class="sterr" data-noi18n>${esc(s.errors.slice(-12).join("\n"))}</pre></details>` : `<p class="note">Cap error recent.</p>`);
+}
+$("#statusCopy")?.addEventListener("click", async () => {
+  await loadStatus(); const s = statusData; if (!s) return;
+  const txt = [`RiftMate ${s.version} · ${s.riot_id || "sense compte"} · model IA ${s.ai_model || "-"}`, ...PARTS.map(([k, n]) => { const p = s.parts?.[k]; return `${n}: ${p ? (p.ok ? "OK" : "ERROR") + (p.msg ? " " + p.msg : "") : "-"}`; }),
+    `Challenger: ${JSON.stringify(s.bench)}`, "Errors:", ...(s.errors || [])].join("\n");
+  try { await navigator.clipboard.writeText(txt); $("#statusCopy").textContent = "Copiat ✓"; } catch (e) { $("#statusCopy").textContent = "No s'ha pogut copiar"; }
+  setTimeout(() => { $("#statusCopy").textContent = "Copiar el diagnòstic"; }, 2500);
+});
+setInterval(() => { if (!$("#viewA").hidden) loadStatus(); }, 5000);
 // ---------- Reports ----------
 // tabs: false/"T" timer, true/"R" reports, "S" season
 function showTab(r){
@@ -4305,6 +4453,7 @@ function showTab(r){
   if (v === "R") loadHistory();
   if (v === "S") { loadRank(false); loadSeason(false); loadHistory(); }
   if (v === "H" && !mhLoaded) loadMatches(true);
+  if (v === "A") loadStatus();
   if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); loadBench(); }); renderCoachAna(); }
 }
 $("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C"));
@@ -4532,6 +4681,12 @@ const BENCH_ROWS = [
   ["Kills i assistències en altres línies abans del 14", "roam", true, 1, "Després d'estavellar l'onada de canó, ves a la línia del costat o al riu: és quan el teu rival no et pot seguir."],
   ["Plaques de torre", "plates", true, 1, "Quan el teu rival torni a base o mori, empeny i pega a la torre abans del minut 14."],
   ["Kills en solitari", "solo", true, 1, null],
+  ["Minut del primer gank (primera kill o assistència)", "jfirst", false, 1, "Planifica el primer gank des del principi: comença la ruta pel costat contrari a la línia que vols gankejar."],
+  ["Kills i assistències a dalt abans del 14", "jtop", null, 1, null],
+  ["Kills i assistències al mig abans del 14", "jmid", null, 1, null],
+  ["Kills i assistències a baix abans del 14", "jbot", null, 1, null],
+  ["Dracs que mata ell", "drakes", true, 1, "Cada vegada que el drac surti, mira si la línia de baix i el mig tenen prioritat: si la tenen, ves-hi."],
+  ["Larves que mata ell", "grubs", true, 1, "Les larves donen força a tot l'equip: prepara-les amb el top i el mig empenyent."],
   ["Primera tornada a base (minut)", "back", null, 1, null],
   ["Primer objecte acabat (minut)", "first", false, 1, "Torna a base amb or per a un component sencer i no perdis onades: el primer objecte arriba abans."],
   ["Visió per minut", "vismin", true, 1, "Posa el ward groc cada vegada que estigui llest i canvia'l per la lent quan tinguis el primer objecte."],
@@ -4601,7 +4756,8 @@ function renderBench(){
         ${s1 ? `<span>Encanteris: <img src="${spellIcon(s1)}" alt="" title="${esc(NAMES[s1] || s1)}"><img src="${spellIcon(s2)}" alt="" title="${esc(NAMES[s2] || s2)}"> <small class="note">${c.share?.spells ?? 0}%</small></span>` : ""}
         ${c.build?.length ? `<span>Build d'ells: ${icons(c.build)} <small class="note">${c.share?.build ?? 0}%</small></span>` : ""}
         ${me?.build?.length ? `<span>La teva: ${icons(me.build)}</span>` : ""}
-        ${c.skills ? `<span>Primer maximitzen la <b>${esc(c.skills)}</b> <small class="note">${c.share?.skills ?? 0}%</small></span>` : ""}</div></div>`;
+        ${c.skills ? `<span>Primer maximitzen la <b>${esc(c.skills)}</b> <small class="note">${c.share?.skills ?? 0}%</small></span>` : ""}
+        ${c.jside ? `<span>Comencen la jungla per <b>${c.jside === "top" ? "dalt" : "baix"}</b> <small class="note">${c.share?.jside ?? 0}%</small>${me?.jside ? ` · tu, per ${me.jside === "top" ? "dalt" : "baix"}` : ""}</span>` : ""}</div></div>`;
   }).join("") + `</div><p class="note">Partides reals de Riot (Solo/Duo de Corea i ${esc(riotCfg?.platform?.toUpperCase() || "EUW")}) de jugadors Challenger, Grandmaster i, si cal, Master que juguen ara aquests campions, a la mateixa posició que tu (i d'altres jugadors d'aquestes mateixes partides amb el campió). "Tu" són les teves últimes partides rankejades amb cada campió, mesurades igual que les seves. En verd, on estàs al seu nivell; en vermell, on et falta. Els percentatges diuen quants d'ells fan aquella tria.${b.updated ? ` Actualitzat ${agoTxt(b.updated)}.` : ""}</p>
     <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Tornar-ho a llegir</button></div>`;
   $("#benchRun")?.addEventListener("click", () => loadBench(true));
@@ -4827,7 +4983,8 @@ function renderReport(r){
   if (r.error) { $("#report").innerHTML = `<section class="card"><h2>Última partida</h2><p class="note warn">No s'ha pogut analitzar (${esc(r.error)}).</p></section>`; return; }
   const win = r.result === "Victòria", jg = r.role === "JUNGLE", sup = r.role === "UTILITY";
   const roleName = ({TOP:"top", JUNGLE:"jungla", MIDDLE:"mid", BOTTOM:"ADC", UTILITY:"suport"})[r.role] || "mid";
-  const deaths = r.deaths.length ? `<div class="tbl"><table><tr><th>Minut</th><th>Fase</th><th>Tipus</th><th>Qui</th></tr>${r.deaths.map(d => `<tr><td>${mm(d.t)}</td><td>${d.phase}</td><td><span class="pill ${d.kind.includes("gank")||d.kind.includes("contra 1")?"gank":d.kind.includes("1v1")?"duel":""}">${esc(d.kind)}</span></td><td>${esc(d.by.join(", "))}</td></tr>`).join("")}</table></div>` : `<p class="note">Cap mort. Molt bé.</p>`;
+  const dr = r.deaths.map(d => deathReview(r, d)), hasMap = dr.some(Boolean);
+  const deaths = r.deaths.length ? `<div class="tbl"><table><tr><th>Minut</th><th>Fase</th><th>Tipus</th><th>Qui</th>${hasMap ? "<th>On</th><th>Què ha fallat</th>" : ""}</tr>${r.deaths.map((d, i) => `<tr><td>${mm(d.t)}</td><td>${d.phase}</td><td><span class="pill ${d.kind.includes("gank")||d.kind.includes("contra 1")?"gank":d.kind.includes("1v1")?"duel":""}">${esc(d.kind)}</span></td><td>${esc(d.by.join(", "))}</td>${hasMap ? `<td>${dr[i] ? esc(dr[i].zone) + (dr[i].mates.length ? `<br><span class="note">aliats a prop: ${esc(dr[i].mates.join(", "))}</span>` : `<br><span class="note">cap aliat a prop</span>`) : ""}</td><td class="why">${esc(dr[i]?.why || "")}</td>` : ""}</tr>`).join("")}</table></div>${hasMap ? `<p class="note">Posicions del mapa de Riot (un cop per minut): "a prop" vol dir a menys d'un terç de línia.</p>` : ""}` : `<p class="note">Cap mort. Molt bé.</p>`;
   const ka = [...r.kills.map(x => ({...x, k: "Kill"})), ...r.assists.map(x => ({...x, k: "Assistència"}))].sort((a,b) => a.t - b.t);
   const kaT = ka.length ? `<div class="tbl"><table><tr><th>Minut</th><th>Tipus</th><th>Víctima</th><th></th></tr>${ka.map(x => `<tr><td>${mm(x.t)}</td><td>${x.k}</td><td>${esc(x.victim)}</td><td>${x.solo ? '<span class="pill duel">sol</span>' : ""}${x.roam ? ' <span class="pill">roam</span>' : ""}</td></tr>`).join("")}</table></div>` : `<p class="note">Cap kill ni assistència.</p>`;
   const obj = r.objectives.length ? r.objectives.map(o => `<span>${mm(o.t)} </span><span>${esc(o.obj)}</span><span> ${o.ours ? (o.me ? "✓ hi eres" : "· sense tu") : "· rival"}</span>`).join("<span> · </span>") : "Cap objectiu registrat.";

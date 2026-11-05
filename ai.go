@@ -35,6 +35,7 @@ Regles:
 - Les xifres concretes de pedaç (danys, temps de recàrrega exactes, preus) poden haver canviat: no les afirmis si no surten a l'estat.
 - Sigues directe i pràctic: digues què fer ara. Si la pregunta no és del joc, respon breument i torna a la partida.
 - Els temps d'encanteris i objectius de l'estat són els que porta l'app; tracta'ls com a aproximats.
+- Per a cada jugador, l'estat diu quants objectes té acabats i quins components porta: no diguis mai que algú té més objectes acabats dels que hi surten.
 - Onades: empènyer fins a la torre rival només si se sap on és el jungla rival o abans d'un objectiu; abans del drac o del baró, les onades del costat de l'objectiu han d'estar empenyent cap a la torre rival; quan moren dos rivals o més, empènyer i fer un objectiu.`
 }
 
@@ -234,7 +235,13 @@ func aiHandlers(mux *http.ServeMux, send func(http.ResponseWriter, int, string, 
 			Date     string   `json:"date"` // review: the report it is saved into
 		}
 		json.NewDecoder(io.LimitReader(req.Body, 64<<10)).Decode(&in)
+		t0 := time.Now()
 		ans, err := aiAskMode(strings.TrimSpace(in.Question), in.State, in.Lang, in.History, in.Mode)
+		if err != nil {
+			setPart("ai", false, err.Error())
+		} else {
+			setPart("ai", true, fmt.Sprintf("%s, %.1f s", loadConfig().AIModel, time.Since(t0).Seconds()))
+		}
 		if err == nil && in.Mode == "review" && in.Date != "" {
 			if g, _, e := readGame(in.Date); e == nil {
 				g.Report["ai_review"] = ans
