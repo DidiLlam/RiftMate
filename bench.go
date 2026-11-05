@@ -53,6 +53,11 @@ type benchGame struct {
 	DeepD    int     `json:"dd"` // deaths before 14 in the enemy half
 	GankD    int     `json:"gd"` // deaths before 14 with the enemy jungler taking part
 	V3       bool    `json:"v3"` // the numbers below were measured (games read since 2.0.27)
+	V5       bool    `json:"v5"` // full rune page and starting items (since 2.0.32)
+	Prim     int     `json:"pr"` // primary rune style
+	Perks    []int   `json:"pk"` // the 9 perks in the client's order: 4 primary, 2 secondary, offense, flex, defense
+	Start    []int   `json:"st"` // items bought before 1:30
+	Opp      string  `json:"o"`  // lane opponent's champion
 	Back     float64 `json:"bk"` // minute of the first recall (first purchase after minute 1:30)
 	Roam     int     `json:"ro"` // kills and assists before 14 on players of another lane
 	Plates   int     `json:"pt"` // tower plates
@@ -274,7 +279,7 @@ func benchRun() {
 			out := []benchGame{}
 			for i, x := range list {
 				benchSet("mine", i+1, len(list))
-				if g, ok := have[x.id]; ok {
+				if g, ok := have[x.id]; ok && g.V5 {
 					out = append(out, g)
 					continue
 				}
@@ -289,6 +294,28 @@ func benchRun() {
 			b.Mine[ch] = out
 			saveBench(b)
 			logf("Challenger: %d partides teves amb %s", len(out), ch)
+		}
+	}
+	// games read before the full rune pages: read again by id (one match and one timeline each, no searching)
+	for _, ch := range champs {
+		for i, g := range b.Games[ch] {
+			if g.V5 && g.Opp != "" {
+				continue
+			}
+			benchSet("update", i+1, len(b.Games[ch]))
+			var m matchDTO
+			if err := benchGet(c, matchRegion(c, g.Match), "/lol/match/v5/matches/"+g.Match, &m); err != nil {
+				continue
+			}
+			for _, p := range m.Info.Participants {
+				if strings.HasPrefix(p.PUUID, g.Player) && strings.EqualFold(p.ChampionName, ch) {
+					if ng, ok := benchFromMatch(c, &m, g.Match, p.PUUID, ch, pos[ch], items); ok {
+						ng.Tier, ng.Player = g.Tier, g.Player
+						b.Games[ch][i] = ng
+					}
+				}
+			}
+			saveBench(b)
 		}
 	}
 	// 1) the ladder: Challenger, then Grandmaster
@@ -467,6 +494,15 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 			if len(p.Perks.Styles) > 1 {
 				g.Sub = p.Perks.Styles[1].Style
 			}
+			if len(p.Perks.Styles) > 1 && len(p.Perks.Styles[0].Selections) == 4 && len(p.Perks.Styles[1].Selections) == 2 && p.Perks.StatPerks.Offense > 0 {
+				g.Prim = p.Perks.Styles[0].Style
+				for _, st := range p.Perks.Styles[:2] {
+					for _, x := range st.Selections {
+						g.Perks = append(g.Perks, x.Perk)
+					}
+				}
+				g.Perks = append(g.Perks, p.Perks.StatPerks.Offense, p.Perks.StatPerks.Flex, p.Perks.StatPerks.Defense)
+			}
 		}
 	}
 	if me < 0 || m.Info.GameDuration < 15*60 {
@@ -480,7 +516,7 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 			g.Plates, g.Solo = int(p.Challenges.Plates), int(p.Challenges.SoloKills)
 		}
 		if p.TeamID != team && p.TeamPosition == g.Pos {
-			opp = p.ParticipantID
+			opp, g.Opp = p.ParticipantID, p.ChampionName
 		}
 		if p.TeamID != team && p.TeamPosition == "JUNGLE" {
 			jg = p.ParticipantID
@@ -493,7 +529,7 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 	key, okey := strconv.Itoa(me), strconv.Itoa(opp)
 	lv := map[int]int{}
 	order := ""
-	g.HasPush, g.V3 = true, true
+	g.HasPush, g.V3, g.V5 = true, true, true
 	pushN, pushT := 0, 0
 	for _, f := range tl.Info.Frames {
 		if mn := f.Timestamp / 60000; mn >= 3 && mn <= 13 {
@@ -538,6 +574,9 @@ func benchFromMatch(c Config, m *matchDTO, mid, puuid, champ, pos string, final 
 					}
 				}
 			case "ITEM_PURCHASED":
+				if e.ParticipantID == me && e.Timestamp <= 90000 && len(g.Start) < 6 {
+					g.Start = append(g.Start, e.ItemID)
+				}
 				if e.ParticipantID == me && e.Timestamp > 90000 && g.Back == 0 {
 					g.Back = math.Round(float64(e.Timestamp)/6000) / 10
 				}
@@ -600,40 +639,61 @@ func finalItems() map[int]bool {
 // ---- summary for the page and the AI
 
 type benchSummary struct {
-	Champ    string         `json:"champ"`
-	Name     string         `json:"name"`
-	Pos      string         `json:"pos,omitempty"`
-	Games    int            `json:"games"`
-	Players  int            `json:"players"`
-	WR       int            `json:"wr"`
-	CS10     float64        `json:"cs10"`
-	CSMin    float64        `json:"csmin"`
-	CS10Diff float64        `json:"cs10d"`
-	Gold10D  float64        `json:"g10d"`
-	K        float64        `json:"k"`
-	D        float64        `json:"d"`
-	A        float64        `json:"a"`
-	D14      float64        `json:"d14"`
-	KP       float64        `json:"kp"`
-	VisMin   float64        `json:"vismin"`
-	Control  float64        `json:"cw"`
-	DmgShare float64        `json:"dmg"`
-	First    float64        `json:"first"`
-	Keystone int            `json:"ks"`
-	Sub      int            `json:"sub"`
-	Spells   string         `json:"spells"`
-	Build    []int          `json:"build"`
-	Skills   string         `json:"skills"`
-	Push     *float64       `json:"push,omitempty"`  // % of minutes 3-13 deep in the enemy half
-	DeepD    *float64       `json:"deepd,omitempty"` // deaths before 14 in the enemy half, per game
-	GankD    *float64       `json:"gankd,omitempty"` // deaths before 14 with the enemy jungler in it, per game
-	Back     *float64       `json:"back,omitempty"`  // minute of the first recall
-	Roam     *float64       `json:"roam,omitempty"`  // kills + assists before 14 in other lanes, per game
-	Plates   *float64       `json:"plates,omitempty"`
-	Solo     *float64       `json:"solo,omitempty"`
-	Tiers    map[string]int `json:"tiers,omitempty"` // games by the player's tier (LOBBY: someone else in one of those games)
-	Me       *benchSummary  `json:"me,omitempty"`    // the player's own games, measured the same way
-	Share    map[string]int `json:"share"`           // how often the most common choice was taken, in %
+	Champ    string              `json:"champ"`
+	Name     string              `json:"name"`
+	Pos      string              `json:"pos,omitempty"`
+	Games    int                 `json:"games"`
+	Players  int                 `json:"players"`
+	WR       int                 `json:"wr"`
+	CS10     float64             `json:"cs10"`
+	CSMin    float64             `json:"csmin"`
+	CS10Diff float64             `json:"cs10d"`
+	Gold10D  float64             `json:"g10d"`
+	K        float64             `json:"k"`
+	D        float64             `json:"d"`
+	A        float64             `json:"a"`
+	D14      float64             `json:"d14"`
+	KP       float64             `json:"kp"`
+	VisMin   float64             `json:"vismin"`
+	Control  float64             `json:"cw"`
+	DmgShare float64             `json:"dmg"`
+	First    float64             `json:"first"`
+	Keystone int                 `json:"ks"`
+	Sub      int                 `json:"sub"`
+	Spells   string              `json:"spells"`
+	Build    []int               `json:"build"`
+	Skills   string              `json:"skills"`
+	Push     *float64            `json:"push,omitempty"`  // % of minutes 3-13 deep in the enemy half
+	DeepD    *float64            `json:"deepd,omitempty"` // deaths before 14 in the enemy half, per game
+	GankD    *float64            `json:"gankd,omitempty"` // deaths before 14 with the enemy jungler in it, per game
+	Back     *float64            `json:"back,omitempty"`  // minute of the first recall
+	Roam     *float64            `json:"roam,omitempty"`  // kills + assists before 14 in other lanes, per game
+	Plates   *float64            `json:"plates,omitempty"`
+	Solo     *float64            `json:"solo,omitempty"`
+	Page     *runePage           `json:"page,omitempty"`  // the most common full rune page
+	Start    []int               `json:"start,omitempty"` // the most common starting items
+	Items    []int               `json:"items,omitempty"` // completed items they build most, by how often
+	Tiers    map[string]int      `json:"tiers,omitempty"`
+	VS       map[string]*benchVs `json:"vs,omitempty"` // by lane opponent // games by the player's tier (LOBBY: someone else in one of those games)
+	Me       *benchSummary       `json:"me,omitempty"` // the player's own games, measured the same way
+	Share    map[string]int      `json:"share"`        // how often the most common choice was taken, in %
+}
+
+type benchVs struct {
+	N     int     `json:"n"`
+	W     int     `json:"w"`
+	CS10D float64 `json:"cs10d"`
+	G10D  float64 `json:"g10d"`
+	D14   float64 `json:"d14"`
+	First int     `json:"first"` // their most common first completed item in this matchup
+	Name  string  `json:"name"`
+}
+
+type runePage struct {
+	Prim  int   `json:"prim"`
+	Sub   int   `json:"sub"`
+	Perks []int `json:"perks"`
+	Share int   `json:"share"` // % of the games with this keystone that use exactly this page
 }
 
 func r1(x float64) float64 { return math.Round(x*10) / 10 }
@@ -740,6 +800,73 @@ func summarize(ch string, gs []benchGame) benchSummary {
 		return best, int(math.Round(100 * float64(n) / nf))
 	}
 	s.Keystone, s.Share["ks"] = topI(ks)
+	// the full page: the most common one among the games with the most common keystone
+	pages, withKs := map[string]int{}, 0
+	for _, g := range gs {
+		if len(g.Perks) == 9 && g.Perks[0] == s.Keystone {
+			pages[fmt.Sprint(g.Prim, g.Sub, g.Perks)]++
+			withKs++
+		}
+	}
+	if best, _ := topS(pages); best != "" {
+		for _, g := range gs {
+			if len(g.Perks) == 9 && fmt.Sprint(g.Prim, g.Sub, g.Perks) == best {
+				s.Page = &runePage{g.Prim, g.Sub, g.Perks, int(math.Round(100 * float64(pages[best]) / float64(withKs)))}
+				break
+			}
+		}
+	}
+	s.VS = map[string]*benchVs{}
+	firsts := map[string]map[int]int{}
+	for _, g := range gs {
+		if g.Opp == "" {
+			continue
+		}
+		v := s.VS[g.Opp]
+		if v == nil {
+			v = &benchVs{Name: displayName(g.Opp)}
+			s.VS[g.Opp], firsts[g.Opp] = v, map[int]int{}
+		}
+		v.N++
+		if g.Win {
+			v.W++
+		}
+		v.CS10D += float64(g.CS10Diff)
+		v.G10D += float64(g.Gold10D)
+		v.D14 += float64(g.D14)
+		if len(g.Build) > 0 {
+			firsts[g.Opp][g.Build[0]]++
+		}
+	}
+	for o, v := range s.VS {
+		n := float64(v.N)
+		v.CS10D, v.G10D, v.D14 = r1(v.CS10D/n), math.Round(v.G10D/n), r1(v.D14/n)
+		v.First, _ = topI(firsts[o])
+	}
+	starts, items := map[string]int{}, map[int]int{}
+	for _, g := range gs {
+		if len(g.Start) > 0 {
+			starts[fmt.Sprint(g.Start)]++
+		}
+		for _, x := range g.Build {
+			items[x]++
+		}
+	}
+	if best, _ := topS(starts); best != "" {
+		for _, f := range strings.Fields(strings.Trim(best, "[]")) {
+			n, _ := strconv.Atoi(f)
+			s.Start = append(s.Start, n)
+		}
+	}
+	for x := range items {
+		s.Items = append(s.Items, x)
+	}
+	sort.Slice(s.Items, func(i, j int) bool {
+		return items[s.Items[i]] > items[s.Items[j]] || (items[s.Items[i]] == items[s.Items[j]] && s.Items[i] < s.Items[j])
+	})
+	if len(s.Items) > 10 {
+		s.Items = s.Items[:10]
+	}
 	s.Sub, s.Share["sub"] = topI(sub)
 	s.Spells, s.Share["spells"] = topS(sp)
 	var first1 string

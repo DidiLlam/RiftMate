@@ -39,7 +39,10 @@ func parseLockfile(path string) (*lcuCreds, error) {
 	return &lcuCreds{Port: f[2], Token: f[3]}, nil
 }
 
-func lcuGet(path string, out any) (int, error) {
+func lcuGet(path string, out any) (int, error) { return lcuDo("GET", path, nil, out) }
+
+// lcuDo: any method; body is sent as JSON
+func lcuDo(method, path string, in, out any) (int, error) {
 	lcuMu.Lock()
 	c := lcuCached
 	if c == nil && time.Since(lcuTried) > 5*time.Second {
@@ -51,7 +54,15 @@ func lcuGet(path string, out any) (int, error) {
 	if c == nil {
 		return 0, errors.New("no_client")
 	}
-	req, _ := http.NewRequest("GET", "https://127.0.0.1:"+c.Port+path, nil)
+	var rd io.Reader
+	if in != nil {
+		raw, _ := json.Marshal(in)
+		rd = strings.NewReader(string(raw))
+	}
+	req, _ := http.NewRequest(method, "https://127.0.0.1:"+c.Port+path, rd)
+	if in != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("riot:"+c.Token)))
 	r, err := lcuHTTP.Do(req)
 	if err != nil {
@@ -62,8 +73,11 @@ func lcuGet(path string, out any) (int, error) {
 	}
 	defer r.Body.Close()
 	body, _ := io.ReadAll(r.Body)
-	if r.StatusCode == 200 && out != nil {
-		return 200, json.Unmarshal(body, out)
+	if r.StatusCode >= 200 && r.StatusCode < 300 && out != nil && len(body) > 0 {
+		return r.StatusCode, json.Unmarshal(body, out)
+	}
+	if r.StatusCode >= 400 && method != "GET" {
+		logf("Client: %s %s -> %d %s", method, path, r.StatusCode, strings.TrimSpace(string(body)))
 	}
 	return r.StatusCode, nil
 }

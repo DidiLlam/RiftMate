@@ -208,6 +208,11 @@ type matchDTO struct {
 			TagLine       string `json:"riotIdTagline"`
 			SummonerName  string `json:"summonerName"`
 			Perks         struct {
+				StatPerks struct {
+					Defense int `json:"defense"`
+					Flex    int `json:"flex"`
+					Offense int `json:"offense"`
+				} `json:"statPerks"`
 				Styles []struct {
 					Style      int `json:"style"`
 					Selections []struct {
