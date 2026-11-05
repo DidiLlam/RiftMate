@@ -56,9 +56,63 @@ func leagueEntries(riotID string) (map[string]leagueEntry, error) {
 }
 
 var (
-	lpMu     sync.Mutex
-	lpBefore = map[string]map[string]leagueEntry{} // by game date
+	lpMu      sync.Mutex
+	lpBefore  = map[string]map[string]leagueEntry{} // by game date
+	lpPending = map[string]string{}                 // games still waiting for Riot's new rank: date -> Riot ID
+	lpLoaded  bool
 )
+
+// The rank at the start of each game and the games still waiting for their LP are kept on disk: closing or
+// updating the app in the minutes after a game (while Riot updates the rank) doesn't lose that game's LP.
+func lpStateFile() string { return profileFile("lp_pendent.json") }
+
+func loadLPState() {
+	if lpLoaded {
+		return
+	}
+	lpLoaded = true
+	var st struct {
+		Before  map[string]map[string]leagueEntry `json:"before"`
+		Pending map[string]string                 `json:"pending"`
+	}
+	if b, err := os.ReadFile(lpStateFile()); err == nil && json.Unmarshal(b, &st) == nil {
+		for k, v := range st.Before {
+			if _, ok := lpBefore[k]; !ok {
+				lpBefore[k] = v
+			}
+		}
+		for k, v := range st.Pending {
+			lpPending[k] = v
+		}
+	}
+}
+
+func saveLPState() {
+	// only the last day: older entries are of games that will never be finished
+	cut := time.Now().Add(-24 * time.Hour).Format("2006-01-02 15:04")
+	for k := range lpBefore {
+		if k < cut {
+			delete(lpBefore, k)
+		}
+	}
+	b, _ := json.Marshal(map[string]any{"before": lpBefore, "pending": lpPending})
+	os.WriteFile(lpStateFile(), b, 0o644)
+}
+
+// lpResume: at start, the games whose LP was still being waited for when the app closed
+func lpResume() {
+	lpMu.Lock()
+	loadLPState()
+	todo := map[string]string{}
+	for k, v := range lpPending {
+		todo[k] = v
+	}
+	lpMu.Unlock()
+	for date, id := range todo {
+		logf("LP: reprenc l'espera de la partida %s", date)
+		go lpAtEnd(date, id)
+	}
+}
 
 // lpAtStart remembers the ranked state when a game starts.
 func lpAtStart(date, riotID string) {
@@ -73,6 +127,7 @@ func lpAtStart(date, riotID string) {
 	}
 	lpMu.Lock()
 	lpBefore[date] = e
+	saveLPState()
 	lpMu.Unlock()
 	logf("LP a l'inici guardats (%d cues)", len(e))
 }
@@ -80,13 +135,22 @@ func lpAtStart(date, riotID string) {
 // lpAtEnd waits for Riot to update the ranked state, then stores the LP change in the report.
 func lpAtEnd(date, riotID string) {
 	lpMu.Lock()
+	loadLPState()
 	before, ok := lpBefore[date]
-	delete(lpBefore, date)
+	lpPending[date] = riotID
+	saveLPState()
 	lpMu.Unlock()
+	defer func() { // done (or given up): forget this game
+		lpMu.Lock()
+		delete(lpBefore, date)
+		delete(lpPending, date)
+		saveLPState()
+		lpMu.Unlock()
+	}()
 	if !ok || loadConfig().RiotKey == "" {
 		return
 	}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		time.Sleep(retryWait())
 		after, err := leagueEntries(riotID)
 		if err != nil {
@@ -113,7 +177,7 @@ func lpAtEnd(date, riotID string) {
 			return
 		}
 	}
-	logf("LP: Riot no ha actualitzat el rang en 10 minuts (normal o personalitzada?)")
+	logf("LP: Riot no ha actualitzat el rang en 20 minuts (normal o personalitzada?)")
 }
 
 func saveLP(date string, lp map[string]any) error {

@@ -1355,6 +1355,8 @@ const I18N = {
   "Que la IA em digui les tres lliçons": ["Que la IA me diga las tres lecciones", "Have the AI give me the three lessons"],
   "La IA llegeix aquest informe (morts, farm, visió, moments clau) i et diu les tres coses més importants a millorar d'aquesta partida. Normalment ho fa sola en acabar; si no hi ha sortit (la IA estava saturada o és una partida antiga), demana-les aquí.": ["La IA lee este informe (muertes, farm, visión, momentos clave) y te dice las tres cosas más importantes a mejorar de esta partida. Normalmente lo hace sola al acabar; si no ha salido (la IA estaba saturada o es una partida antigua), pídelas aquí.", "The AI reads this report (deaths, farm, vision, key moments) and tells you the three most important things to improve from this game. It usually does it by itself when the game ends; if it didn't (the AI was busy or it's an old game), ask here."],
   "Veu": ["Voz", "Voice"], "En partida": ["En partida", "In game"], "Compte i app": ["Cuenta y app", "Account and app"],
+  "et falten {n} LP · {y}, o unes {m} partides al teu {k}% actual": ["te faltan {n} LP · {y}, o unas {m} partidas a tu {k}% actual", "{n} LP to go · {y}, or about {m} games at your current {k}%"],
+  "{x}: et falten {n} LP · {y}, o unes {m} partides al teu {k}% actual": ["{x}: te faltan {n} LP · {y}, o unas {m} partidas a tu {k}% actual", "{x}: {n} LP to go · {y}, or about {m} games at your current {k}%"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -3893,9 +3895,11 @@ function lpGoal(){
   const d = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && r.lp.delta != null).slice(0, 20).map(r => r.lp.delta);
   const win = d.filter(x => x > 0), loss = d.filter(x => x < 0);
   const gain = win.length >= 3 ? win.reduce((a, b) => a + b, 0) / win.length : 25, lose = loss.length >= 3 ? -loss.reduce((a, b) => a + b, 0) / loss.length : 22;
-  const wr = (q.wr || 50) / 100, per = wr * gain - (1 - wr) * lose;
+  // your current form: the last 20 games with the app (Solo/Duo), or the season's win rate when there are fewer than 10
+  const rec = histCache.filter(r => !r.error && r.result && (!r.lp || r.lp.queue === "RANKED_SOLO_5x5")).slice(0, 20);
+  const wr = rec.length >= 10 ? rec.filter(r => r.result === "Victòria").length / rec.length : (q.wr || 50) / 100, per = wr * gain - (1 - wr) * lose;
   const plan = (need, e) => { const straight = Math.ceil(need / gain), games = per > 0.5 ? Math.ceil(need / per) : null, name = tierTxt(e);
-    return {need, tier: e.tier, name, straight, games, text: `${name}: et falten ${need} LP · ${straight === 1 ? "1 victòria" : `${straight} victòries seguides`}${games && games > straight && games <= 60 ? `, o unes ${games} partides al teu ${Math.round(wr * 100)}%` : ""}`}; };
+    return {need, tier: e.tier, name, straight, games, text: `${name}: et falten ${need} LP · ${straight === 1 ? "1 victòria" : `${straight} victòries seguides`}${games && games > straight && games <= 60 ? `, o unes ${games} partides al teu ${Math.round(wr * 100)}%${rec.length >= 10 ? " actual" : ""}` : ""}`}; };
   // the next division (Platinum 1 -> Emerald 4, Emerald 4 -> Emerald 3...), and the next league when it isn't that same step
   const nextDiv = div === 3 ? {tier: TIER_ORDER[ti + 1], rank: ti + 1 >= 7 ? "I" : "IV"} : {tier: q.tier, rank: ["IV", "III", "II", "I"][div + 1]};
   const steps = [plan(100 - q.lp, nextDiv)];
@@ -4056,6 +4060,19 @@ const MATCHUP = {
   "Elise|Nocturne": {tip: "Nocturne guanya el 51% i va +237 d'experiència al minut 15: no perdis camps per gankejar.", src: "Mobalytics, Esmeralda+"}
 };
 let histCache = [];
+// a game whose LP Riot didn't give in time: the change between its rank and the previous game's, when they are
+// consecutive games of the same queue (one game apart in wins + losses)
+function lpBackfill(list){
+  const solo = list.filter(r => r.lp?.after && r.lp.queue).sort((a, b) => a.date < b.date ? -1 : 1);
+  const TIERS = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER"];
+  const abs = e => { const t = Math.max(0, TIERS.indexOf(e?.tier)); return t >= 7 ? 2800 + (e.leaguePoints || 0) : t * 400 + ({IV: 0, III: 100, II: 200, I: 300}[e?.rank] || 0) + (e?.leaguePoints || 0); };
+  for (let i = 1; i < solo.length; i++) {
+    const r = solo[i], p = solo[i - 1];
+    if (r.lp.delta != null || p.lp.queue !== r.lp.queue) continue;
+    const g = x => (x.wins || 0) + (x.losses || 0);
+    if (g(r.lp.after) - g(p.lp.after) === 1) { r.lp.delta = abs(r.lp.after) - abs(p.lp.after); r.lp.est = true; }
+  }
+}
 function personalRecord(mine, opp){
   const g = histCache.filter(r => !r.error && r.opponent === opp);
   const same = g.filter(r => r.champion === mine);
@@ -4107,7 +4124,10 @@ function renderSession(h, fresh){
   const absLP = e => { const t = Math.max(0, TIERS.indexOf(e?.tier)); return t >= 7 ? 2800 + (e.leaguePoints || 0) : t * 400 + ({IV: 0, III: 100, II: 200, I: 300}[e?.rank] || 0) + (e?.leaguePoints || 0); };
   const solo = day.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && r.lp.after).sort((a, b) => a.date < b.date ? -1 : 1);
   const firstBefore = solo.find(r => r.lp.before)?.lp.before, startsAtFirst = solo.length && solo[0].lp.before;
-  const lp = solo.length && firstBefore ? absLP(solo[solo.length - 1].lp.after) - absLP(firstBefore) : 0;
+  // the end point: your rank right now (read from Riot) when it's newer than the last saved game
+  const lastAfter = solo.length ? solo[solo.length - 1].lp.after : null, now = mySolo && mySolo.queue === "RANKED_SOLO_5x5" ? {tier: mySolo.tier, rank: mySolo.rank, leaguePoints: mySolo.lp, wins: mySolo.wins, losses: mySolo.losses} : null;
+  const end = now && (!lastAfter || (now.wins + now.losses) >= (lastAfter.wins + lastAfter.losses)) ? now : lastAfter;
+  const lp = solo.length && firstBefore && end ? absLP(end) - absLP(firstBefore) : 0;
   const withLp = !!(solo.length && firstBefore), lpPartial = withLp && (!startsAtFirst || solo.length < day.filter(r => r.result).length);
   const bad = {}; for (const r of day) for (const g of reportGrades(r)) if (g.level === "bad") bad[g.area] = (bad[g.area] || 0) + 1;
   const rep = Object.entries(bad).sort((a, b) => b[1] - a[1])[0];
@@ -5300,6 +5320,8 @@ async function loadHistory(){
     if (histCount >= 0 && h.length > histCount) { mhLoaded = false; showTab(true); window.scrollTo({top: 0}); toFront("informe"); if (on("vGame")) speak("Informe de la partida llest.");
       }
     const fresh = histCount >= 0 && h.length > histCount;
+    lpBackfill(h);
+    if (fresh) [120, 300, 600].forEach(sec => setTimeout(() => loadRank(true).then(() => renderSession(histCache, false)), sec * 1000));
     histCount = h.length; histCache = h; maybeReview(h[0]); renderTrends(); renderReport(h[0]); if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
   } catch(e) { $("#report").innerHTML = `<section class="card"><p class="note warn">Els informes només funcionen obrint la pàgina des del programa RiftMate.</p></section>`; }
 }

@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.39"
+	version = "2.0.40"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -513,8 +513,9 @@ func serve(ln net.Listener) {
 }
 
 func main() {
-	migrateOldData() // first, before anything writes to the new folder
-	ownerID()        // the account this PC already knew keeps its data where it is
+	migrateOldData()                                         // first, before anything writes to the new folder
+	ownerID()                                                // the account this PC already knew keeps its data where it is
+	go func() { time.Sleep(20 * time.Second); lpResume() }() // LP of a game that was still waiting for Riot when the app closed
 	if handleInstallFlags(os.Args[1:]) {
 		return
 	}
