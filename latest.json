@@ -1,7 +1,7 @@
 {
- "version": "2.0.35",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.35.exe",
- "size": 8611328,
- "sha256": "d46cceaae0c2897be1d146004609709b170517bd63e1873465641158a2caf4db",
- "notes": "- Objectiu: LP que et falten per a la lliga següent i quantes victòries, i a la selecció, el teu campió més segur i avís de dodge quan estàs a punt de pujar\n- Coach: què ha canviat al pedaç per als teus campions i les seves builds, i te'l diu a la primera partida\n- Coach al xat: 'coach, al xat' o el botó copia els temporitzadors per enganxar-los amb Ctrl+V\n- Coach: el teu grup de campions i quan jugues millor (hores, dies i primera partida del dia)\n- Informe: moments clau, on es va guanyar i on es va perdre la partida\n- Historial i informes: arreglat un error amb partides sense dades d'equip"
+ "version": "2.0.36",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.36.exe",
+ "size": 8612864,
+ "sha256": "bdf01b4161c595a5a125c3822085e1c2f80e4b8ae2478474f5bb7963be335d4e",
+ "notes": "- Objectiu: ara mostra la divisió següent i, si és més lluny, també la lliga següent, cadascuna amb el seu escut\n- Es recalcula sol quan puges o baixes"
 }
