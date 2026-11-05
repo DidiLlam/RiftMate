@@ -1,7 +1,7 @@
 {
- "version": "2.0.32",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.32.exe",
- "size": 8475136,
- "sha256": "184886376c1b709200fd1fa6e1cbc08da8f8ec822ab0f0d390813e73db315961",
- "notes": "- Selecció: posa al client la pàgina de runes i el conjunt d'objectes dels Challenger amb el teu campió (només toca els que ha fet RiftMate)\n- Selecció: ban suggerit i com et va contra els rivals que ja han triat\n- Matchup: el teu resultat de la temporada contra el rival i què fan els Challenger en aquest enfrontament\n- Coach: missatges per prioritat, sense repeticions, i opció 'Quant parla el coach' (poc, normal, molt)\n- Coach: gràfics de com evolucionen els teus números setmana a setmana\n- Sessió: LP del dia, l'error que més es repeteix, i pausa després de dues derrotes"
+ "version": "2.0.33",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.33.exe",
+ "size": 8518656,
+ "sha256": "4e146696dbafc3d97b10b7bec679e62834d67f50f1e44f8bd8a576d281d41a00",
+ "notes": "- Ajustos: panell 'Estat de l'app' amb què funciona i els últims errors, i botó per copiar el diagnòstic\n- Premades: avisa si dos rivals (o dos del teu equip) juguen junts\n- Veu: aprèn com dius els noms quan repeteixes una ordre, i calla el soroll que es repeteix\n- IA: prova dos models alhora si el primer triga, i si no respon et diu almenys el marcador i el proper objectiu\n- IA: ja no compta components com a objectes acabats\n- Informe: a cada mort, on va ser, qui hi havia i què ha fallat\n- Jungla: primer gank, ganks per línia, per on comencen, dracs i larves dels Challenger\n- Recordatoris fets amb els teus números (farm i visió contra les teves victòries) en lloc de frases generals"
 }
