@@ -307,7 +307,19 @@ type MapData struct {
 	Stats   *MatchStats `json:"stats,omitempty"`
 	Win     *bool       `json:"win,omitempty"` // official result
 	Queue   int         `json:"queue,omitempty"`
-	Board   *Board      `json:"board,omitempty"` // the scoreboard of the 10 players
+	Board   *Board      `json:"board,omitempty"`  // the scoreboard of the 10 players
+	Gold    [][3]int    `json:"gold,omitempty"`   // each minute: second, your team's gold, the enemy's
+	Fights  []MapFight  `json:"fights,omitempty"` // every champion kill of the game
+}
+
+// MapFight: one champion kill anywhere on the map
+type MapFight struct {
+	T      float64 `json:"t"`
+	X      float64 `json:"x"`
+	Y      float64 `json:"y"`
+	Ours   bool    `json:"ours"` // killed by your team
+	Victim string  `json:"v"`    // champion (Data Dragon id)
+	Me     bool    `json:"me,omitempty"`
 }
 
 // Official end-of-game numbers for you and your lane opponent, and the differences at minutes 10 and 15.
@@ -473,6 +485,21 @@ func fetchMap(rec *Record, endUnix int64) (*MapData, error) {
 		}
 		md.Queue = m.Info.QueueID
 		for _, f := range tl.Info.Frames {
+			g := [3]int{int(f.Timestamp / 1000), 0, 0}
+			for k, pf := range f.ParticipantFrames {
+				id, _ := strconv.Atoi(k)
+				if teams[id] == team {
+					g[1] += pf.TotalGold
+				} else {
+					g[2] += pf.TotalGold
+				}
+			}
+			md.Gold = append(md.Gold, g)
+			for _, e := range f.Events {
+				if e.Type == "CHAMPION_KILL" && e.Position != nil {
+					md.Fights = append(md.Fights, MapFight{float64(e.Timestamp) / 1000, e.Position.X, e.Position.Y, teams[e.KillerID] == team || (e.KillerID == 0 && teams[e.VictimID] != team), champs[e.VictimID], e.VictimID == me || e.KillerID == me})
+				}
+			}
 			fr := MapFrame{T: float64(f.Timestamp) / 1000, Pos: map[string][2]int{}}
 			for k, pf := range f.ParticipantFrames {
 				fr.Pos[k] = [2]int{int(pf.Position.X), int(pf.Position.Y)}
@@ -576,9 +603,9 @@ func addMap(date string) (string, error) {
 	}
 	// fetch again when the game's result is unknown (the game closed before its end event was read)
 	if g.Report["map"] != nil && g.Report["result"] != nil && g.Report["result"] != "" {
-		if mm, _ := g.Report["map"].(map[string]any); mm != nil && mm["board"] != nil {
+		if mm, _ := g.Report["map"].(map[string]any); mm != nil && mm["board"] != nil && mm["gold"] != nil {
 			return "ok", nil
-		} // saved before the scoreboard existed: read it again
+		} // saved before the scoreboard or the teams' gold existed: read it again (once)
 	}
 	md, err := fetchMap(rec, g.EndUnix)
 	if err != nil {

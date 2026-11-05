@@ -78,8 +78,11 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 .bgap{background:var(--cool);border-radius:10px;padding:10px 14px;margin:4px 0 10px;font-size:.92rem}.bgap ol{margin:6px 0 4px;padding-left:20px}.bgap li{margin:4px 0;line-height:1.45}.bgap li .note{display:block}
 .stlist{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}.stlist li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.stlist .dot{width:9px;height:9px;border-radius:50%;background:var(--cool);flex:0 0 auto;transform:translateY(1px)}
 .stlist .dot.good{background:var(--good)}.stlist .dot.bad{background:var(--loss)}.sterr{font-family:var(--mono);font-size:.78rem;white-space:pre-wrap;max-height:220px;overflow:auto;background:var(--cool);padding:8px;border-radius:8px}
-td.why{min-width:220px;line-height:1.4}
+td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom b{display:block}.kmom.bad b{color:var(--loss)}.kmom.good b{color:var(--good)}
 .trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}#trainChamp{flex:1 1 160px;min-width:140px}
+.poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
+.rbgoal{flex-basis:100%;font-size:.85rem;color:var(--muted);margin-top:4px}
+.csban.goal{font-weight:600}.csban.bad{color:var(--loss)}
 .csban{margin:0 0 8px;font-size:.92rem}.csban .good b{color:var(--good)}.csban .bad b{color:var(--loss)}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px 24px}.pchart svg{width:100%;height:auto;display:block}
 .phead{display:flex;justify-content:space-between;align-items:baseline;font-size:.92rem;margin-bottom:2px}.phead .good{color:var(--good)}.phead .bad{color:var(--loss)}
@@ -195,7 +198,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .rqp .emb{width:56px;height:56px;object-fit:contain}
 .rqp .pk{display:flex;flex-direction:column;font-size:.9rem}.rqp .pk span{color:var(--muted);font-size:.8rem}
 .rqp .tag{margin-left:auto;font-size:.72rem;padding:2px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:600}
-.rankbadge{display:flex;align-items:center;gap:14px;margin:0 0 12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.rankbadge{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:0 0 12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
 .rankbadge img{width:72px;height:72px;object-fit:contain;flex:none}
 .rankbadge .rbt{display:flex;flex-direction:column;gap:2px}.rankbadge .rbt b{font-family:var(--display);font-size:1.35rem;line-height:1.1}
 .rankbadge .rbt span{color:var(--muted);font-family:var(--mono);font-size:.9rem}
@@ -380,6 +383,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <div class="bar">
     <span class="micstate" id="micState">Micro: s'activarà sol quan comenci la partida</span>
     <button class="b" id="resetAll">Anul·lar tots</button>
+    <button class="b" id="chatCopy" type="button" title="Copia els temporitzadors dels rivals per enganxar-los al xat del joc (Enter, Ctrl+V, Enter)">Copiar per al xat</button>
   </div>
   <div class="game"><span class="dot" id="gameDot"></span><span id="gameTxt">Esperant que comenci una partida…</span></div>
   <div class="heard"><span class="note">He sentit:</span> <b id="heard">—</b></div>
@@ -502,6 +506,9 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div id="coachAnaBody"></div>
       <div class="bar"><button class="b primary" type="button" id="coachAnaBtn">Analitza les meves partides</button><button class="b" type="button" id="coachAnaVoice" hidden>▶ Escolta-ho</button></div>
     </section>
+    <section class="card" id="poolCard"><h2>El teu grup de campions</h2><div id="poolBody"><p class="note">Carregant…</p></div></section>
+    <section class="card" id="whenCard"><h2>Quan jugues millor</h2><div id="whenBody"><p class="note">Carregant…</p></div></section>
+    <section class="card" id="patchCard" hidden><h2>Canvis del pedaç</h2><div id="patchBody"></div></section>
     <section class="card" id="progCard"><h2>Com evolucionen els teus números</h2><div id="progBody"></div></section>
     <section class="card" id="benchCard"><h2>Tu contra Challenger</h2><div id="benchBody"><p class="note">Carregant…</p></div></section>
     <section class="card"><h2>Pregunta-li al coach</h2>
@@ -1322,6 +1329,20 @@ const I18N = {
   "Digues cada campió com el diries en partida i l'app aprèn la teva manera de dir-lo. Ja entén moltes formes (Velkoz, Belcos, Chogat, Kasix, Asol, MF…), però així t'entendrà encara que el diguis a la teva manera.": ["Di cada campeón como lo dirías en partida y la app aprende tu manera de decirlo. Ya entiende muchas formas (Velkoz, Belcos, Chogat, Kasix, Asol, MF…), pero así te entenderá aunque lo digas a tu manera.", "Say each champion as you would in game and the app learns how you say it. It already knows many forms, but this way it will understand your own."],
   "Entrenament acabat. Les formes noves ja les fa servir la veu de Windows a la propera partida.": ["Entrenamiento acabado. Las formas nuevas ya las usa la voz de Windows en la próxima partida.", "Training done. The Windows voice will use the new forms from the next game."],
   "No t'he sentit. El torno a demanar al final.": ["No te he oído. Te lo vuelvo a pedir al final.", "I didn't hear you. I'll ask again at the end."],
+  "Copiar per al xat": ["Copiar para el chat", "Copy for chat"], "No hi ha cap temporitzador en marxa per copiar.": ["No hay ningún temporizador en marcha para copiar.", "No timers running to copy."],
+  "Copiat. Prem Enter, Control V i Enter.": ["Copiado. Pulsa Enter, Control V y Enter.", "Copied. Press Enter, Control V and Enter."], "No hi ha cap temporitzador en marxa.": ["No hay ningún temporizador en marcha.", "No timers running."],
+  "Copiat per al xat: {x}": ["Copiado para el chat: {x}", "Copied for chat: {x}"],
+  "Moments clau": ["Momentos clave", "Key moments"], "On es va perdre": ["Dónde se perdió", "Where it was lost"], "On es va guanyar": ["Dónde se ganó", "Where it was won"],
+  "Amb l'or de cada equip minut a minut (Riot): els dos minuts que més van canviar la partida.": ["Con el oro de cada equipo minuto a minuto (Riot): los dos minutos que más cambiaron la partida.", "From each team's gold minute by minute (Riot): the two minutes that changed the game most."],
+  "{x}: et falten {n} LP · {y}, o unes {m} partides al teu {k}% (guanyes {a} i perds {b} de mitjana)": ["{x}: te faltan {n} LP · {y}, o unas {m} partidas a tu {k}% (ganas {a} y pierdes {b} de media)", "{x}: {n} LP to go · {y}, or about {m} games at your {k}% (you win {a} and lose {b} on average)"],
+  "{x}: et falten {n} LP · {y} (guanyes {a} i perds {b} de mitjana)": ["{x}: te faltan {n} LP · {y} (ganas {a} y pierdes {b} de media)", "{x}: {n} LP to go · {y} (you win {a} and lose {b} on average)"],
+  "{n} victòries seguides": ["{n} victorias seguidas", "{n} wins in a row"], "1 victòria": ["1 victoria", "1 win"],
+  "El teu grup de campions": ["Tu grupo de campeones", "Your champion pool"], "Quan jugues millor": ["Cuándo juegas mejor", "When you play best"], "Canvis del pedaç": ["Cambios del parche", "Patch changes"],
+  "Partides": ["Partidas", "Games"], "Victòries": ["Victorias", "Win rate"], "LP amb l'app": ["LP con la app", "LP with the app"], "juga'l": ["juégalo", "play it"], "millor a normals": ["mejor en normales", "better in normals"], "poques partides": ["pocas partidas", "few games"], "correcte": ["correcto", "fine"],
+  "Primera partida del dia": ["Primera partida del día", "First game of the day"], "La resta": ["El resto", "The rest"], "Matí (6–14 h)": ["Mañana (6–14 h)", "Morning (6–14)"], "Tarda (14–18 h)": ["Tarde (14–18 h)", "Afternoon (14–18)"], "Vespre (18–22 h)": ["Noche (18–22 h)", "Evening (18–22)"], "Nit (22–6 h)": ["Madrugada (22–6 h)", "Night (22–6)"],
+  "Diumenge": ["Domingo", "Sunday"], "Dilluns": ["Lunes", "Monday"], "Dimarts": ["Martes", "Tuesday"], "Dimecres": ["Miércoles", "Wednesday"], "Dijous": ["Jueves", "Thursday"], "Divendres": ["Viernes", "Friday"], "Dissabte": ["Sábado", "Saturday"],
+  "Encara no hi ha prou partides d'aquesta temporada.": ["Todavía no hay suficientes partidas de esta temporada.", "Not enough games this season yet."],
+  "Pedaç nou: han tocat {x}. {y}.": ["Parche nuevo: han tocado a {x}. {y}.", "New patch: {x} was changed. {y}."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -2380,6 +2401,7 @@ function coachStart(data){
   coach = {ganks: 0, nextRem: t + nextReminder(), lastRem: "", csLevel: 0, csCheck: Math.max(180, t + 30), said: new Set(), myDeaths: 0,
            lastSaidAt: t};
   helpStart(data, t);
+  if (t < 120) { const mc = playerBy(data, game.me)?.championName; if (mc) setTimeout(() => sayPatchFor(mc), 20000); }
   guideStart(data, t);
   focusStart(t);
   coach.planAt = t < 120 ? t + 25 : Infinity;   // without scouting, the plan comes alone
@@ -2842,8 +2864,25 @@ const Q = {
   dead: /\b(mort|muerto|muerta|morta|dead|reviu|revive|reapareix|reaparece|torna|vuelve|respawn)\b/,
   level: /\b(nivell|nivel|level|lvl)\b/
 };
+// the enemy timers as a chat line ("Zed flash 12:30 · Samira ign 13:10"), with the game clock when each comes back
+const CHAT_SP = {Flash: "flash", Ignite: "ign", Heal: "heal", Teleport: "tp", Exhaust: "exh", Barrier: "barrier", Ghost: "ghost", Cleanse: "cleanse", Smite: "smite", R: "ult", Zhonya: "zhonya"};
+function chatTimers(){
+  const t = lastData?.gameData?.gameTime; if (t == null) return "";
+  return Object.entries(timers).filter(([k, x]) => +k.split("-")[0] < 5 && x.end > Date.now())
+    .map(([, x]) => ({who: x.who(), sp: CHAT_SP[x.spell] || x.spell, at: t + (x.end - Date.now()) / 1000})).sort((a, b) => a.at - b.at)
+    .map(x => `${x.who} ${x.sp} ${fmtClock(x.at)}`).join(" · ");
+}
+async function copyTimers(){
+  const txt = chatTimers(); if (!txt) return "";
+  try { await fetch("/api/clipboard", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: txt})}); } catch (e) {}
+  plog(`Xat: copiat "${txt}"`); return txt;
+}
 function localAnswer(q){
   const n = norm(q), words = n.split(" "), has = re => re.test(n), short = words.length <= 6;
+  if (has(/\b(xat|chat|al xat|al chat|copia|copiar|copia ho|enviar|envia|equip sapiga)\b/) && !has(Q.advice)) {
+    const txt = chatTimers(); if (!txt) return "No hi ha cap temporitzador en marxa per copiar.";
+    copyTimers(); return "Copiat. Prem Enter, Control V i Enter.";
+  }
   if (short && has(Q.mute)) { coachMuteUntil = Date.now() + 180000; return "D'acord, callo tres minuts. Els encanteris rivals te'ls continuo dient."; }
   if (short && has(Q.unmute) && !has(Q.ask)) { coachMuteUntil = 0; return "Torno a parlar."; }
   if (short && has(Q.repeat)) return coachLastText || "Encara no t'he dit res.";
@@ -2988,6 +3027,30 @@ function pushLine(r){
   const p = pushStats(r); if (!p) return "";
   return `Control d'onada (minuts 3-13): ${p.push}% del temps a fons al camp rival; ${p.deepd === 1 ? "1 mort" : `${p.deepd} morts`} a camp rival abans del 14${p.deepd ? ` (${p.when.join(", ")}${p.gankd ? `, ${p.gankd} amb el jungla rival` : ""})` : ""}.`;
 }
+// the moments that turned the game: the 2-minute windows with the biggest change in the gold difference between the
+// teams (Riot's timeline), what happened in them (fights, objectives) and where you were
+function keyMoments(r){
+  const md = r.map, g = md?.gold; if (!g || g.length < 8) return [];
+  const diff = g.map(x => x[1] - x[2]), out = [];
+  const win = [];
+  for (let i = 4; i + 2 < g.length; i++) win.push({i, d: diff[i + 2] - diff[i]});
+  const worst = win.slice().sort((a, b) => a.d - b.d)[0], best = win.slice().sort((a, b) => b.d - a.d)[0];
+  for (const w of [worst, best]) {
+    if (!w || Math.abs(w.d) < 1500) continue;
+    const t0 = g[w.i][0], t1 = g[w.i + 2][0];
+    const f = (md.fights || []).filter(x => x.t >= t0 - 20 && x.t <= t1);
+    const ours = f.filter(x => x.ours).length, theirs = f.length - ours;
+    const cx = f.length ? f.reduce((a, x) => a + x.x, 0) / f.length : null, cy = f.length ? f.reduce((a, x) => a + x.y, 0) / f.length : null;
+    const obj = (r.objectives || []).filter(o => o.t >= t0 - 20 && o.t <= t1);
+    const p = (md.path || []).reduce((a, b) => Math.abs(b.t - (t0 + t1) / 2) < Math.abs((a?.t ?? 1e9) - (t0 + t1) / 2) ? b : a, null);
+    const died = f.some(x => x.me && !x.ours), far = p && cx != null ? Math.hypot(p.x - cx, p.y - cy) > 4500 : false;
+    const at = (x, y) => ("a " + aiZone(x, y, md.side)).replace(/^a el /, "al ");
+    const what = [f.length ? `${f.length > 2 ? "una baralla" : f.length === 2 ? "dues kills" : "una kill"} ${cx != null ? at(cx, cy) : ""} (${ours} vostres, ${theirs} seves)` : "", ...obj.map(o => `${o.ours ? "el vostre equip va fer" : "el rival va fer"} ${o.obj.toLowerCase()}`)].filter(Boolean);
+    const where = p ? (died ? "Tu vas morir en aquella baralla." : far && f.length ? `Tu eres ${at(p.x, p.y)}, lluny de la baralla.` : f.length ? "Tu hi eres a prop." : `Tu eres ${at(p.x, p.y)}.`) : "";
+    out.push({bad: w.d < 0, t0, t1, text: `Entre el minut ${Math.floor(t0 / 60)} i el ${Math.ceil(t1 / 60)} el teu equip va ${w.d < 0 ? "perdre" : "guanyar"} ${Math.abs(Math.round(w.d / 100) * 100).toLocaleString("ca-ES")} d'or de diferència${what.length ? `: ${what.join(" i ")}` : ""}. ${where}`.trim()});
+  }
+  return out;
+}
 // each death read on Riot's map: where, who was near, and what most likely went wrong (a rule, not the AI)
 function deathReview(r, d){
   const md = r.map; if (!md?.events) return null;
@@ -3050,7 +3113,7 @@ async function aiReview(r, speakIt){
     (r.tips || []).length ? "Consells de l'app: " + r.tips.join(" ") : "",
     me ? `Taula: ${me.place}è de 10, ${me.k}/${me.d}/${me.a}, ${me.cs} CS, ${me.dmg} de dany.` : "",
     (r.deaths || []).length ? "Morts: " + r.deaths.map(d => `${fmtClock(d.t)} ${d.kind} (${d.by.join(", ")})`).join("; ") : "",
-    deathsOnMap(r), pushLine(r), aiMemory(r.date), benchText(r.champion)].filter(Boolean).join("\n");
+    deathsOnMap(r), pushLine(r), keyMoments(r).map(k => "Moment clau: " + k.text).join(" "), aiMemory(r.date), benchText(r.champion)].filter(Boolean).join("\n");
   try {
     const res = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({question: "Dona'm les tres lliçons d'aquesta partida. Si un error es repeteix respecte de les partides anteriors, digues-ho; si ha millorat en alguna cosa que li havies dit, reconeix-ho.", state: text, lang: speechChoice().lang, mode: "review", date: r.date})})).json();
@@ -3150,10 +3213,10 @@ async function loadRank(force){
         <div class="rec"><b>${q.wins}V ${q.losses}D</b><br>Win rate ${q.wr}%</div></div>${peakHtml}</div>`;
   }).join("");
   const solo = qs.find(q => q.queue === "RANKED_SOLO_5x5") || qs[0];
-  { const so = qs.find(q => q.queue === "RANKED_SOLO_5x5"); if (so) myRankAbs = absRank(so.tier, so.rank, so.lp); }
+  { const so = qs.find(q => q.queue === "RANKED_SOLO_5x5"); if (so) { myRankAbs = absRank(so.tier, so.rank, so.lp); mySolo = so; } }
   badge.hidden = false;
   badge.innerHTML = `${emblemImg(solo.tier, "")}<div class="rbt"><b data-noi18n>${tierTxt(solo)}</b><span>${solo.lp} LP · ${queueTxt(solo.queue)}</span></div>
-    <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>`;
+    <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${esc(g.text)}</div>` : ""; })()}`;
   { const h = $("#rankBadgeH"); if (h) { h.innerHTML = badge.innerHTML; h.hidden = false; } }
 }
 loadRank(false);
@@ -3414,7 +3477,8 @@ async function loadMe(){
   $("#meChip").hidden = false;
 }
 loadMe(); setInterval(() => { if (!game) loadMe(); }, 180000);
-setTimeout(() => loadBench(false), 4000);   // for the AI: the Challenger numbers of your champions
+setTimeout(() => loadBench(false), 4000);
+setTimeout(() => loadWhen().then(() => renderSession(histCache, false)), 5000);   // for the AI: the Challenger numbers of your champions
 // ---------- Season win rate per champion (Riot match history, kept on disk by the program) ----------
 let seasonQueue = store.get("seasonQueue", "RANKED_SOLO_5x5"), seasonTimer = null, seasonData = null;
 const seasonOpen = new Set();
@@ -3796,6 +3860,22 @@ function sayForm(champ, where){
   f.slice(0, 2).forEach(x => (coach ? coachSay(x) : speak(x)));
 }
 // ---------- Loading screen: scout the rivals (public Riot data) and warn about the dangerous ones ----------
+// ---------- Next league: LP left, and what it takes with your usual LP per win and loss ----------
+let mySolo = null;
+const TIER_ORDER = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER"];
+function lpGoal(){
+  const q = mySolo; if (!q) return null;
+  const ti = TIER_ORDER.indexOf(q.tier); if (ti < 0 || ti >= 7) return null;
+  const div = {IV: 0, III: 1, II: 2, I: 3}[q.rank] ?? 0, need = (3 - div) * 100 + (100 - q.lp), next = TIER_ORDER[ti + 1];
+  const d = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && r.lp.delta != null).slice(0, 20).map(r => r.lp.delta);
+  const win = d.filter(x => x > 0), loss = d.filter(x => x < 0);
+  const gain = win.length >= 3 ? win.reduce((a, b) => a + b, 0) / win.length : 25, lose = loss.length >= 3 ? -loss.reduce((a, b) => a + b, 0) / loss.length : 22;
+  const wr = (q.wr || 50) / 100, per = wr * gain - (1 - wr) * lose, straight = Math.ceil(need / gain);
+  const games = per > 0.5 ? Math.ceil(need / per) : null;
+  const name = tierTxt({tier: next, rank: "IV"});
+  return {need, next, name, gain: Math.round(gain), lose: Math.round(lose), straight, games,
+    text: `${name}: et falten ${need} LP · ${straight === 1 ? "1 victòria" : `${straight} victòries seguides`}${games ? `, o unes ${games} partides al teu ${Math.round(wr * 100)}%` : ""} (guanyes ${Math.round(gain)} i perds ${Math.round(lose)} de mitjana)`};
+}
 let myRankAbs = null, scoutTimer = null, scoutSaid = false, lastScout = null;
 const TIER_IDX = {IRON: 0, BRONZE: 1, SILVER: 2, GOLD: 3, PLATINUM: 4, EMERALD: 5, DIAMOND: 6, MASTER: 7, GRANDMASTER: 7, CHALLENGER: 7};
 const absRank = (tier, rank, lp) => TIER_IDX[tier] >= 7 ? 2800 + lp : (TIER_IDX[tier] ?? 0) * 400 + ({IV: 0, III: 100, II: 200, I: 300}[rank] ?? 0) + lp;
@@ -3990,7 +4070,7 @@ function renderSession(h, fresh){
   const day = all.filter(r => !from || r.date > from);
   const box = $("#session");
   const resetToday = from.startsWith(today());
-  if (!all.length && !resetToday) { box.hidden = true; return; }
+  if (!all.length && !resetToday) { const wa = warmupAdvice(); if (wa) { box.className = "session"; box.innerHTML = `<span>${esc(wa)}</span>`; box.hidden = false; } else box.hidden = true; return; }
   const w = day.filter(r => r.result === "Victòria").length, l = day.filter(r => r.result === "Derrota").length;
   let streak = 0; for (const r of day) { if (r.result === "Victòria") break; if (r.result === "Derrota") streak++; } // newest first; unknown results don't count
   const stop = streak >= 3, pause = streak === 2;
@@ -4225,6 +4305,7 @@ function bindMarks(md){
     $("#mapSel").innerHTML = `<p class="selh">${esc(mm(e.t))} · ${esc(e.label)}</p>${e.kind !== "objective" ? eventContext(md, e) : ""}`;
   }));
 }
+const goldTried = new Set();
 async function requestMap(date){
   const err = $("#mapErr"); if (err) err.textContent = "Demanant-lo a Riot…";
   try {
@@ -4386,7 +4467,15 @@ function csExtra(cs){
   const ban = Object.entries(opps).filter(([, r]) => r.w + r.l >= 3 && r.l > r.w).sort((a, b) => (b[1].l - b[1].w) - (a[1].l - a[1].w) || b[1].l - a[1].l)
     .filter(([n]) => !cs.their_team.some(p => norm(p.name) === norm(n))).slice(0, 2);
   const vs = cs.their_team.map(p => [p.name, opps[p.name] || Object.entries(opps).find(([k]) => norm(k) === norm(p.name))?.[1]]).filter(([, r]) => r && r.w + r.l >= 2);
-  return (ban.length && !cs.their_team.length ? `<p class="csban">Ban suggerit: ${ban.map(([n, r]) => fmt(n, r)).join(" · ")} <span class="note">(els rivals de línia que més et guanyen aquesta temporada)</span></p>` : "")
+  const g = lpGoal(), me = cs.my_team.find(p => p.me);
+  let goal = "";
+  if (g && g.need <= 40) {
+    const solo = seasonData?.queues?.RANKED_SOLO_5x5?.champions || [], best = solo.filter(c => c.games >= 8).sort((a, b) => b.wr - a.wr)[0];
+    const mine = me?.name && solo.find(c => norm(c.name) === norm(me.name) || norm(c.champ) === norm(me.champ || ""));
+    goal = `<p class="csban goal">Estàs a ${g.need} LP de ${esc(g.name)}${best ? `: el teu campió més segur és <b data-noi18n>${esc(best.name)}</b> (${best.wr}% en ${best.games} partides)` : ""}.</p>`;
+    if (me?.locked && mine && mine.games >= 5 && mine.wr < 40) goal += `<p class="csban bad">Amb ${esc(mine.name)} vas ${mine.wins}V – ${mine.losses}D aquesta temporada. Tan a prop de pujar, si no et ve de gust, valora el dodge: costa menys LP que una derrota.</p>`;
+  }
+  return goal + (ban.length && !cs.their_team.length ? `<p class="csban">Ban suggerit: ${ban.map(([n, r]) => fmt(n, r)).join(" · ")} <span class="note">(els rivals de línia que més et guanyen aquesta temporada)</span></p>` : "")
     + (vs.length ? `<p class="csban">Contra els que han triat: ${vs.map(([n, r]) => `<span class="${r.w >= r.l ? "good" : "bad"}">${fmt(n, r)}</span>`).join(" · ")}</p>` : "");
 }
 function renderCS(cs){
@@ -4521,7 +4610,7 @@ function showTab(r){
   if (v === "H" && !mhLoaded) loadMatches(true);
   if (v === "H") loadRank(false);
   if (v === "A") loadStatus();
-  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); loadBench(); }); renderCoachAna(); }
+  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
 }
 $("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -4710,6 +4799,7 @@ async function loadMatches(reset){
   renderMatches();
 }
 $("#mhMore").addEventListener("click", () => loadMatches(false));
+$("#chatCopy").addEventListener("click", async () => { const t = await copyTimers(); $("#status").textContent = t ? `Copiat per al xat: ${t}` : "No hi ha cap temporitzador en marxa."; $("#status").className = "note"; });
 $("#mhList").addEventListener("click", e => {
   if (e.target.closest("a")) return;                 // a name: its OP.GG
   const c = e.target.closest(".mh"); if (!c) return;
@@ -4836,6 +4926,72 @@ function renderBench(){
     <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Tornar-ho a llegir</button></div>`;
   $("#benchRun")?.addEventListener("click", () => loadBench(true));
   loadRunes(); fillRunes(); renderProgress(); i18nAll();
+}
+// ---------- What the patch changed for your champions and items ----------
+let patchData = null;
+async function loadPatch(){
+  if (!location.protocol.startsWith("http")) return null;
+  const champs = new Set((benchData?.champs || []).map(c => c.champ));
+  for (const c of (seasonData?.queues?.RANKED_SOLO_5x5?.champions || []).slice().sort((a, b) => b.games - a.games).slice(0, 4)) champs.add(c.champ);
+  if (!champs.size) return null;
+  const items = new Set((benchData?.champs || []).flatMap(c => [...(c.build || []), ...(c.me?.build || [])]));
+  try { patchData = await (await fetch(`/api/patchdiff?champs=${encodeURIComponent([...champs].join(","))}&items=${[...items].join(",")}`, {cache: "no-store"})).json(); } catch (e) { return null; }
+  renderPatch(); return patchData;
+}
+function patchLines(){
+  const p = patchData; if (!p || p.error) return [];
+  return [...Object.entries(p.champs || {}).map(([c, l]) => `${displayChamp(c)}: ${l.join("; ")}`), ...Object.entries(p.items || {}).map(([n, l]) => `${n}: ${l.join("; ")}`)];
+}
+function renderPatch(){
+  const card = $("#patchCard"), el = $("#patchBody"), p = patchData; if (!card || !p || p.error) return;
+  const lines = patchLines(); card.hidden = false;
+  el.innerHTML = lines.length ? `<ul class="cslist">${lines.map(l => `<li data-noi18n>${esc(l)}</li>`).join("")}</ul><p class="note">Del pedaç ${esc(p.from)} al ${esc(p.to)}, amb les dades públiques de Riot (Data Dragon): estadístiques, temps de recàrrega, cost i abast. Els canvis de dany a vegades no hi surten.</p>`
+    : `<p class="note">Del pedaç ${esc(p.from)} al ${esc(p.to)} no hi ha canvis a les dades públiques dels teus campions ni de les seves builds (els canvis de dany a vegades no hi surten).</p>`;
+}
+// the first game of a new patch: say what changed for the champion you're playing
+async function sayPatchFor(champName){
+  if (!patchData) await loadPatch(); const p = patchData; if (!p || p.error) return;
+  const key = `patchSaid:${p.to}:${champName}`; if (store.get(key, false)) return;
+  const id = Object.keys(p.champs || {}).find(c => norm(c) === norm(champId(champName) || champName)); if (!id) return;
+  store.set(key, true);
+  coachSay(`Pedaç nou: han tocat ${displayChamp(id)}. ${p.champs[id].slice(0, 2).map(l => l.replace(/(\S+) → (\S+)/g, "de $1 a $2")).join(". ")}.`, 1);
+}
+// ---------- Your champion pool (this season's Solo/Duo) and when you play best ----------
+function renderPool(){
+  const el = $("#poolBody"); if (!el) return;
+  const list = (seasonData?.queues?.RANKED_SOLO_5x5?.champions || []).filter(c => c.games >= 2).sort((a, b) => b.games - a.games).slice(0, 10);
+  if (!list.length) { el.innerHTML = `<p class="note">Encara no hi ha prou partides d'aquesta temporada.</p>`; return; }
+  const lpOf = c => { const d = histCache.filter(r => r.lp?.delta != null && r.lp.queue === "RANKED_SOLO_5x5" && (norm(r.champion) === norm(c.name) || norm(champId(r.champion) || "") === norm(c.champ))).map(r => r.lp.delta); return d.length ? d.reduce((a, b) => a + b, 0) : null; };
+  const verdict = c => c.games < 8 ? {t: "poques partides", c: ""} : c.wr >= 55 ? {t: "juga'l", c: "good"} : c.wr < 45 ? {t: "millor a normals", c: "bad"} : {t: "correcte", c: ""};
+  const rows = list.map(c => { const v = verdict(c), lp = lpOf(c); return `<tr><td><b data-noi18n>${esc(c.name)}</b></td><td>${c.games}</td><td class="${c.wr >= 55 ? "good" : c.wr < 45 ? "bad" : ""}">${c.wr}%</td><td>${String(c.kda).replace(".", ",")}</td><td>${lp == null ? "—" : `<span class="${lp >= 0 ? "good" : "bad"}">${lp >= 0 ? "+" : ""}${lp}</span>`}</td><td><span class="tg ${v.c}">${v.t}</span></td></tr>`; }).join("");
+  const play = list.filter(c => c.games >= 8 && c.wr >= 55).slice(0, 2), drop = list.filter(c => c.games >= 8 && c.wr < 45);
+  const rec = play.length ? `Per pujar, juga ${play.map(c => c.name).join(" i ")}.${drop.length ? ` ${drop.map(c => c.name).join(", ")}, millor a normals fins que hi guanyis més.` : ""}` : drop.length ? `${drop.map(c => c.name).join(", ")}, millor a normals fins que hi guanyis més.` : "";
+  el.innerHTML = (rec ? `<p class="poolrec">${esc(rec)}</p>` : "") + `<div class="tbl"><table class="bench"><tr><th></th><th>Partides</th><th>Victòries</th><th>KDA</th><th>LP amb l'app</th><th></th></tr>${rows}</table></div>
+    <p class="note">Solo/Duo d'aquesta temporada (Riot). "Juga'l": 8 partides o més i el 55% de victòries o més; "millor a normals": per sota del 45%. Els LP són els de les partides jugades amb l'app oberta.</p>`;
+}
+let whenData = null;
+async function loadWhen(){
+  if (!location.protocol.startsWith("http")) return;
+  try { whenData = await (await fetch("/api/when", {cache: "no-store"})).json(); } catch (e) { return; }
+  renderWhen();
+}
+const pctOf = x => x && x.w + x.l ? Math.round(100 * x.w / (x.w + x.l)) : null;
+function warmupAdvice(){
+  const w = whenData; if (!w) return "";
+  const f = pctOf(w.first), r = pctOf(w.rest), n = (w.first?.w || 0) + (w.first?.l || 0);
+  return n >= 10 && f != null && r != null && r - f >= 8 ? `La primera partida de cada dia et va pitjor (${f}% contra ${r}%): abans de la primera ranked, fes una normal o 5 minuts a la Practice Tool.` : "";
+}
+function renderWhen(){
+  const el = $("#whenBody"), w = whenData; if (!el || !w) return;
+  if (w.games < 20) { el.innerHTML = `<p class="note">Encara no hi ha prou partides d'aquesta temporada.</p>`; return; }
+  const BANDS = [["matí", "Matí (6–14 h)"], ["tarda", "Tarda (14–18 h)"], ["vespre", "Vespre (18–22 h)"], ["nit", "Nit (22–6 h)"]], DAYS = ["Diumenge", "Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres", "Dissabte"];
+  const cell = (label, x) => { const n = x ? x.w + x.l : 0, p = pctOf(x); return `<tr><td>${label}</td><td>${n}</td><td class="${p == null || n < 6 ? "" : p >= 55 ? "good" : p < 45 ? "bad" : ""}">${p == null ? "—" : p + "%"}</td></tr>`; };
+  const bestBand = BANDS.map(([k, l]) => ({l, x: w.hours?.[k]})).filter(b => b.x && b.x.w + b.x.l >= 10).sort((a, b) => pctOf(b.x) - pctOf(a.x));
+  const tips = [warmupAdvice(), bestBand.length >= 2 && pctOf(bestBand[0].x) - pctOf(bestBand[bestBand.length - 1].x) >= 8 ? `Et va millor al ${bestBand[0].l.split(" (")[0].toLowerCase()} (${pctOf(bestBand[0].x)}%) que al ${bestBand[bestBand.length - 1].l.split(" (")[0].toLowerCase()} (${pctOf(bestBand[bestBand.length - 1].x)}%).` : ""].filter(Boolean);
+  el.innerHTML = (tips.length ? tips.map(t => `<p class="poolrec">${esc(t)}</p>`).join("") : "") + `<div class="whengrid"><div class="tbl"><table class="bench"><tr><th></th><th>Partides</th><th>Victòries</th></tr>
+    ${cell("Primera partida del dia", w.first)}${cell("La resta", w.rest)}${BANDS.map(([k, l]) => cell(l, w.hours?.[k])).join("")}</table></div>
+    <div class="tbl"><table class="bench"><tr><th></th><th>Partides</th><th>Victòries</th></tr>${[1, 2, 3, 4, 5, 6, 0].map(d => cell(DAYS[d], w.days?.[d])).join("")}</table></div></div>
+    <p class="note">Rankeds d'aquesta temporada (Riot). Un "dia" acaba quan passes més d'una hora i mitja sense jugar.</p>`;
 }
 // ---------- Progress week by week (the app's reports), with the Challenger line of your main champion ----------
 const PROG = [
@@ -5074,6 +5230,8 @@ function renderReport(r){
     <div class="kv"><div><span>${jg ? "Els teus ganks amb èxit" : "Els teus roams amb èxit"}</span><b>${r.roams.length}</b></div><div><span>${jg ? "Ganks del jungla rival" : "Roams del rival amb èxit"}</span><b class="${r.rival_roams.length >= 2 ? "bad" : ""}">${r.rival_roams.length}</b></div></div>
     <p class="note">Abans del minut 14: kills o assistències a altres línies. ${r.rival_roams.length ? "El rival ha ajudat a matar: " + r.rival_roams.map(x => `${esc(x.victim)} (${mm(x.t)})`).join(", ") + "." : ""}</p>
   </section>
+  ${(() => { if (r.map?.match_id && !r.map.gold && !goldTried.has(r.date)) { goldTried.add(r.date); setTimeout(() => requestMap(r.date), 500); }   // older reports: the teams' gold is read once
+    const km = keyMoments(r); return km.length ? `<section class="card"><h2>Moments clau</h2>${km.map(k => `<p class="kmom ${k.bad ? "bad" : "good"}"><b>${k.bad ? "On es va perdre" : "On es va guanyar"}</b> ${esc(k.text)}</p>`).join("")}<p class="note">Amb l'or de cada equip minut a minut (Riot): els dos minuts que més van canviar la partida.</p></section>` : ""; })()}
   <section class="card"><h2>Morts</h2>${deaths}</section>
   <section class="card"><h2>Kills i assistències</h2>${kaT}</section>
   <section class="card"><h2>Objectius</h2><p class="note">${obj}</p></section>`;

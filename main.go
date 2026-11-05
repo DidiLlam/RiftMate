@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.34"
+	version = "2.0.35"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -423,6 +423,18 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/runes", runesHandler(send))
 	mux.HandleFunc("/api/status", statusHandler(send))
 	mux.HandleFunc("/api/matches/ranks", matchRanksHandler(send))
+	mux.HandleFunc("/api/when", whenHandler(send))
+	mux.HandleFunc("/api/patchdiff", patchDiffHandler(send))
+	mux.HandleFunc("/api/clipboard", func(w http.ResponseWriter, req *http.Request) {
+		var in struct{ Text string }
+		json.NewDecoder(io.LimitReader(req.Body, 4096)).Decode(&in)
+		res := `{"ok":true}`
+		if err := setClipboard(in.Text); err != nil {
+			res = `{"ok":false}`
+			logf("Porta-retalls: %v", err)
+		}
+		send(w, 200, "application/json", []byte(res))
+	})
 	updateHandlers(mux, send, func(exe string) {
 		time.Sleep(300 * time.Millisecond)
 		voiceStop()
