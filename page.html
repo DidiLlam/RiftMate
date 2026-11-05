@@ -79,7 +79,7 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 .stlist{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}.stlist li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.stlist .dot{width:9px;height:9px;border-radius:50%;background:var(--cool);flex:0 0 auto;transform:translateY(1px)}
 .stlist .dot.good{background:var(--good)}.stlist .dot.bad{background:var(--loss)}.sterr{font-family:var(--mono);font-size:.78rem;white-space:pre-wrap;max-height:220px;overflow:auto;background:var(--cool);padding:8px;border-radius:8px}
 td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom b{display:block}.kmom.bad b{color:var(--loss)}.kmom.good b{color:var(--good)}
-.trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}#trainChamp{flex:1 1 160px;min-width:140px}
+.trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}
 .poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
 .rbgoal{flex-basis:100%;font-size:.88rem;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center}
 .rbstep{display:inline-flex;align-items:center;gap:8px}.rankbadge img.rbemb{width:34px;height:34px}
@@ -327,9 +327,12 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 .lane{white-space:nowrap;flex-shrink:0;width:5.6em}
 .enemy{position:relative}.haste .insp{position:absolute;top:1px;right:12px;font-size:.7rem;line-height:1.1}
 /* settings: cards flow in balanced columns (no holes under the short ones) */
-.settings{columns:3 320px;column-gap:16px}
-.settings > section{break-inside:avoid;display:block;margin:0 0 16px}
-.settings details{column-span:all;margin-top:4px}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}.subtabs button{font:inherit;font-weight:600;padding:7px 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.subtabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.settings{columns:2 380px;column-gap:16px}
+.settings > section,.settings > details{break-inside:avoid;display:block;margin:0 0 16px}
+.settings details.card summary{cursor:pointer;font-weight:600}
+#viewA [data-hide]{display:none !important}
 .mapctl{display:flex;gap:10px;align-items:center;margin-top:10px}
 .mapctl input[type=range]{flex:1;accent-color:var(--accent)}
 .mapctl span{font-family:var(--mono);font-variant-numeric:tabular-nums;min-width:5.5em}
@@ -396,7 +399,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   </div>
   </div>
   <div class="view" id="viewA" hidden>
-  <section class="card" id="statusCard"><h2>Estat de l'app</h2><div id="statusBody"><p class="note">Carregant…</p></div>
+  <nav class="subtabs" id="setTabs" role="tablist"><button type="button" data-g="veu">Veu</button><button type="button" data-g="coach">Coach</button><button type="button" data-g="partida">En partida</button><button type="button" data-g="app">Compte i app</button></nav>
+  <section class="card" id="statusCard" data-g="app"><h2>Estat de l'app</h2><div id="statusBody"><p class="note">Carregant…</p></div>
     <div class="bar"><button class="b" type="button" id="statusCopy">Copiar el diagnòstic</button><span class="note">Si alguna cosa no va, copia això i envia-ho.</span></div></section>
   <div class="settings">
   <section class="card" id="micCard"><h2>Micròfon i so</h2>
@@ -408,9 +412,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   </section>
   <section class="card" id="trainCard"><h2>Entrena els noms dels campions</h2>
     <p class="note">Digues cada campió com el diries en partida i l'app aprèn la teva manera de dir-lo. Ja entén moltes formes (Velkoz, Belcos, Chogat, Kasix, Asol, MF…), però així t'entendrà encara que el diguis a la teva manera.</p>
-    <div class="bar"><button class="b primary" type="button" id="trainHard">Entrenar els 50 noms difícils</button>
-      <input type="text" id="trainChamp" list="trainChampList" placeholder="o un campió concret"><datalist id="trainChampList"></datalist><button class="b" type="button" id="trainOne">Entrenar-lo</button>
-      <button class="b" type="button" id="trainStop" hidden>Aturar</button></div>
+    <div class="bar"><button class="b primary" type="button" id="trainHard">Entrenar els 50 noms difícils</button><button class="b" type="button" id="trainStop" hidden>Aturar</button></div>
+    <div class="keyrow"><input type="text" id="trainChamp" list="trainChampList" placeholder="o un campió concret"><datalist id="trainChampList"></datalist><button class="b" type="button" id="trainOne">Entrenar-lo</button></div>
     <div id="trainBox"></div>
   </section>
   <section class="card" id="coachCard"><h2>Coach de veu</h2>
@@ -488,14 +491,14 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="aDeco"><input type="checkbox" id="aDeco" checked><span>Decoració de temporada (Halloween, Nadal, Sant Jordi…)</span></label>
     <div class="row2"><label for="aFont">Lletra</label><select id="aFont"><option value="orig">Original</option><option value="sys">La del sistema</option><option value="read">Molt llegible</option></select></div>
   </section>
-  <details>
+  <details data-g="partida" class="card">
     <summary>Temps de recàrrega base (segons, editables)</summary>
     <table id="cdTable"><tbody></tbody></table>
     <p class="note" id="patchInfo"></p>
     <p class="note">Botes Jòniques: +10 de pressa d'encanteri. Perspicàcia còsmica: +18. Recàrrega = base ÷ (1 + pressa/100). Comprova els valors si hi ha hagut un pedaç nou.</p>
   </details>
   </div>
-    <div class="bar"><button class="b" type="button" id="updCheck">Comprovar si hi ha versió nova</button><button class="b" type="button" id="welcomeShow">Veure la pantalla de benvinguda</button><button class="b" id="quitBtn" title="Atura el programa">Tancar el programa</button></div>
+    <div class="bar" data-g="app"><button class="b" type="button" id="updCheck">Comprovar si hi ha versió nova</button><button class="b" type="button" id="welcomeShow">Veure la pantalla de benvinguda</button><button class="b" id="quitBtn" title="Atura el programa">Tancar el programa</button></div>
   </div>
   <div class="view" id="viewH" hidden>
     <div class="rankbadge" id="rankBadgeH" hidden></div>
@@ -1351,6 +1354,7 @@ const I18N = {
   "Xat: en partida, tenir sempre copiats els temporitzadors dels rivals, per enviar-los al xat amb Enter, Ctrl+V i Enter sense sortir del joc": ["Chat: en partida, tener siempre copiados los temporizadores de los rivales, para enviarlos al chat con Enter, Ctrl+V y Enter sin salir del juego", "Chat: in game, always keep the enemy timers copied, to send them with Enter, Ctrl+V, Enter without leaving the game"],
   "Que la IA em digui les tres lliçons": ["Que la IA me diga las tres lecciones", "Have the AI give me the three lessons"],
   "La IA llegeix aquest informe (morts, farm, visió, moments clau) i et diu les tres coses més importants a millorar d'aquesta partida. Normalment ho fa sola en acabar; si no hi ha sortit (la IA estava saturada o és una partida antiga), demana-les aquí.": ["La IA lee este informe (muertes, farm, visión, momentos clave) y te dice las tres cosas más importantes a mejorar de esta partida. Normalmente lo hace sola al acabar; si no ha salido (la IA estaba saturada o es una partida antigua), pídelas aquí.", "The AI reads this report (deaths, farm, vision, key moments) and tells you the three most important things to improve from this game. It usually does it by itself when the game ends; if it didn't (the AI was busy or it's an old game), ask here."],
+  "Veu": ["Voz", "Voice"], "En partida": ["En partida", "In game"], "Compte i app": ["Cuenta y app", "Account and app"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -4596,6 +4600,21 @@ $("#trainHard").addEventListener("click", () => trainStart(TRICKY.slice()));
 $("#trainOne").addEventListener("click", () => { const v = $("#trainChamp").value.trim(), c = CHAMPS.find(x => norm(x) === norm(v)) || bestChampion(norm(v)); if (c) trainStart([c, c]); });
 $("#trainStop").addEventListener("click", () => { trainOn = false; trainList = []; $("#trainStop").hidden = true; $("#trainBox").innerHTML = ""; });
 setTimeout(() => { $("#trainChampList").innerHTML = CHAMPS.map(c => `<option value="${esc(c)}">`).join(""); }, 0);
+// ---------- Ajustos: one group at a time ----------
+const SET_GROUP = {micCard: "veu", trainCard: "veu", coachCard: "coach", aiCard: "coach", helpCard: "partida", buysCard: "partida", statusCard: "app"};
+const SET_BY_TITLE = {"Altres avisos de veu": "veu", "Mapa de l'informe (clau de Riot)": "app", "Registre": "app", "Aparença": "app"};
+function setGroup(g){
+  try { localStorage.setItem("setGroup", g); } catch (e) {}
+  document.querySelectorAll("#setTabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.g === g));
+  document.querySelectorAll("#viewA section.card, #viewA details, #viewA .bar[data-g]").forEach(el => {
+    if (!el.dataset.g) { const t = el.querySelector("h2")?.textContent?.trim(); el.dataset.g = SET_GROUP[el.id] || SET_BY_TITLE[t] || SET_BY_TITLE[Object.keys(SET_BY_TITLE).find(k => tr(k) === t)] || "app"; }
+    if (el.closest("section.card") && el.closest("section.card") !== el) return;   // a block inside a card follows the card
+    el.toggleAttribute("data-hide", el.dataset.g !== g);
+  });
+  if (g === "app") loadStatus();
+}
+$("#setTabs").addEventListener("click", e => { const g = e.target.closest("button")?.dataset.g; if (g) setGroup(g); });
+setTimeout(() => { let g = "veu"; try { g = localStorage.getItem("setGroup") || "veu"; } catch (e) {} setGroup(g); }, 0);
 // ---------- App status (Ajustos) ----------
 const PARTS = [["riot", "Clau de Riot"], ["ai", "IA (Gemini)"], ["voice", "Veu de Windows"], ["client", "Client de LoL"], ["runes", "Runes dels Challenger"]];
 let statusData = null;
@@ -4632,7 +4651,7 @@ function showTab(r){
   if (v === "S") { loadRank(false); loadSeason(false); loadHistory(); }
   if (v === "H" && !mhLoaded) loadMatches(true);
   if (v === "H") loadRank(false);
-  if (v === "A") loadStatus();
+  if (v === "A") { const g = $("#setTabs button[aria-selected=true]")?.dataset.g; if (g === "app") loadStatus(); }
   if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
 }
 $("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C"));
