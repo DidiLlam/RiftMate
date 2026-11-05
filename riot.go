@@ -18,17 +18,18 @@ import (
 // ------------------------------------------------------------ config
 
 type Config struct {
-	RiotKey  string                            `json:"riot_key"`
-	Region   string                            `json:"region"`
-	Platform string                            `json:"platform"`
-	PUUIDs   map[string]string                 `json:"puuids"`
-	AIKey    string                            `json:"ai_key,omitempty"`
-	AIModel  string                            `json:"ai_model,omitempty"` // Gemini model that answered last
-	MyRiotID string                            `json:"my_riot_id,omitempty"`
-	Peaks    map[string]leagueEntry            `json:"peaks,omitempty"` // highest rank seen this season, by queue
-	Me       *meInfo                           `json:"me,omitempty"`
-	Owner    string                            `json:"owner,omitempty"`    // first account of this PC (its data keeps the original files)
-	PeaksBy  map[string]map[string]leagueEntry `json:"peaks_by,omitempty"` // peaks of the other accounts    // last known summoner name, level and icon (shown in the header)
+	RiotKey    string                            `json:"riot_key"`
+	Region     string                            `json:"region"`
+	Platform   string                            `json:"platform"`
+	PUUIDs     map[string]string                 `json:"puuids"`
+	AIKey      string                            `json:"ai_key,omitempty"`
+	AIModel    string                            `json:"ai_model,omitempty"` // Gemini model that answered last
+	MyRiotID   string                            `json:"my_riot_id,omitempty"`
+	Peaks      map[string]leagueEntry            `json:"peaks,omitempty"` // highest rank seen this season, by queue
+	Me         *meInfo                           `json:"me,omitempty"`
+	Owner      string                            `json:"owner,omitempty"`       // first account of this PC (its data keeps the original files)
+	VoiceAlias map[string][]string               `json:"voice_alias,omitempty"` // champion -> how you say it (learnt or trained)
+	PeaksBy    map[string]map[string]leagueEntry `json:"peaks_by,omitempty"`    // peaks of the other accounts    // last known summoner name, level and icon (shown in the header)
 }
 
 var cfgMu sync.Mutex

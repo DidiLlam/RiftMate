@@ -19,6 +19,7 @@ type histMatch struct {
 	End      int64  `json:"end"`      // unix seconds
 	Duration int64  `json:"duration"` // seconds
 	Board    *Board `json:"board"`
+	Ranks    bool   `json:"ranks,omitempty"` // the board has every player's rank (read when the game is opened)
 }
 
 var (
@@ -107,6 +108,50 @@ func matchesHandler(send func(http.ResponseWriter, int, string, []byte)) http.Ha
 			count = 10
 		}
 		b, err := matchesJSON(start, count)
+		if err != nil {
+			b, _ = json.Marshal(map[string]string{"error": err.Error()})
+		}
+		send(w, 200, "application/json", b)
+	}
+}
+
+// ranksForMatch: the Solo/Duo rank of the ten players of one game of the history (11 calls), read when you open it,
+// and kept with the game. It's their rank now, not on the day of the game.
+func ranksForMatch(mid string) ([]byte, error) {
+	c := loadConfig()
+	puuid, err := puuidFor(&c, myRiotID())
+	if err != nil {
+		return nil, err
+	}
+	var m matchDTO
+	if err := riotGetQuiet(c, "/lol/match/v5/matches/"+mid, &m); err != nil {
+		return nil, err
+	}
+	me := -1
+	for _, p := range m.Info.Participants {
+		if p.PUUID == puuid {
+			me = p.ParticipantID
+		}
+	}
+	histMu.Lock()
+	defer histMu.Unlock()
+	cache := loadHist()
+	h, ok := cache[mid]
+	if !ok {
+		return nil, fmt.Errorf("not_found")
+	}
+	h.Board, h.Ranks = makeBoardOpt(c, &m, me, true), true
+	cache[mid] = h
+	if b, err := json.Marshal(cache); err == nil {
+		os.WriteFile(histFile(), b, 0o644)
+	}
+	h.QueueTxt = queueName[h.Queue]
+	return json.Marshal(h)
+}
+
+func matchRanksHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		b, err := ranksForMatch(req.URL.Query().Get("id"))
 		if err != nil {
 			b, _ = json.Marshal(map[string]string{"error": err.Error()})
 		}

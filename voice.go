@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -74,7 +75,49 @@ func voiceHandlers(mux *http.ServeMux, send func(http.ResponseWriter, int, strin
 		send(w, 200, "application/json", []byte(msg))
 	})
 	mux.HandleFunc("/api/voice/variants", func(w http.ResponseWriter, req *http.Request) {
-		b, _ := json.Marshal(voiceVariants)
+		all := map[string][]string{}
+		for c, v := range voiceVariants {
+			all[c] = append([]string{}, v...)
+		}
+		for c, v := range loadConfig().VoiceAlias {
+			all[c] = append(all[c], v...)
+		}
+		b, _ := json.Marshal(all)
+		send(w, 200, "application/json", b)
+	})
+	// POST {champ, phrase}: a way you say a champion, kept for the Windows recognizer and the page;
+	// POST {clear:true} forgets them all. GET lists them.
+	mux.HandleFunc("/api/voice/learn", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodPost {
+			var in struct {
+				Champ, Phrase string
+				Clear         bool
+			}
+			json.NewDecoder(io.LimitReader(req.Body, 4096)).Decode(&in)
+			c := loadConfig()
+			if in.Clear {
+				c.VoiceAlias = nil
+			} else if ph := strings.Join(strings.Fields(strings.TrimSpace(in.Phrase)), " "); in.Champ != "" && ph != "" && len(ph) <= 40 {
+				if c.VoiceAlias == nil {
+					c.VoiceAlias = map[string][]string{}
+				}
+				list := c.VoiceAlias[in.Champ]
+				dup := false
+				for _, x := range list {
+					dup = dup || strings.EqualFold(x, ph)
+				}
+				if !dup {
+					list = append(list, ph)
+					if len(list) > 8 {
+						list = list[len(list)-8:]
+					}
+					c.VoiceAlias[in.Champ] = list
+					logf("Veu: \"%s\" és %s (après)", ph, in.Champ)
+				}
+			}
+			saveConfig(c)
+		}
+		b, _ := json.Marshal(loadConfig().VoiceAlias)
 		send(w, 200, "application/json", b)
 	})
 	mux.HandleFunc("/api/voice/stop", func(w http.ResponseWriter, req *http.Request) {
