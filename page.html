@@ -3341,6 +3341,8 @@ function waveTick(data, t, me, opp){
     const enemyTook = champOf(ev.KillerName) && champOf(ev.KillerName).team !== me.team;
     if (ev.EventName === "ChampionKill") {
       const v = champOf(ev.VictimName);
+      if (v && pid(v) === game.me) { said = null; seen = null; w.meDiedAt = t; continue; }   // you died in that fight: the death advice speaks
+      if (t - (w.meDiedAt ?? -99) < 15) continue;
       if (jg && v && pid(v) === pid(jg)) { said = `Ha mort el jungla rival: ara pots empènyer l'onada fins a la torre sense por.`; w.seenAt = t; continue; }
       if (opp && v && pid(v) === pid(opp) && (role !== "UTILITY")) { said = `Ha mort ${opp.championName}: empeny l'onada fins a la seva torre i després torna a base o agafa plaques.`; continue; }
       if (jg && [ev.KillerName, ...(ev.Assisters || [])].some(isJg) && v && pid(v) !== game.me) {
@@ -3353,8 +3355,9 @@ function waveTick(data, t, me, opp){
   if (t >= 840) waveLate(data, t, me, w);
   if (!mine || t < 150 || t > 1200 || me.isDead) return;
   const name = jg?.championName || "El jungla rival";
+  if (seen && seen.why === w.lastWhy && t - w.seenAt < 60) seen = null;   // the three grubs are three events
   if (seen) {
-    w.seenAt = t;
+    w.seenAt = t; w.lastWhy = seen.why;
     const where = {top: "a dalt", bot: "a baix", mid: "al mig"}[seen.lane];
     if (seen.lane === mine) said = `${name} és a la teva línia (${seen.why}). No empenyis: deixa que l'onada vingui cap a tu fins que el tornis a veure.`;
     else if (mine === "mid" || seen.lane === "mid") said = `${name} és ${where} (${seen.why}). Si l'onada et va bé, ara pots empènyer una mica, però no et quedis sol a fons.`;
