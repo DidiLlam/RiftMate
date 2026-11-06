@@ -1,7 +1,7 @@
 {
- "version": "2.0.41",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.41.exe",
- "size": 8627712,
- "sha256": "a02b1ea47a543965fa0cedb22f5ecb303e739473b62883a03a1d5f15e738fd76",
- "notes": "- Objectiu: només els LP que falten"
+ "version": "2.0.42",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.42.exe",
+ "size": 8633344,
+ "sha256": "d18eefead8a26bca9a72df3058b1f83d8a9fb36c88c752b1a3d0e210c30da786",
+ "notes": "- Veu: ja no llegeix frases en català amb la veu castellana: arreglat un error que deixava sense traduir la segona frase d'alguns avisos\n- Si una frase no té traducció (per exemple, els canvis del pedaç), la IA la tradueix abans que la veu la llegeixi"
 }
