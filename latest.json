@@ -1,7 +1,7 @@
 {
- "version": "2.0.43",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.43.exe",
- "size": 8638464,
- "sha256": "697a13714b9ec6eb25b1cc54709f28619038f64109464a91fe7c3069bfa0b9dc",
- "notes": "- Veu: els consells de tips de dues frases ja surten sencers en castellà\n- Matchup amb Challenger: més clar (per sobre o per sota del rival al minut 10) i només es diu amb 3 partides o més\n- Menys repeticions: el 'Tens or per a un component' com a molt cada 2 minuts i mig, i un sol avís abans de drac i baró\n- Pla de la IA: centrat en la teva línia i el teu rival, sense parlar de comprar ni de la jungla si no ets jungla\n- Victòries i derrotes: les del client de LoL quan està obert"
+ "version": "2.0.44",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.44.exe",
+ "size": 9076736,
+ "sha256": "4d7b86d1538dced6dd3f476ae6729d31dc5b6a3c98ca116c798b5be6bea09ae9",
+ "notes": "- IA: quan Google diu que s'ha acabat el límit gratuït, l'app ja no li torna a preguntar fins que es renova i et diu a quina hora\n- IA: menys peticions (el segon model només si el primer triga més de 6 segons), perquè el límit duri més"
 }
