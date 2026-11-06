@@ -1358,6 +1358,12 @@ const I18N = {
   "et falten {n} LP · {y}, o unes {m} partides al teu {k}% actual": ["te faltan {n} LP · {y}, o unas {m} partidas a tu {k}% actual", "{n} LP to go · {y}, or about {m} games at your current {k}%"],
   "{x}: et falten {n} LP · {y}, o unes {m} partides al teu {k}% actual": ["{x}: te faltan {n} LP · {y}, o unas {m} partidas a tu {k}% actual", "{x}: {n} LP to go · {y}, or about {m} games at your current {k}%"],
   "et falten {n} LP": ["te faltan {n} LP", "{n} LP to go"], "{x}: et falten {n} LP": ["{x}: te faltan {n} LP", "{x}: {n} LP to go"],
+  "Al minut 10 van {x} del rival, i el primer objecte que fan és {y}.": ["Al minuto 10 van {x} del rival, y el primer objeto que hacen es {y}.", "At minute 10 they're {x} their opponent, and their first item is {y}."],
+  "Al minut 10 van {x} del rival.": ["Al minuto 10 van {x} del rival.", "At minute 10 they're {x} their opponent."],
+  "Els Challenger amb {x} contra {y} ({z}): {w}.": ["Los Challenger con {x} contra {y} ({z}): {w}.", "Challenger players with {x} against {y} ({z}): {w}."],
+  "{n} de farm per sobre": ["{n} de farm por encima", "{n} CS ahead of"], "{n} de farm per sota": ["{n} de farm por debajo", "{n} CS behind"], "{n} d'or per sobre": ["{n} de oro por encima", "{n} gold ahead of"], "{n} d'or per sota": ["{n} de oro por debajo", "{n} gold behind"],
+  "Al minut 10 van {x} i {y} del rival, i el primer objecte que fan és {z}.": ["Al minuto 10 van {x} y {y} del rival, y el primer objeto que hacen es {z}.", "At minute 10 they're {x} and {y} their opponent, and their first item is {z}."],
+  "Al minut 10 van {x} i {y} del rival.": ["Al minuto 10 van {x} y {y} del rival.", "At minute 10 they're {x} and {y} their opponent."], "igualats": ["igualados", "even with"],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -1645,7 +1651,16 @@ function tr(text, depth = 0, lang = LANG){
   }
   // several sentences: translate them one by one
   const parts = core.split(/(?<=[.!?])\s+(?=[A-ZÀ-Ú"«])/);
-  if (parts.length > 1) return lead + parts.map(x => tr(x, depth + 1, lang)).join(" ") + trail;
+  if (parts.length > 1) {
+    // the longest run of sentences that is one known text (a tip of two sentences) goes together
+    const out = [];
+    for (let a = 0; a < parts.length;) {
+      let b = parts.length;
+      while (b > a + 1 && !I18N_EXACT.has(parts.slice(a, b).join(" "))) b--;
+      out.push(tr(parts.slice(a, b).join(" "), depth + 1, lang)); a = b;
+    }
+    return lead + out.join(" ") + trail;
+  }
   return raw;
 }
 
@@ -2681,7 +2696,7 @@ function helpTick(data, t, me, opp){
     for (const k of ["drag", "grubs", "herald", "baron"]) {
       const at = help.obj[k]; if (!(t >= at - 60 && t < at)) continue;
       const key = k === "drag" && help.elderNext ? "elder" : k, txt = OBJ_TEXT[key][game.role] || OBJ_TEXT[key]._;
-      if (txt && !coach.said.has("o-" + k)) { coach.said.add("o-" + k); helpSay(txt, t, 1); }
+      if (txt && !coach.said.has("o-" + k)) { coach.said.add("o-" + k); if (!(coach.said.has("wv" + k + at) && game.role !== "JUNGLE")) helpSay(txt, t, 1); }   // the 90 s wave call already said it
       if (k === "grubs" || k === "herald") help.obj[k] = Infinity;
     }
   }
@@ -2706,7 +2721,8 @@ function helpTick(data, t, me, opp){
       help.goldKey = nb && nb.kind + nb.id; help.goldSaidAt = t;
     } else if (!dead) {
       const key = nb && nb.kind + nb.id;
-      if (nb && key !== help.goldKey && t - help.goldSaidAt >= 45) {
+      // a finished item: as soon as you can; a component (Tomo amplificador…): at most every 2 and a half minutes
+      if (nb && key !== help.goldKey && t - help.goldSaidAt >= (nb.kind === "full" ? 45 : 150)) {
         helpSay(nb.kind === "full" ? `Ja tens or per acabar ${itemName(nb.id)}. Empeny l'onada i torna a base.` : `Tens or per ${itemName(nb.id)}, per a ${itemName(nb.target)}.`, t);
         help.goldKey = key; help.goldSaidAt = t;
       } else if (!nb && (help.offPlan || !getBuilds()[me.championName]) && gold >= 1300 && help.genericArmed && t - help.goldSaidAt >= 45) {
@@ -3035,7 +3051,7 @@ async function aiProactive(kind, question, extra){
 }
 function aiPlan(){
   if (!game || game.planSaid) return; game.planSaid = true;
-  aiProactive("pla", "Fes-me el pla d'aquesta partida en dues frases curtes: com guanyar la meva línia o el meu rol, i amb qui del meu equip jugar o de quin rival protegir-me, segons els campions i les dades dels jugadors. Si el meu historial recent mostra un error que es repeteix, recorda-me'l.", (() => { const mc = playerBy(lastData, game.me)?.championName, oc = playerBy(lastData, game.ids[game.oppIdx])?.championName, sv = mc && oc ? seasonVs(mc, oc) : {n: 0};
+  aiProactive("pla", `Fes-me el pla d'aquesta partida en dues frases curtes. Jugo ${{TOP: "de top", JUNGLE: "de jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"}[game.role] || "la meva posició"}. La primera frase: com guanyar la meva línia contra el meu rival directe (habilitats i moments per pegar). La segona: de quin rival protegir-me o amb qui del meu equip jugar, i, si el meu historial recent mostra un error que es repeteix, recorda-me'l. No em diguis què comprar ni em parlis de la jungla si no soc el jungla.`, (() => { const mc = playerBy(lastData, game.me)?.championName, oc = playerBy(lastData, game.ids[game.oppIdx])?.championName, sv = mc && oc ? seasonVs(mc, oc) : {n: 0};
     return [aiMemory(), benchText(mc), mc && oc ? benchVsText(mc, oc) : "", sv.n ? `Aquesta temporada el jugador va ${sv.w}V-${sv.l}D amb ${mc} contra ${oc}.` : ""].filter(Boolean).join("\n"); })());
 }
 function aiAfterDeath(killer, helpers, t){
@@ -4109,7 +4125,8 @@ function benchVsText(mine, opp){
   const c = (benchData?.champs || []).find(x => norm(x.champ) === norm(champId(mine) || mine) || norm(x.name) === norm(mine)); if (!c?.vs) return "";
   const v = Object.entries(c.vs).find(([k, x]) => norm(k) === norm(champId(opp) || opp) || norm(x.name) === norm(opp))?.[1]; if (!v?.n) return "";
   const sg = x => (x >= 0 ? "+" : "") + String(x).replace(".", ",");
-  return `Els Challenger amb ${c.name} contra ${v.name} (${v.n === 1 ? "1 partida" : `${v.n} partides`}): ${v.n === 1 ? (v.w ? "la van guanyar" : "la van perdre") : `en guanyen ${v.w}`}, van ${sg(v.cs10d)} de farm i ${sg(v.g10d)} d'or al minut 10${v.first ? ` i el primer objecte que fan és ${itemName(v.first)}` : ""}.`;
+  const vs = (x, u) => Math.abs(x) < (u === "or" ? 100 : 3) ? "igualats" : `${String(Math.abs(Math.round(x))).replace(".", ",")} ${u === "or" ? "d'or" : "de farm"} ${x > 0 ? "per sobre" : "per sota"}`;
+  return `Els Challenger amb ${c.name} contra ${v.name} (${v.n === 1 ? "1 partida" : `${v.n} partides`}): ${v.n === 1 ? (v.w ? "la van guanyar" : "la van perdre") : `en guanyen ${v.w}`}. Al minut 10 van ${vs(v.cs10d, "farm")}${Math.abs(v.cs10d) >= 3 || Math.abs(v.g10d) >= 100 ? ` i ${vs(v.g10d, "or")}` : ""} del rival${v.first ? `, i el primer objecte que fan és ${itemName(v.first)}` : ""}.`;
 }
 function showMatchup(mine, opp){
   if (!mine || !opp) { $("#mCard").hidden = true; return; }
@@ -4121,7 +4138,7 @@ function showMatchup(mine, opp){
   else if (rec.any[0] + rec.any[1]) lines.push(`<p><b>El teu historial contra ${esc(opp)}:</b> ${rec.any[0]}V – ${rec.any[1]}D (amb altres campions).</p>`);
   if (m) { lines.push(`<p>${esc(m.tip)}</p><p class="src">Font: ${esc(m.src)}</p>`); say.push(m.tip); }
   const bv = benchVsText(mine, opp);
-  if (bv) { lines.push(`<p>${esc(bv)}</p>`); if (!/\(1 partida\)/.test(bv)) say.push(bv); }
+  if (bv) { lines.push(`<p>${esc(bv)}</p>`); if (!/\((1|2) partid/.test(bv)) say.push(bv); }   // spoken only with 3 games or more
   if (!lines.length) lines.push(`<p class="note">Encara no hi ha dades d'aquest enfrontament. Es guardaran a partir d'aquesta partida.</p>`);
   $("#mTitle").textContent = `${mine} contra ${opp}`; $("#mBody").innerHTML = lines.join(""); $("#mCard").hidden = false;
   if (say.length && on("vMatchup")) setTimeout(() => coachSay(say.join(" ")), 2500);

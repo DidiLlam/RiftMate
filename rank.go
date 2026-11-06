@@ -83,6 +83,10 @@ func rankJSON(force bool) []byte {
 				changed = true
 			}
 			p := peaks[q]
+			// the client, when it's open, has the counts it shows you (Riot's API sometimes counts a game more)
+			if lw, ll, ok := clientRankedWL(q, e.Tier, e.Rank); ok {
+				e.Wins, e.Losses = lw, ll
+			}
 			rq := rankQueue{q, e.Tier, e.Rank, e.LeaguePoints, e.Wins, e.Losses, 0, &p}
 			if g := e.Wins + e.Losses; g > 0 {
 				rq.WR = (e.Wins*100 + g/2) / g // rounded to the nearest whole percent
@@ -197,4 +201,27 @@ func cropTransparent(b []byte) ([]byte, error) {
 		return nil, err
 	}
 	return out.Bytes(), nil
+}
+
+// clientRankedWL: wins and losses of a queue as the League client shows them (only when the client is open and is on
+// the same tier and division, so it's the same account)
+func clientRankedWL(queue, tier, div string) (int, int, bool) {
+	var st struct {
+		Queues []struct {
+			QueueType string `json:"queueType"`
+			Tier      string `json:"tier"`
+			Division  string `json:"division"`
+			Wins      int    `json:"wins"`
+			Losses    int    `json:"losses"`
+		} `json:"queues"`
+	}
+	if code, _ := lcuGet("/lol-ranked/v1/current-ranked-stats", &st); code != 200 {
+		return 0, 0, false
+	}
+	for _, q := range st.Queues {
+		if q.QueueType == queue && q.Tier == tier && q.Division == div && q.Wins+q.Losses > 0 {
+			return q.Wins, q.Losses, true
+		}
+	}
+	return 0, 0, false
 }
