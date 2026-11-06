@@ -1615,7 +1615,7 @@ for (const [k, v] of Object.entries(I18N)) {
     if (m[1].startsWith("de:")) return "((?:d'|de )\\S.*?)";
     return "(.+?)";
   }).join("");
-  I18N_PAT.push({re: new RegExp("^" + rx + "$"), names, v, lit: k.replace(/\{[a-z:]+\}/g, "").length});
+  I18N_PAT.push({re: new RegExp("^" + rx + "$"), names, v, key: k, lit: k.replace(/\{[a-z:]+\}/g, "").length});
 }
 I18N_PAT.sort((a, b) => b.lit - a.lit);
 
@@ -1629,8 +1629,11 @@ function tr(text, depth = 0, lang = LANG){
   const ex = I18N_EXACT.get(core);
   if (ex) return lead + ex[i] + trail;
   if (depth > 3) return raw;
+  const SENT = /[.!?]\s+[A-ZÀ-Ú"«]/;
   for (const p of I18N_PAT) {
     const m = core.match(p.re); if (!m) continue;
+    // a one-sentence pattern doesn't swallow the next sentence ("…on és {x}." must not take "Zed. No passis…" as {x})
+    if (!SENT.test(p.key.replace(/\{[a-z:]+\}/g, "X")) && m.slice(1).some(v => SENT.test(v || ""))) continue;
     let out = p.v[i];
     p.names.forEach((name, j) => {
       let val = m[j + 1];
@@ -1889,13 +1892,34 @@ const speechText = t => String(t).replace(/(\d)\s*:\s+(\d)/g, "$1, $2").replace(
 function speak(text, cb){
   $("#status").textContent = text;
   if (!synth) { cb?.("no"); return; }
-  sayQ.push({t: text, cb}); sayPump();
+  const lang = speechChoice().lang, miss = lang !== "ca" && aiHasKey ? untranslated(text, lang) : "";
+  if (!miss) { sayQ.push({t: text, cb}); sayPump(); return; }
+  // a sentence without a translation: the AI translates it first (at most 4 s), so a Spanish voice doesn't read Catalan
+  const item = {t: text, cb, wait: true}; sayQ.push(item);
+  aiTranslate(text, lang).then(t => { if (t) { item.t = t; item.done = true; } }).finally(() => { item.wait = false; sayPump(); });
+}
+// the sentences of a text that the app's own translations don't cover (and that look Catalan)
+const CA_WORDS = /\b(els|amb|però|també|teu|teva|aquest|aquesta|dels|pots|tens|fes|surt|abans|després|mentre|molt|perquè|quan|recàrrega|dany|onada|línia|seva|seu|ells)\b|[àèòç·]/i;   // words a Spanish sentence doesn't have
+function untranslated(text, lang){
+  const parts = String(tr(text, 0, lang)).split(/(?<=[.!?])\s+(?=[A-ZÀ-Ú0-9"«(])/);   // what's left in Catalan after the app's own translations
+  return parts.filter(p => CA_WORDS.test(p)).join(" ");
+}
+const trCacheAI = new Map();
+async function aiTranslate(text, lang){
+  const k = lang + "|" + text; if (trCacheAI.has(k)) return trCacheAI.get(k);
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 4000);
+  try {
+    const r = await (await fetch("/api/translate", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: tr(text, 0, lang), lang}), signal: ctl.signal})).json();
+    if (r.text) { trCacheAI.set(k, r.text); plog(`Veu: traduït amb la IA: "${text}" -> "${r.text}"`); return r.text; }
+  } catch (e) {} finally { clearTimeout(to); }
+  return null;
 }
 function sayPump(){
   if (sayCur || !sayQ.length || reportSpeaking) return;
   if (Date.now() < sayHold) { setTimeout(sayPump, sayHold - Date.now() + 10); return; }
+  if (sayQ[0].wait) return;   // the first one is still being translated: it keeps its turn
   const item = sayQ.shift(), text = item.t, c = speechChoice();
-  const u = new SpeechSynthesisUtterance(speechText(tr(text, 0, c.lang)));
+  const u = new SpeechSynthesisUtterance(speechText(item.done ? text : tr(text, 0, c.lang)));
   if (c.voice) { u.voice = c.voice; u.lang = c.voice.lang; } else u.lang = {ca: "ca-ES", es: "es-ES", en: "en-US"}[c.lang];
   let started = false, t1 = 0, t2 = 0;
   const done = e => { if (sayCur !== u) return; clearTimeout(t1); clearTimeout(t2); sayCur = null; item.cb?.(e?.error ? "error " + e.error : "end"); setTimeout(sayPump, 0); };
