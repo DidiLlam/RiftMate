@@ -1364,6 +1364,8 @@ const I18N = {
   "{n} de farm per sobre": ["{n} de farm por encima", "{n} CS ahead of"], "{n} de farm per sota": ["{n} de farm por debajo", "{n} CS behind"], "{n} d'or per sobre": ["{n} de oro por encima", "{n} gold ahead of"], "{n} d'or per sota": ["{n} de oro por debajo", "{n} gold behind"],
   "Al minut 10 van {x} i {y} del rival, i el primer objecte que fan és {z}.": ["Al minuto 10 van {x} y {y} del rival, y el primer objeto que hacen es {z}.", "At minute 10 they're {x} and {y} their opponent, and their first item is {z}."],
   "Al minut 10 van {x} i {y} del rival.": ["Al minuto 10 van {x} y {y} del rival.", "At minute 10 they're {x} and {y} their opponent."], "igualats": ["igualados", "even with"],
+  "La IA gratuïta de Google ha arribat al límit d'avui: torna a funcionar a les {x}. Mentrestant, els avisos de l'app continuen.": ["La IA gratuita de Google ha llegado al límite de hoy: vuelve a funcionar a las {x}. Mientras, los avisos de la app siguen.", "Google's free AI has hit today's limit: it works again at {x}. The app's own calls carry on meanwhile."],
+  "La IA gratuïta ha arribat al límit d'aquest minut. Torna-ho a provar d'aquí a un minut.": ["La IA gratuita ha llegado al límite de este minuto. Vuelve a probar dentro de un minuto.", "The free AI hit this minute's limit. Try again in a minute."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -3017,7 +3019,7 @@ async function askAI(q){
     const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({question: q, state: aiState(), lang, history: aiHistory})})).json();
     if (r.error) {
-      const msg = r.error === "no_key" ? "Per parlar amb la IA, posa la clau de Gemini als ajustos." : r.error === "limit_gratuit" ? "Has arribat al límit gratuït per ara. Torna-ho a provar d'aquí a un minut." : /HTTP 50|demand|Timeout|deadline/i.test(r.error) ? "Google té la IA saturada ara mateix. Torna-ho a provar d'aquí a una estona." : "La IA no ha pogut respondre. Mira la connexió o la clau.";
+      const msg = r.error === "no_key" ? "Per parlar amb la IA, posa la clau de Gemini als ajustos." : /^limit_gratuit/.test(r.error) ? aiLimitNote(r.error) : /HTTP 50|demand|Timeout|deadline/i.test(r.error) ? "Google té la IA saturada ara mateix. Torna-ho a provar d'aquí a una estona." : "La IA no ha pogut respondre. Mira la connexió o la clau.";
       // the AI didn't answer: at least what the game itself says
       const fb = [localAnswer("com anem"), help?.obj ? (() => { const tt = lastData?.gameData?.gameTime ?? 0; const nx = [["drag", "El drac"], ["baron", "El baró"], ["herald", "El herald"]].map(([k, n]) => [n, help.obj[k]]).filter(([, a]) => isFinite(a) && a > tt).sort((a, b) => a[1] - b[1])[0]; return nx ? `${nx[0]} surt d'aquí a ${durTxt(Math.round(nx[1] - tt))}, al minut ${fmtClock(nx[1])}.` : ""; })() : ""].filter(Boolean).join(" ");
       aiShow(q, fb || null, true); speak(fb && game ? `${msg} ${fb}` : msg); plog(`IA: error ${r.error}`);
@@ -3033,8 +3035,18 @@ async function askAI(q){
 
 // ---------- The AI speaking by itself: game plan, after a death, lessons of the report ----------
 let aiAutoAt = 0, aiAutoBusy = false;
+// the free Gemini limit used up: no more automatic questions until it comes back, and it's said only once
+let aiLimitUntil = 0, aiLimitSaid = false;
+function aiLimitNote(err){
+  const m = String(err || "").match(/^limit_gratuit(?:\|(\d\d:\d\d))?/); if (!m) return "";
+  const at = m[1];
+  if (at) { const [h, mi] = at.split(":").map(Number), d = new Date(); d.setHours(h, mi, 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1); aiLimitUntil = d.getTime(); }
+  else aiLimitUntil = Date.now() + 60000;
+  if (at && aiLimitUntil - Date.now() < 10 * 60000) return "La IA gratuïta ha arribat al límit d'aquest minut. Torna-ho a provar d'aquí a un minut.";
+  return at ? `La IA gratuïta de Google ha arribat al límit d'avui: torna a funcionar a les ${at}. Mentrestant, els avisos de l'app continuen.` : "La IA gratuïta ha arribat al límit d'aquest minut. Torna-ho a provar d'aquí a un minut.";
+}
 async function aiProactive(kind, question, extra){
-  if (!aiHasKey || !$("#cAiAuto")?.checked || aiAutoBusy || !location.protocol.startsWith("http")) return;
+  if (!aiHasKey || !$("#cAiAuto")?.checked || aiAutoBusy || !location.protocol.startsWith("http") || Date.now() < aiLimitUntil) return;
   aiAutoBusy = true;
   try {
     const lang = speechChoice().lang, t0 = Date.now();
@@ -3045,7 +3057,10 @@ async function aiProactive(kind, question, extra){
       aiHistory.push({role: "user", text: question}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
       aiShow({pla: "Pla de partida", mort: "Després de morir", macro: "Macro"}[kind] || kind, r.answer);
       speak(r.answer); aiAutoAt = Date.now();
-    } else if (r.error) plog(`IA (${kind}): error ${r.error}`);
+    } else if (r.error) {
+      plog(`IA (${kind}): error ${r.error}`);
+      const note = aiLimitNote(r.error); if (note && !aiLimitSaid && aiLimitUntil - Date.now() > 10 * 60000) { aiLimitSaid = true; aiShow("IA", note); if (game) coachSay(note, 1); }
+    }
   } catch (e) {}
   aiAutoBusy = false;
 }

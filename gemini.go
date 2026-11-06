@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	_ "time/tzdata"
 )
 
 // Google Gemini (free tier from Google AI Studio, no card needed). The best "Flash" model available to the key
@@ -145,18 +146,34 @@ func pickGeminiModel(key string) (string, error) {
 
 // geminiAsk tries the last model that worked, then the others: the free tier is the first to be refused when a
 // model is saturated ("high demand", 503) or over its per-model limit (429).
+var gemBlocked = map[string]time.Time{} // model -> until when its free limit is used up
+
 func geminiAsk(key, system string, msgs []map[string]string) (string, error) {
 	if _, err := pickGeminiModel(key); err != nil {
 		return "", err
 	}
 	gemMu.Lock()
-	order := []string{gemModel}
-	for _, c := range gemCands {
-		if c != gemModel {
+	order := []string{}
+	var until time.Time
+	for _, c := range append([]string{gemModel}, gemCands...) {
+		dup := false
+		for _, o := range order {
+			dup = dup || o == c
+		}
+		if b := gemBlocked[c]; time.Now().Before(b) { // over its free limit: not asked again until it resets
+			if until.IsZero() || b.Before(until) {
+				until = b
+			}
+			continue
+		}
+		if !dup && c != "" {
 			order = append(order, c)
 		}
 	}
 	gemMu.Unlock()
+	if len(order) == 0 {
+		return "", fmt.Errorf("limit_gratuit|%s", until.Local().Format("15:04"))
+	}
 	if len(order) > 4 {
 		order = order[:4]
 	}
@@ -176,7 +193,7 @@ func geminiAsk(key, system string, msgs []map[string]string) (string, error) {
 		var r res
 		select {
 		case r = <-ch:
-		case <-time.After(3 * time.Second):
+		case <-time.After(6 * time.Second): // a second model only when the first is really slow: each request counts towards the free limit
 			if next < len(order) {
 				logf("IA: %s triga, provo també %s", order[next-1], order[next])
 				start(order[next])
@@ -213,6 +230,19 @@ func geminiAsk(key, system string, msgs []map[string]string) (string, error) {
 			start(order[next])
 			next++
 			running++
+		}
+	}
+	if last != nil && last.Error() == "limit_gratuit" { // all of them over the limit: say until when
+		gemMu.Lock()
+		var u time.Time
+		for _, m := range order {
+			if b := gemBlocked[m]; !b.IsZero() && (u.IsZero() || b.Before(u)) {
+				u = b
+			}
+		}
+		gemMu.Unlock()
+		if !u.IsZero() {
+			return "", fmt.Errorf("limit_gratuit|%s", u.Local().Format("15:04"))
 		}
 	}
 	return "", last
@@ -292,6 +322,31 @@ func geminiOnce(key, model, system string, msgs []map[string]string) (string, er
 	json.Unmarshal(raw, &out)
 	if code != 200 {
 		if code == 429 {
+			// which limit: per minute (wait the seconds Google says) or per day (until midnight in California)
+			body := string(raw)
+			wait := time.Minute
+			if m := regexp.MustCompile(`"retryDelay":\s*"(\d+)s"`).FindStringSubmatch(body); m != nil {
+				if n, _ := strconv.Atoi(m[1]); n > 0 {
+					wait = time.Duration(n+1) * time.Second
+				}
+			}
+			quota := ""
+			if m := regexp.MustCompile(`"quotaId":\s*"([^"]+)"`).FindStringSubmatch(body); m != nil {
+				quota = m[1]
+			}
+			until := time.Now().Add(wait)
+			if strings.Contains(quota, "PerDay") {
+				if la, err := time.LoadLocation("America/Los_Angeles"); err == nil {
+					n := time.Now().In(la)
+					until = time.Date(n.Year(), n.Month(), n.Day()+1, 0, 1, 0, 0, la)
+				} else {
+					until = time.Now().Add(6 * time.Hour)
+				}
+			}
+			gemMu.Lock()
+			gemBlocked[model] = until
+			gemMu.Unlock()
+			logf("IA: %s ha arribat al límit gratuït (%s) fins a les %s", model, map[bool]string{true: quota, false: "sense detall"}[quota != ""], until.Local().Format("15:04"))
 			return "", errors.New("limit_gratuit")
 		}
 		if out.Error != nil {
