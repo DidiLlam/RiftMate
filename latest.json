@@ -1,7 +1,7 @@
 {
- "version": "2.0.44",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.44.exe",
- "size": 9076736,
- "sha256": "4d7b86d1538dced6dd3f476ae6729d31dc5b6a3c98ca116c798b5be6bea09ae9",
- "notes": "- IA: quan Google diu que s'ha acabat el límit gratuït, l'app ja no li torna a preguntar fins que es renova i et diu a quina hora\n- IA: menys peticions (el segon model només si el primer triga més de 6 segons), perquè el límit duri més"
+ "version": "2.0.45",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.45.exe",
+ "size": 9110528,
+ "sha256": "9a95a6712848bca32bb1649bed132c3275ca2dddd3dde21cca33cc11a4b07e2d",
+ "notes": "- Quan mors i la IA no hi és, el coach et diu per què amb les dades de la partida (nivell, ulti, objectes, jungla)\n- Pressupost diari de la IA amb comptador (Avui: N de 60) i prioritats\n- Nova targeta La teva setmana al Coach: últims 7 dies contra els 7 d'abans\n- Repeticions de les teves partides per poder reproduir el coach (Ajustos, Compte i app, Registre)"
 }
