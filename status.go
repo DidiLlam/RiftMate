@@ -69,7 +69,7 @@ func statusHandler(send func(http.ResponseWriter, int, string, []byte)) http.Han
 		bs := map[string]any{"busy": benchBusy, "msg": benchMsg, "done": benchDone, "goal": benchGoal, "updated": b.Updated, "games": n}
 		benchMu.Unlock()
 		raw, _ := json.Marshal(map[string]any{"version": version, "parts": parts, "errors": errs, "bench": bs, "voice": voiceRunning(),
-			"riot_key": c.RiotKey != "", "ai_key": c.AIKey != "", "ai_model": c.AIModel, "riot_id": c.MyRiotID})
+			"riot_key": c.RiotKey != "", "ai_key": c.AIKey != "", "ai_model": c.AIModel, "ai_used": aiUsedToday(0), "riot_id": c.MyRiotID})
 		send(w, 200, "application/json", raw)
 	}
 }

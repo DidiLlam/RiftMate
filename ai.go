@@ -250,7 +250,7 @@ func aiHandlers(mux *http.ServeMux, send func(http.ResponseWriter, int, string, 
 				}
 			}
 		}
-		res := map[string]string{"answer": ans}
+		res := map[string]any{"answer": ans, "used": aiUsedToday(0)}
 		if err != nil {
 			res["error"] = err.Error()
 			if err.Error() != "no_key" {

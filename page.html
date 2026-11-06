@@ -274,6 +274,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .maplegend input{accent-color:var(--accent)}
 .maplegend svg{width:18px;height:18px;flex:none}
 .mapsel{font-size:.88rem;min-height:1.4em}
+.wtab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}.wtab th,.wtab td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}.wtab th{font-weight:600;color:var(--muted,inherit);font-size:.9em}
 .keyrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .keyrow input{flex:1;min-width:14em;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 .chart svg{width:100%;height:auto;display:block}
@@ -467,7 +468,9 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <section class="card" id="aiCard"><h2>Coach amb IA</h2>
     <label class="ph-item" for="cAiAuto"><input type="checkbox" id="cAiAuto" checked><span>La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors, macro als minuts 14, 25 i 35, i tres lliçons a l'informe</span></label>
     <p class="note">Durant la partida, digues "coach" (o "entrenador") i, quan soni el to, fes la pregunta: "què em compro ara?", "com jugo contra Ahri?", "val la pena anar al drac?". Respon una IA que veu l'estat de la partida: campions, nivells, objectes, KDA, or, els temps que porta l'app i els objectius.</p>
-    <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de preguntes per minut i per dia que en una partida no s'arriba a tocar.</p>
+    <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de peticions per dia, que torna a les 9 del matí (mitjanit a Califòrnia).</p>
+    <div class="keyrow"><label for="aiBudget">Peticions al dia per a la IA</label><input type="number" id="aiBudget" min="10" max="1500" step="10" value="60" style="flex:0 0 6em;min-width:0"><span class="note" id="aiUsedNote"></span></div>
+    <p class="note">Les teves preguntes i les lliçons de l'informe van sempre. El pla de partida es fa fins que has gastat el 70% d'aquest pressupost, i els consells de macro i de quan mors, fins al 40%; després, quan mors, el coach et diu per què amb les dades de la partida, sense IA.</p>
     <div class="keyrow"><input type="password" id="aiKey" placeholder="Clau de Google AI Studio" autocomplete="off"><button class="b" id="aiSave" type="button">Desar</button><button class="b" id="aiTest" type="button">Provar</button></div>
     <p class="note" id="aiState"></p>
     <p class="note">Després de dir "coach", parla amb naturalitat, en català o en castellà. El que es pot saber de la partida (quan surt el drac o el baró, quant li falta al Flash d'un rival, qui no té Flash, on s'ha vist el jungla rival, com aneu, si un rival és mort, què porta o quin nivell té) et respon a l'instant i sense IA. També pots dir "Zed ha gastat el flash", "repeteix" o "calla". La resta de preguntes, i les que demanen un consell, van a la IA.</p>
@@ -480,7 +483,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   </section>
   <section class="card"><h2>Registre</h2>
     <p class="note">L'app anota què passa a cada partida en un fitxer (registre.txt). Si alguna cosa no funciona, envia aquest fitxer per veure què ha fallat. No hi apareix la clau de Riot.</p>
-    <div class="bar"><button class="b" id="openLog" type="button">Obrir la carpeta del registre</button></div>
+    <div class="bar"><button class="b" id="openLog" type="button">Obrir la carpeta del registre</button><button class="b" id="openReplays" type="button">Obrir les repeticions</button></div>
+    <p class="note">Les repeticions són les dades de les teves 3 últimes partides (un fitxer .json.gz per partida). Si el coach diu alguna cosa estranya, envia la repetició d'aquella partida i es pot tornar a passar el coach per sobre per arreglar-ho.</p>
   </section>
   <section class="card"><h2>Aparença</h2>
     <div class="row2"><label for="aLang">Idioma</label><select id="aLang" data-noi18n><option value="ca">Català</option><option value="es">Español</option><option value="en">English</option></select></div>
@@ -511,6 +515,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div id="coachAnaBody"></div>
       <div class="bar"><button class="b primary" type="button" id="coachAnaBtn">Analitza les meves partides</button><button class="b" type="button" id="coachAnaVoice" hidden>▶ Escolta-ho</button></div>
     </section>
+    <section class="card" id="weekCard"><h2>La teva setmana</h2><div id="weekBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="poolCard"><h2>El teu grup de campions</h2><div id="poolBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="whenCard"><h2>Quan jugues millor</h2><div id="whenBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="patchCard" hidden><h2>Canvis del pedaç</h2><div id="patchBody"></div></section>
@@ -584,6 +589,19 @@ const I18N = {
     ["Cuando empieza la partida se rellenan solos los rivales, sus hechizos y si tienen Zhonya. Tú di \"flash Ahri\" cuando lo gasten y te avisa 30 segundos antes y cuando lo vuelve a tener.",
      "When the game starts, enemies, their summoner spells and whether they have Zhonya's fill in by themselves. Say \"flash Ahri\" when they use it and you get a warning 30 seconds before and when it is back up."],
   "Temporitzador": ["Temporizador", "Timers"],
+  // death read without the AI
+  "Has mort perquè t'han agafat {n} rivals: no et quedis sol lluny del teu equip.": ["Has muerto porque te han pillado {n} rivales: no te quedes solo lejos de tu equipo.", "You died because {n} enemies caught you: don't stay alone far from your team."],
+  "Has mort perquè {a} ja tenia la ulti i tu no: espera el teu nivell 6 per pegar-li.": ["Has muerto porque {a} ya tenía la ulti y tú no: espera a tu nivel 6 para pegarle.", "You died because {a} already had ult and you didn't: wait for your level 6 to hit them."],
+  "Has mort perquè {a} anava {n} nivells per davant: juga a prop de la torre fins que t'hi posis.": ["Has muerto porque {a} iba {n} niveles por delante: juega cerca de la torre hasta que lo alcances.", "You died because {a} was {n} levels ahead: play near your tower until you catch up."],
+  "Has mort perquè {a} tenia {n} objectes acabats més que tu: no busquis l'u contra u fins que acabis el teu objecte.": ["Has muerto porque {a} tenía {n} objetos completos más que tú: no busques el uno contra uno hasta que acabes tu objeto.", "You died because {a} had {n} more finished items than you: don't look for the 1v1 until you finish your item."],
+  "Has mort perquè {a} tenia un objecte acabat més que tu: no busquis l'u contra u fins que acabis el teu objecte.": ["Has muerto porque {a} tenía un objeto completo más que tú: no busques el uno contra uno hasta que acabes tu objeto.", "You died because {a} had one more finished item than you: don't look for the 1v1 until you finish your item."],
+  "Has mort perquè hi era el jungla rival: abans d'avançar, pensa on va aparèixer per última vegada.": ["Has muerto porque estaba el jungla rival: antes de avanzar, piensa dónde apareció por última vez.", "You died because the enemy jungler was there: before stepping up, think where they were last seen."],
+  "Peticions al dia per a la IA": ["Peticiones al día para la IA", "AI requests per day"],
+  "La teva setmana": ["Tu semana", "Your week"], "Últims 7 dies": ["Últimos 7 días", "Last 7 days"], "Els 7 d'abans": ["Los 7 anteriores", "The 7 before"],
+  "Partides": ["Partidas", "Games"], "Victòries i derrotes": ["Victorias y derrotas", "Wins and losses"], "LP a Solo/Duo": ["LP en Solo/Duo", "Solo/Duo LP"],
+  "millor": ["mejor", "better"], "pitjor": ["peor", "worse"],
+  "Aquesta setmana encara no has jugat cap partida amb l'app.": ["Esta semana aún no has jugado ninguna partida con la app.", "You haven't played any game with the app this week yet."],
+  "Només compta les partides que ha registrat l'app; els números són mitjanes per partida.": ["Solo cuenta las partidas que ha registrado la app; los números son medias por partida.", "Only counts the games the app recorded; numbers are per-game averages."],
   "Informes": ["Informes", "Reports"],
   "Micro: s'activarà sol quan comenci la partida": ["Micro: se activará solo cuando empiece la partida", "Mic: turns on by itself when the game starts"],
   "Micro escoltant": ["Micro escuchando", "Mic listening"],
@@ -1366,6 +1384,8 @@ const I18N = {
   "Al minut 10 van {x} i {y} del rival.": ["Al minuto 10 van {x} y {y} del rival.", "At minute 10 they're {x} and {y} their opponent."], "igualats": ["igualados", "even with"],
   "La IA gratuïta de Google ha arribat al límit d'avui: torna a funcionar a les {x}. Mentrestant, els avisos de l'app continuen.": ["La IA gratuita de Google ha llegado al límite de hoy: vuelve a funcionar a las {x}. Mientras, los avisos de la app siguen.", "Google's free AI has hit today's limit: it works again at {x}. The app's own calls carry on meanwhile."],
   "La IA gratuïta ha arribat al límit d'aquest minut. Torna-ho a provar d'aquí a un minut.": ["La IA gratuita ha llegado al límite de este minuto. Vuelve a probar dentro de un minuto.", "The free AI hit this minute's limit. Try again in a minute."],
+  "Obrir les repeticions": ["Abrir las repeticiones", "Open the replays"],
+  "Les repeticions són les dades de les teves 3 últimes partides (un fitxer .json.gz per partida). Si el coach diu alguna cosa estranya, envia la repetició d'aquella partida i es pot tornar a passar el coach per sobre per arreglar-ho.": ["Las repeticiones son los datos de tus 3 últimas partidas (un archivo .json.gz por partida). Si el coach dice algo raro, envía la repetición de esa partida y se puede volver a pasar el coach por encima para arreglarlo.", "Replays are the data of your last 3 games (one .json.gz file per game). If the coach says something odd, send that game's replay so the coach can be run over it again to fix it."],
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
@@ -3017,7 +3037,7 @@ async function askAI(q){
   try {
     const lang = speechChoice().lang;
     const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question: q, state: aiState(), lang, history: aiHistory})})).json();
+      body: JSON.stringify({question: q, state: aiState(), lang, history: aiHistory})})).json(); aiNoteUsed(r);
     if (r.error) {
       const msg = r.error === "no_key" ? "Per parlar amb la IA, posa la clau de Gemini als ajustos." : /^limit_gratuit/.test(r.error) ? aiLimitNote(r.error) : /HTTP 50|demand|Timeout|deadline/i.test(r.error) ? "Google té la IA saturada ara mateix. Torna-ho a provar d'aquí a una estona." : "La IA no ha pogut respondre. Mira la connexió o la clau.";
       // the AI didn't answer: at least what the game itself says
@@ -3035,6 +3055,13 @@ async function askAI(q){
 
 // ---------- The AI speaking by itself: game plan, after a death, lessons of the report ----------
 let aiAutoAt = 0, aiAutoBusy = false;
+// the day's AI budget: the free Gemini key has a daily limit, so the automatic questions take turns. Your own
+// questions and the lessons at the end always go; the game plan while less than 70% is used; macro and deaths, 40%.
+let aiUsed = 0;
+function aiNoteUsed(r){ if (r && typeof r.used === "number") { aiUsed = r.used; aiUsedShow(); } }
+function aiUsedShow(){ const el = $("#aiUsedNote"); if (el) el.textContent = `Avui: ${aiUsed} de ${aiBudget()}`; }
+function aiBudget(){ return Math.max(10, +($("#aiBudget")?.value || 60)); }
+function aiBudgetOk(kind){ const b = aiBudget(); return kind === "pla" ? aiUsed < b * 0.7 : kind === "mort" || kind === "macro" ? aiUsed < b * 0.4 : true; }
 // the free Gemini limit used up: no more automatic questions until it comes back, and it's said only once
 let aiLimitUntil = 0, aiLimitSaid = false;
 function aiLimitNote(err){
@@ -3047,11 +3074,12 @@ function aiLimitNote(err){
 }
 async function aiProactive(kind, question, extra){
   if (!aiHasKey || !$("#cAiAuto")?.checked || aiAutoBusy || !location.protocol.startsWith("http") || Date.now() < aiLimitUntil) return;
+  if (!aiBudgetOk(kind)) { plog(`IA (${kind}): no la faig servir per guardar el pressupost del dia (${aiUsed} de ${aiBudget()} peticions)`); return; }
   aiAutoBusy = true;
   try {
     const lang = speechChoice().lang, t0 = Date.now();
     const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question, state: (game ? aiState() : "") + (extra ? "\n" + extra : ""), lang, history: aiHistory})})).json();
+      body: JSON.stringify({question, state: (game ? aiState() : "") + (extra ? "\n" + extra : ""), lang, history: aiHistory})})).json(); aiNoteUsed(r);
     if (r.answer && !r.error) {
       plog(`IA (${kind}): ${r.answer} (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
       aiHistory.push({role: "user", text: question}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
@@ -3069,8 +3097,27 @@ function aiPlan(){
   aiProactive("pla", `Fes-me el pla d'aquesta partida en dues frases curtes. Jugo ${{TOP: "de top", JUNGLE: "de jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"}[game.role] || "la meva posició"}. La primera frase: com guanyar la meva línia contra el meu rival directe (habilitats i moments per pegar). La segona: de quin rival protegir-me o amb qui del meu equip jugar, i, si el meu historial recent mostra un error que es repeteix, recorda-me'l. No em diguis què comprar ni em parlis de la jungla si no soc el jungla.`, (() => { const mc = playerBy(lastData, game.me)?.championName, oc = playerBy(lastData, game.ids[game.oppIdx])?.championName, sv = mc && oc ? seasonVs(mc, oc) : {n: 0};
     return [aiMemory(), benchText(mc), mc && oc ? benchVsText(mc, oc) : "", sv.n ? `Aquesta temporada el jugador va ${sv.w}V-${sv.l}D amb ${mc} contra ${oc}.` : ""].filter(Boolean).join("\n"); })());
 }
+// a death read from the game itself, without the AI: levels, finished items and who was there
+function localDeath(killer, helpers, t){
+  const d = lastData, me = d && playerBy(d, game.me); if (!me || !killer || killer.team === me.team) return "";
+  const fin = p => (p.items || []).filter(x => isFinal(x.itemID)).length;
+  const jg = [killer, ...helpers].some(p => p && (p.position || "").toUpperCase() === "JUNGLE" && p.team !== me.team && pid(p) !== pid(me));
+  const n = [killer, ...helpers].filter(Boolean).length, k = killer.championName, fk = fin(killer), fm = fin(me);
+  // one reason, the most likely, with what to do: fixed sentences so the Spanish and English voices have them too
+  // (the gank before minute 14 and the lost 1v1 against your laner already have their own message)
+  if (n >= 3 && t >= 840) return `Has mort perquè t'han agafat ${n} rivals: no et quedis sol lluny del teu equip.`;
+  if (killer.level >= 6 && me.level < 6) return `Has mort perquè ${k} ja tenia la ulti i tu no: espera el teu nivell 6 per pegar-li.`;
+  if (killer.level - me.level >= 2) return `Has mort perquè ${k} anava ${killer.level - me.level} nivells per davant: juga a prop de la torre fins que t'hi posis.`;
+  if (fk - fm >= 2) return `Has mort perquè ${k} tenia ${fk - fm} objectes acabats més que tu: no busquis l'u contra u fins que acabis el teu objecte.`;
+  if (fk - fm === 1) return `Has mort perquè ${k} tenia un objecte acabat més que tu: no busquis l'u contra u fins que acabis el teu objecte.`;
+  if (jg && t >= 840 && n >= 2) return "Has mort perquè hi era el jungla rival: abans d'avançar, pensa on va aparèixer per última vegada.";
+  return "";
+}
 function aiAfterDeath(killer, helpers, t){
-  if (!game || t < 60 || Date.now() - aiAutoAt < 120000) return;
+  if (!game || t < 60) return;
+  // without the AI (no key, limit used up, or keeping it for the end of the game): the app's own reading
+  if (!aiHasKey || Date.now() < aiLimitUntil || !aiBudgetOk("mort") || !$("#cAiAuto")?.checked) { const l = localDeath(killer, helpers, t); if (l && Date.now() - (game.localDeathAt || 0) > 60000) { game.localDeathAt = Date.now(); coachSay(l, 1); } return; }
+  if (Date.now() - aiAutoAt < 120000) return;
   const by = [killer, ...helpers].filter(Boolean).map(p => p.championName).filter((x, i, a) => x && a.indexOf(x) === i);
   aiProactive("mort", `M'acaben de matar al minut ${fmtClock(t)}${by.length ? `: ${by.join(", ")}` : ""}. En una sola frase: per què probablement he mort, amb el que portem cadascú, i què he de fer diferent.`);
 }
@@ -3197,7 +3244,7 @@ async function aiReview(r, speakIt){
     deathsOnMap(r), pushLine(r), keyMoments(r).map(k => "Moment clau: " + k.text).join(" "), aiMemory(r.date), benchText(r.champion)].filter(Boolean).join("\n");
   try {
     const res = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question: "Dona'm les tres lliçons d'aquesta partida. Si un error es repeteix respecte de les partides anteriors, digues-ho; si ha millorat en alguna cosa que li havies dit, reconeix-ho.", state: text, lang: speechChoice().lang, mode: "review", date: r.date})})).json();
+      body: JSON.stringify({question: "Dona'm les tres lliçons d'aquesta partida. Si un error es repeteix respecte de les partides anteriors, digues-ho; si ha millorat en alguna cosa que li havies dit, reconeix-ho.", state: text, lang: speechChoice().lang, mode: "review", date: r.date})})).json(); aiNoteUsed(res);
     if (res.answer && !res.error) {
       r.ai_review = res.answer; plog(`IA (lliçons): ${res.answer}`);
       if (histCache[0]?.date === r.date && !$("#viewR").hidden) renderReport(r);
@@ -3240,7 +3287,10 @@ async function aiRefresh(){
   try { const c = await (await fetch("/api/config", {cache: "no-store"})).json(); aiHasKey = !!c.has_ai_key;
     $("#aiState").textContent = aiHasKey ? `Clau desada (${c.ai_key_hint}). Digues "coach" o "entrenador" durant la partida.` : "Encara no hi ha cap clau.";
     $("#aiKey").placeholder = aiHasKey ? `${c.ai_key_hint} (desada)` : "Clau de Google AI Studio"; } catch (e) {}
+  try { const st = await (await fetch("/api/status", {cache: "no-store"})).json(); if (typeof st.ai_used === "number") aiUsed = st.ai_used; } catch (e) {}
+  aiUsedShow();
 }
+{ const el = $("#aiBudget"), v = store.get("aiBudget", null); if (el) { if (v !== null) el.value = v; el.addEventListener("change", () => { el.value = Math.min(1500, Math.max(10, +el.value || 60)); store.set("aiBudget", +el.value); aiUsedShow(); }); } }
 async function aiSaveKey(){
   const v = $("#aiKey").value.trim().replace(/^["'\s]+|["'\s]+$/g, "");
   const st = $("#aiState");
@@ -4454,6 +4504,7 @@ function plog(msg){ if (!location.protocol.startsWith("http") || ++logCount > 40
 window.addEventListener("error", e => plog(`Error JS: ${e.message} (${(e.filename || "").split("/").pop()}:${e.lineno})`));
 window.addEventListener("unhandledrejection", e => plog(`Error JS (promesa): ${e.reason && (e.reason.message || e.reason)}`));
 $("#openLog").addEventListener("click", () => fetch("/api/openlog", {method: "POST"}).catch(() => {}));
+$("#openReplays").addEventListener("click", () => fetch("/api/openreplays", {method: "POST"}).catch(() => {}));
 plog(`Pagina oberta · ${navigator.userAgent.match(/(Edg|Chrome|Firefox)\/[\d.]+/)?.[0] || "navegador desconegut"} · veu sintetica: ${!!window.speechSynthesis} · reconeixement de veu: ${!!(window.SpeechRecognition || window.webkitSpeechRecognition)}`);
 
 // ---------- History reset (reports are archived, not deleted) ----------
@@ -4713,7 +4764,7 @@ async function loadStatus(){
 }
 $("#statusCopy")?.addEventListener("click", async () => {
   await loadStatus(); const s = statusData; if (!s) return;
-  const txt = [`RiftMate ${s.version} · ${s.riot_id || "sense compte"} · model IA ${s.ai_model || "-"}`, ...PARTS.map(([k, n]) => { const p = s.parts?.[k]; return `${n}: ${p ? (p.ok ? "OK" : "ERROR") + (p.msg ? " " + p.msg : "") : "-"}`; }),
+  const txt = [`RiftMate ${s.version} · ${s.riot_id || "sense compte"} · model IA ${s.ai_model || "-"} · IA avui ${s.ai_used ?? "-"} peticions`, ...PARTS.map(([k, n]) => { const p = s.parts?.[k]; return `${n}: ${p ? (p.ok ? "OK" : "ERROR") + (p.msg ? " " + p.msg : "") : "-"}`; }),
     `Challenger: ${JSON.stringify(s.bench)}`, "Errors:", ...(s.errors || [])].join("\n");
   try { await navigator.clipboard.writeText(txt); $("#statusCopy").textContent = "Copiat ✓"; } catch (e) { $("#statusCopy").textContent = "No s'ha pogut copiar"; }
   setTimeout(() => { $("#statusCopy").textContent = "Copiar el diagnòstic"; }, 2500);
@@ -5120,7 +5171,30 @@ const PROG = [
   {k: "vismin", t: "Visió per minut", up: true, f: r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); }, d: 1}
 ];
 function weekOf(date){ const d = new Date(String(date).slice(0, 10) + "T12:00:00"); if (isNaN(d)) return null; d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toISOString().slice(0, 10); }
+// the last 7 days against the 7 before: games, record, LP and the same numbers as the charts
+function renderWeek(){
+  const el = $("#weekBody"); if (!el) return;
+  const day = r => { const d = new Date(String(r.date).slice(0, 10) + "T12:00:00"); return isNaN(d) ? null : Math.floor((Date.now() - d) / 864e5); };
+  const list = histCache.filter(r => !r.error && r.date && (r.result === "Victòria" || r.result === "Derrota")), A = list.filter(r => day(r) != null && day(r) < 7), B = list.filter(r => day(r) >= 7 && day(r) < 14);
+  if (!A.length) { el.innerHTML = `<p class="note">Aquesta setmana encara no has jugat cap partida amb l'app.</p>`; return; }
+  const avg = (rs, f) => { const v = rs.map(f).filter(x => x != null && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const lp = rs => { const v = rs.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && r.lp.delta != null); return v.length ? v.reduce((a, r) => a + r.lp.delta, 0) : null; };
+  const wl = rs => `${rs.filter(r => r.result === "Victòria").length}V – ${rs.filter(r => r.result === "Derrota").length}D`;
+  const f1 = (v, d) => v == null ? "–" : (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace(".", ",");
+  const cmp = (a, b, up, eps) => a == null || b == null || Math.abs(a - b) < eps ? "" : (a > b) === up ? `<span class="good">millor</span>` : `<span class="bad">pitjor</span>`;
+  const la = lp(A), lb = lp(B);
+  const rows = [[ "Partides", String(A.length), B.length ? String(B.length) : "–", ""], ["Victòries i derrotes", wl(A), B.length ? wl(B) : "–", ""],
+    ["LP a Solo/Duo", la == null ? "–" : (la > 0 ? "+" : "") + la, lb == null ? "–" : (lb > 0 ? "+" : "") + lb, cmp(la, lb, true, 1)],
+    ...PROG.map(m => { const a = avg(A, m.f), b = avg(B, m.f); return [m.t, f1(a, m.d), f1(b, m.d), cmp(a, b, m.up, m.d ? 0.15 : 2)]; })];
+  // the death that repeats most this week
+  const kinds = {}; for (const r of A) for (const d of r.deaths || []) if (d.kind) kinds[d.kind] = (kinds[d.kind] || 0) + 1;
+  const top = Object.entries(kinds).sort((a, b) => b[1] - a[1])[0];
+  el.innerHTML = `<table class="wtab"><thead><tr><th></th><th>Últims 7 dies</th><th>Els 7 d'abans</th><th></th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td><td>${esc(r[2])}</td><td>${r[3]}</td></tr>`).join("")}</tbody></table>`
+    + (top && top[1] >= 2 ? `<p class="note">La mort que més es repeteix aquesta setmana: <b>${esc(tr(top[0]))}</b> (${top[1]} cops).</p>` : "")
+    + `<p class="note">Només compta les partides que ha registrat l'app; els números són mitjanes per partida.</p>`;
+}
 function renderProgress(){
+  renderWeek();
   const el = $("#progBody"); if (!el) return;
   const list = histCache.filter(r => !r.error && r.date);
   const weeks = [...new Set(list.map(r => weekOf(r.date)).filter(Boolean))].sort().slice(-8);
@@ -5175,7 +5249,7 @@ function renderCoachAna(){
 }
 async function coachAsk(question){
   const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({question, state: coachState(), lang: speechChoice().lang, mode: "coach"})})).json();
+    body: JSON.stringify({question, state: coachState(), lang: speechChoice().lang, mode: "coach"})})).json(); aiNoteUsed(r);
   if (r.error) throw new Error(r.error);
   return r.answer;
 }

@@ -258,7 +258,38 @@ func gemRetryable(err error) bool {
 	return false
 }
 
+// aiCount: requests sent to Google today (Madrid date), kept on disk so restarts don't reset it.
+// The free key's limit is per day, so the page shares it out between the automatic messages.
+var aiCountMu sync.Mutex
+
+func aiCountFile() string { return profileFile("ia_peticions.json") }
+
+func aiUsedToday(add int) int {
+	aiCountMu.Lock()
+	defer aiCountMu.Unlock()
+	// Google resets at midnight Pacific: count by that day, so "today" ends when the limit comes back
+	day := time.Now().In(pacificLoc()).Format("2006-01-02")
+	var c struct {
+		Day string `json:"day"`
+		N   int    `json:"n"`
+	}
+	if b, e := os.ReadFile(aiCountFile()); e == nil {
+		json.Unmarshal(b, &c)
+	}
+	if c.Day != day {
+		c.Day, c.N = day, 0
+	}
+	if add > 0 {
+		c.N += add
+		if b, e := json.Marshal(c); e == nil {
+			os.WriteFile(aiCountFile(), b, 0o644)
+		}
+	}
+	return c.N
+}
+
 func geminiOnce(key, model, system string, msgs []map[string]string) (string, error) {
+	aiUsedToday(1)
 	contents := []map[string]any{}
 	for _, m := range msgs {
 		role := "user"
@@ -455,4 +486,11 @@ func geminiInteractions(key, model, system string, msgs []map[string]string) (st
 		}
 	}
 	return "", errors.New("resposta sense text")
+}
+
+func pacificLoc() *time.Location {
+	if la, err := time.LoadLocation("America/Los_Angeles"); err == nil {
+		return la
+	}
+	return time.UTC
 }

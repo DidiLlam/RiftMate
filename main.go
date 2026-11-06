@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.44"
+	version = "2.0.45"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -88,6 +88,9 @@ type Recorder struct {
 }
 
 func (r *Recorder) loop() {
+	if os.Getenv("LT_NO_RECORDER") != "" { // replaying a game for tests: only the page reads the game data
+		return
+	}
 	live := false
 	for {
 		raw, err := fetchLiveRaw()
@@ -232,6 +235,7 @@ func (r *Recorder) finish(result string) {
 	dir := dataDir()
 	os.MkdirAll(dir, 0o755)
 	stamp := strings.NewReplacer(":", "", " ", "_").Replace(rec.Date)
+	go replaySave(stamp)
 	b, _ := json.Marshal(map[string]any{"report": report, "raw": rec, "end_unix": time.Now().Unix()})
 	if err := os.WriteFile(filepath.Join(dir, stamp+".json"), b, 0o644); err != nil {
 		logf("ERROR guardant l'informe: %v", err)
@@ -339,6 +343,7 @@ func serve(ln net.Listener) {
 			send(w, 503, "application/json", []byte(`{"ingame":false}`))
 			return
 		}
+		go replayNote(b)
 		send(w, 200, "application/json", b)
 	})
 	mux.HandleFunc("/api/history/reset", func(w http.ResponseWriter, req *http.Request) {
@@ -488,6 +493,13 @@ func serve(ln net.Listener) {
 			logf("Finestra al davant (%s): %v", req.URL.Query().Get("why"), ok)
 		}
 		send(w, 200, "application/json", []byte(fmt.Sprintf(`{"ok":%v}`, ok)))
+	})
+	mux.HandleFunc("/api/openreplays", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodPost {
+			os.MkdirAll(replayDir(), 0o755)
+			openFolder(filepath.Join(replayDir(), "x"))
+		}
+		send(w, 200, "application/json", []byte(`{"ok":true}`))
 	})
 	mux.HandleFunc("/api/openlog", func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodPost {
