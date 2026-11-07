@@ -2092,6 +2092,12 @@ function findEnemy(words, used){
   const j = words.join(" "); for (let i = 0; i < 5; i++) if (LANE_WORDS[i].some(l => l.includes(" ") && j.includes(l))) return i;
   return -1;
 }
+// the only rival (rows 0-4) whose summoner spells, as the game reports them, include this one; -1 if none or several
+function onlyCarrier(sp){
+  const sp2 = game?.spells; if (!sp2) return -1;
+  const c = [0, 1, 2, 3, 4].filter(k => sp2[k]?.includes(sp));
+  return c.length === 1 ? c[0] : -1;
+}
 function slotFor(i, sp){
   if (sp === "Zhonya") return "Zhonya";
   if (sp === "R") return "R";
@@ -2116,7 +2122,14 @@ function handle(text, final = true){
     return final ? (setChampion(words) || newGame(words)) : false;
   }
   const isCancel = saidCancel || Date.now() < pendingCancel;
-  const i = findEnemy(words, s.w);
+  let i = findEnemy(words, s.w);
+  // the recognizer often hears the wrong name ("Ash heal" for Ezreal). If the name it heard doesn't carry that spell,
+  // or no name was heard, and only one rival carries it, it's that one: the spell is the part it gets right
+  const known0 = i >= 0 && game?.spells?.[i];
+  if (final && !["Zhonya", "R"].includes(s.sp) && (i < 0 ? s.exact : known0 && !known0.includes(s.sp))) {
+    const c = onlyCarrier(s.sp);
+    if (c >= 0) { plog(`Veu: "${text}" -> ${s.sp}: ${i < 0 ? "sense nom" : `${$(`#name${i}`).value.trim()} no el porta`}, és ${$(`#name${c}`).value.trim()}, l'únic rival que el porta`); i = c; }
+  }
   if (i < 0) {
     if (final && s.exact) {
       plog(`Veu: "${text}" -> ${s.sp} sense rival`);

@@ -226,6 +226,15 @@ func geminiAsk(key, system string, msgs []map[string]string) (string, error) {
 			return "", r.err
 		}
 		logf("IA: %s no respon (%v), provo el següent", r.m, r.err)
+		// a model that doesn't even answer before the client timeout (gemini-3.8-flash on the free key, every time):
+		// don't make the next questions wait for it, leave it out for half an hour
+		if strings.Contains(r.err.Error(), "Client.Timeout") || strings.Contains(r.err.Error(), "deadline exceeded") {
+			gemMu.Lock()
+			if b := gemBlocked[r.m]; time.Now().After(b) {
+				gemBlocked[r.m] = time.Now().Add(30 * time.Minute)
+			}
+			gemMu.Unlock()
+		}
 		if next < len(order) {
 			start(order[next])
 			next++
