@@ -1,7 +1,7 @@
 {
- "version": "2.0.46",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.46.exe",
- "size": 9113088,
- "sha256": "66ace88babd3b4d800cc251c12677cd551ab3182e8411bb97e8b1fdc49834439",
- "notes": "- Pots preguntar pels premades: 'Graves amb qui és premade?' o 'hi ha premades?' (abans ho confonia amb l'Ignite)\n- Arreglat un premade que sortia com 'Name'\n- El coach ja no repeteix 'tens or per...' per un objecte que no compres\n- 'Has recuperat el farm' només quan ho has recuperat de debò"
+ "version": "2.0.47",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.47.exe",
+ "size": 9115136,
+ "sha256": "ddba543c6489ca4442f9f9ad0efea06e992d9e37927fda2b20dff9a0d19f897f",
+ "notes": "- Veu: si el nom que ha entès no porta aquell encanteri (o no n'ha entès cap) i només un rival el porta, el compta per a aquest\n- La IA deixa de provar durant mitja hora un model que no respon (gemini-3.8-flash), així respon més ràpid"
 }
