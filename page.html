@@ -1326,6 +1326,8 @@ const I18N = {
   "Clau de Riot": ["Clave de Riot", "Riot key"], "Veu de Windows": ["Voz de Windows", "Windows voice"], "Client de LoL": ["Cliente de LoL", "LoL client"], "Runes dels Challenger": ["Runas de los Challenger", "Challenger runes"], "Partides dels Challenger": ["Partidas de los Challenger", "Challenger games"],
   "Cap error recent.": ["Ningún error reciente.", "No recent errors."], "Últims errors ({n})": ["Últimos errores ({n})", "Latest errors ({n})"],
   "Paraules que la veu ha après de tu: {x}.": ["Palabras que la voz ha aprendido de ti: {x}.", "Words the voice has learnt from you: {x}."], "Oblidar-les": ["Olvidarlas", "Forget them"],
+  "{a} juga amb {x}.": ["{a} juega con {x}.", "{a} plays with {x}."], "{a} no sembla premade amb ningú.": ["{a} no parece premade con nadie.", "{a} doesn't look premade with anyone."],
+  "Encara no he analitzat els jugadors d'aquesta partida.": ["Todavía no he analizado a los jugadores de esta partida.", "I haven't analysed this game's players yet."], "No he vist cap premade en aquesta partida.": ["No he visto ningún premade en esta partida.", "I haven't seen any premades in this game."],
   "premade amb {x}": ["premade con {x}", "premade with {x}"], "Al teu equip, {x} juguen junts.": ["En tu equipo, {x} juegan juntos.", "On your team, {x} are playing together."],
   "Atenció: {x} són premade, juguen junts.": ["Atención: {x} son premade, juegan juntos.", "Heads up: {x} are premade, playing together."],
   "On": ["Dónde", "Where"], "Què ha fallat": ["Qué ha fallado", "What went wrong"], "cap aliat a prop": ["ningún aliado cerca", "no ally nearby"], "aliats a prop: {x}": ["aliados cerca: {x}", "allies nearby: {x}"],
@@ -1745,6 +1747,9 @@ function setIcon(img, src){ img.style.display = ""; img.onerror = () => { img.st
 // Data Dragon id of a champion name ("Kai'Sa" -> "Kaisa", "Wukong" -> "MonkeyKing")
 const DD_SPECIAL = {"Kai'Sa": "Kaisa", "Cho'Gath": "Chogath", "Kha'Zix": "Khazix", "Vel'Koz": "Velkoz", "Bel'Veth": "Belveth", "LeBlanc": "Leblanc",
   "Wukong": "MonkeyKing", "Nunu & Willump": "Nunu", "Renata Glasc": "Renata"};
+// the English id from the live game's raw name: "game_character_displayname_Kaisa" -> "Kaisa". Some champions come as
+// "..._Seraphine_Name" or similar, so take the word right after "displayname_", never a trailing "Name"
+function rawChampId(p){ const m = String(p?.rawChampionName || "").match(/displayname_([A-Za-z]+)/i) || String(p?.rawChampionName || "").match(/_([A-Za-z]+)$/); const id = m?.[1]; return id && !/^name$/i.test(id) ? id : ""; }
 const champId = name => DD_SPECIAL[name] || name.replace(/[^A-Za-z0-9]/g, "");
 function setChampFace(i){
   const img = $(`#cimg${i}`); if (!img) return;
@@ -2007,6 +2012,7 @@ const CANCEL = ["cancela","cancel la","cancel","cancelar","cancella","anula","an
 function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=[...Array(n+1).keys()];for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
 const close = (w, target) => w === target || (target.length >= 4 && w.length >= 3 && lev(w, target) <= (target.length >= 6 ? 2 : 1));
 function findSpell(words){
+  words = words.filter(w => !/^(premades?|premeid|premed)$/.test(w));
   const cands = [...words, ...words.slice(1).map((w,k) => words[k] + w)];
   for (const w of cands) for (const [sp, list] of Object.entries(SPELL_WORDS)) if (list.some(t => close(w,t))) return {sp, w, exact: list.includes(w)};
   return null;
@@ -2055,7 +2061,7 @@ function champDistance(words, used, name){
 // a row's champion in English too: a client in Spanish says "Maestro Yi", you may say "Master Yi"
 function rowEnglish(i){
   const p = game && lastData && game.ids[i] && playerBy(lastData, game.ids[i]);
-  const id = ((p?.rawChampionName || "").match(/_([A-Za-z]+)$/) || [])[1];
+  const id = rawChampId(p);
   return id ? CHAMPS.find(c => champId(c) === id) : null;
 }
 // what your voice says for a champion, learnt when a command wasn't understood and you said it again right after
@@ -2519,7 +2525,9 @@ function coachTick(data){
     if (game.role !== "UTILITY" && myCs != null && opCs != null && t >= coach.csCheck) {
       coach.csCheck = t + 45;
       const d = myCs - opCs, name = opp.championName;
-      const lvl = d <= -30 ? -2 : d <= -15 ? -1 : d >= 25 ? 1 : 0;
+      let lvl = d <= -30 ? -2 : d <= -15 ? -1 : d >= 25 ? 1 : 0;
+      // "recovered" only once you're really back (within 5): 20 behind and then 14 behind isn't recovering
+      if (lvl === 0 && coach.csLevel < 0 && d < -5) lvl = -1;
       if (lvl !== coach.csLevel) {
         if (lvl === -2) coachSay(`${name} et treu ${-d} de farm. Vas per darrere, fot-li gas!`);
         else if (lvl === -1 && coach.csLevel >= 0) coachSay(`Vas ${-d} de farm per darrere ${de(name)}. Concentra't en els últims cops.`);
@@ -2732,21 +2740,25 @@ function helpTick(data, t, me, opp){
   // gold & purchases
   if ($("#cGold").checked && Object.keys(ITEMS).length && t > 90) {
     let nb = nextBuy(me.championName, items, gold);
+    // an item the build wants but you keep not buying (you're going another way): after saying it 3 times, drop it
+    help.tSaid ??= {};
+    if (nb && (help.tSaid[nb.target || nb.id] || 0) >= 3) nb = null;
     if (nb?.kind === "off") {
       if (!help.offSaid && !dead) { helpSay("Compres fora de la build. De moment només t'avisaré quan portis molt d'or.", t); help.offSaid = true; help.goldSaidAt = t; }
       nb = null; help.offPlan = true;
     } else { help.offPlan = false; help.offSaid = false; }
     if (dead && !help.wasDead) {
-      if (nb && nb.kind + nb.id === help.goldKey && t - help.goldSaidAt < 90) {}   // just said it
-      else if (nb) helpSay(nb.kind === "full" ? `Mentre esperes pots comprar ${itemName(nb.id)}.` : `Mentre esperes pots comprar ${itemName(nb.id)}, per a ${itemName(nb.target)}.`, t);
+      if (nb && (nb.kind === "full" ? "full" + nb.id : "part" + nb.target) === help.goldKey && t - help.goldSaidAt < 90) {}   // just said it
+      else if (nb) { helpSay(nb.kind === "full" ? `Mentre esperes pots comprar ${itemName(nb.id)}.` : `Mentre esperes pots comprar ${itemName(nb.id)}, per a ${itemName(nb.target)}.`, t); help.tSaid[nb.target || nb.id] = (help.tSaid[nb.target || nb.id] || 0) + 1; }
       else if (gold >= 1000) helpSay(`Tens ${gold} d'or: aprofita per comprar mentre esperes.`, t);
-      help.goldKey = nb && nb.kind + nb.id; help.goldSaidAt = t;
+      help.goldKey = nb && (nb.kind === "full" ? "full" + nb.id : "part" + nb.target); help.goldSaidAt = t;
     } else if (!dead) {
-      const key = nb && nb.kind + nb.id;
+      // the item it's for, not the component: Cristal de rubí and then Brillo for the same item is the same advice
+      const key = nb && (nb.kind === "full" ? "full" + nb.id : "part" + nb.target);
       // a finished item: as soon as you can; a component (Tomo amplificador…): at most every 2 and a half minutes
       if (nb && key !== help.goldKey && t - help.goldSaidAt >= (nb.kind === "full" ? 45 : 150)) {
         helpSay(nb.kind === "full" ? `Ja tens or per acabar ${itemName(nb.id)}. Empeny l'onada i torna a base.` : `Tens or per ${itemName(nb.id)}, per a ${itemName(nb.target)}.`, t);
-        help.goldKey = key; help.goldSaidAt = t;
+        help.goldKey = key; help.goldSaidAt = t; help.tSaid[nb.target || nb.id] = (help.tSaid[nb.target || nb.id] || 0) + 1;
       } else if (!nb && (help.offPlan || !getBuilds()[me.championName]) && gold >= 1300 && help.genericArmed && t - help.goldSaidAt >= 45) {
         helpSay(`Tens ${gold} d'or. Si l'onada està empesa, torna a base a comprar.`, t); help.genericArmed = false; help.goldSaidAt = t;
       }
@@ -2974,6 +2986,14 @@ function localAnswer(q){
   if (short && has(Q.mute)) { coachMuteUntil = Date.now() + 180000; return "D'acord, callo tres minuts. Els encanteris rivals te'ls continuo dient."; }
   if (short && has(Q.unmute) && !has(Q.ask)) { coachMuteUntil = 0; return "Torno a parlar."; }
   if (short && has(Q.repeat)) return coachLastText || "Encara no t'he dit res.";
+  // premades: "Graves amb qui és premade?", "hi ha premades?" (before the spells: "premade" sounds like "prende")
+  if (has(/\b(premades?|premeid|premed|duo|duos|juntos|junts|en grupo|en grup)\b/)) {
+    if (!lastScout?.length) return "Encara no he analitzat els jugadors d'aquesta partida.";
+    const dist = x => Math.min(champDistance(words, "", displayChamp(x.champ)), champDistance(words, "", x.champ));
+    const who = lastScout.map(x => [x, dist(x)]).filter(a => a[1] < Infinity).sort((a, b) => a[1] - b[1])[0]?.[0];
+    if (who) return who.premade?.length ? `${displayChamp(who.champ)} juga amb ${who.premade.map(displayChamp).join(", ")}.` : `${displayChamp(who.champ)} no sembla premade amb ningú.`;
+    const pm = premadeLines(lastScout); return pm.length ? pm.join(" ") : "No he vist cap premade en aquesta partida.";
+  }
   if (has(Q.advice) && aiHasKey) return null;   // advice: the AI
   const d = lastData, t = d?.gameData?.gameTime; if (!d || !game || t == null) return null;
   const me = playerBy(d, game.me);
@@ -4133,7 +4153,7 @@ function startScout(data, me){
   clearTimeout(scoutTimer); scoutSaid = false; lastScout = null;
   if (!$("#cScout").checked || !riotCfg?.has_key) { $("#scoutCard").hidden = true; return; }
   const players = data.allPlayers.filter(p => pid(p) !== pid(me) && (p.riotId || "").includes("#")).map(p => ({
-    riotId: p.riotId, champ: ((p.rawChampionName || "").match(/_([A-Za-z]+)$/) || [])[1] || champId(p.championName), pos: (p.position || "").toUpperCase(), ally: p.team === me.team}))
+    riotId: p.riotId, champ: rawChampId(p) || champId(p.championName), pos: (p.position || "").toUpperCase(), ally: p.team === me.team}))
     .sort((a, b) => a.ally - b.ally);   // rivals first: they are the ones said at the loading screen
   if (!players.length) return;
   renderScout(null);
