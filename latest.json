@@ -1,7 +1,7 @@
 {
- "version": "2.0.45",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.45.exe",
- "size": 9110528,
- "sha256": "9a95a6712848bca32bb1649bed132c3275ca2dddd3dde21cca33cc11a4b07e2d",
- "notes": "- Quan mors i la IA no hi és, el coach et diu per què amb les dades de la partida (nivell, ulti, objectes, jungla)\n- Pressupost diari de la IA amb comptador (Avui: N de 60) i prioritats\n- Nova targeta La teva setmana al Coach: últims 7 dies contra els 7 d'abans\n- Repeticions de les teves partides per poder reproduir el coach (Ajustos, Compte i app, Registre)"
+ "version": "2.0.46",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.46.exe",
+ "size": 9113088,
+ "sha256": "66ace88babd3b4d800cc251c12677cd551ab3182e8411bb97e8b1fdc49834439",
+ "notes": "- Pots preguntar pels premades: 'Graves amb qui és premade?' o 'hi ha premades?' (abans ho confonia amb l'Ignite)\n- Arreglat un premade que sortia com 'Name'\n- El coach ja no repeteix 'tens or per...' per un objecte que no compres\n- 'Has recuperat el farm' només quan ho has recuperat de debò"
 }
