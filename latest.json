@@ -1,7 +1,7 @@
 {
- "version": "2.0.51",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.51.exe",
- "size": 9303552,
- "sha256": "1ad771d8287f25326a19616d8882d5c33a3919f484d46a9a6974896efa8196c3",
- "notes": "- Coach de vídeo: comença just en acabar la partida (agafa l'identificador de la partida del client), sense esperar que Riot la publiqui\n- Si la repetició encara no està a punt, ho torna a provar cada minut"
+ "version": "2.0.52",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.52.exe",
+ "size": 9309696,
+ "sha256": "286cfde6e1a03c6c7ea9e241b8c2629ff2272395d5a1843dfea06f37914af6fe",
+ "notes": "- Ja no s'obre res a la pantalla: la IA t'explica les morts amb les dades de Riot (lloc, qui i amb quin dany, qui hi havia a prop, on era el jungla rival, els teus wards)\n- T'ho diu en veu quan Riot publica la partida, 2-3 minuts després d'acabar\n- A l'informe: targeta Per què has mort"
 }
