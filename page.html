@@ -83,6 +83,7 @@ td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom 
 .poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
 .lpch{}.lpch-h{justify-content:space-between;flex-wrap:wrap}.lpch-h .lpgoal{font-size:1.15rem}.lpt.up{color:var(--lpblue)}.lpt.down{color:var(--lporange)}
 #lp3d{position:relative}#lp3d.is3d{aspect-ratio:16/7.2;cursor:default;touch-action:none}#lp3d canvas{display:block;border-radius:10px}
+.lpcard:fullscreen{background:var(--bg);padding:24px;display:flex;flex-direction:column;justify-content:center}.lpcard:fullscreen #lp3d.is3d{height:auto!important;aspect-ratio:auto!important;flex:1}
 .lp3zoom{position:absolute;right:8px;bottom:8px;display:none;gap:4px;z-index:2}#lp3d.is3d .lp3zoom{display:flex}.lp3zoom button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-weight:700;cursor:pointer;line-height:1}
 .lp3tip{position:absolute;left:10px;top:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:.8rem;pointer-events:none}.lpdot[data-date]{cursor:pointer}.lpdot[data-date]:hover .v{r:7px}.mh.flash{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color .3s}.lpcard{margin-top:10px}.lpch svg{width:100%;height:auto;display:block}.lpch-h{display:flex;gap:10px;align-items:baseline;font-size:.88rem;margin-bottom:4px}.lpch-h span{color:var(--muted);font-size:.8rem}
 .rbgoal{flex-basis:100%;font-size:.88rem;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center}
@@ -4082,7 +4083,7 @@ function lpChart(){
   const total = myRankAbs - pts[0].v, w = games.filter(r => r.lp.delta > 0).length, next = Math.floor(myRankAbs / 100) * 100 + 100;
   lpChartData = {pts, LO: lo, HI: Math.max(hi, next), next};
   return `<div class="lpch"><div class="lpch-h"><b class="lpgoal">Et falten ${next - myRankAbs} LP per a ${esc(tierTxt(absName(next)))}</b><span>${games.length} partides · ${w}V ${games.length - w}D · <b class="lpt ${total >= 0 ? "up" : "down"}">${total >= 0 ? "+" : ""}${total} LP</b></span></div>
-    <div id="lp3d"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg><div class="lp3tip" hidden></div><div class="lp3zoom"><button type="button" data-z="1.25" title="Apropa">+</button><button type="button" data-z="0.8" title="Allunya">−</button><button type="button" data-z="0" title="Torna a la vista inicial">⟲</button></div></div></div>`;
+    <div id="lp3d"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg><div class="lp3tip" hidden></div><div class="lp3zoom"><button type="button" data-z="1.25" title="Apropa">+</button><button type="button" data-z="0.8" title="Allunya">−</button><button type="button" data-z="0" title="Torna a la vista inicial">⟲</button><button type="button" data-z="fs" title="Pantalla completa">⛶</button></div></div></div>`;
 }
 // a dot of the LP history: that game opened in the match history below (or its report, if it's older than the list)
 let pendingReport = "";
@@ -4136,16 +4137,29 @@ async function lp3d(){
     k.fillStyle = c; k.fillText(txt, mid ? 256 : 6, mid ? 66 : 64);
     const s = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(cv), transparent: true, depthWrite: false})); s.scale.set(w, w * .1875, 1); s.position.set(x, y, z); sc.add(s); };
   // the ridge
-  // the ridge: one slab per game, from the LP before to the LP after, blue when you won and orange when you lost
-  const x0 = -W3 / 2 - 1.5;
-  const slabMat = {[BLUE]: new T.MeshStandardMaterial({color: col(BLUE), roughness: .8, metalness: .05}),
-    [ORANGE]: new T.MeshStandardMaterial({color: col(ORANGE), roughness: .8, metalness: .05})};
-  for (let i = 1; i < n; i++) {
-    const xa = x0 + (i - 1) * ST, xb = x0 + i * ST, sh = new T.Shape();
-    sh.moveTo(xa, 0); sh.lineTo(xa, sy(pts[i - 1].v)); sh.lineTo(xb, sy(pts[i].v)); sh.lineTo(xb, 0); sh.lineTo(xa, 0);
+  // the ridge: blue where you won, orange where you lost, grey for 0 LP; each game keeps its colour in the middle of
+  // its stretch and blends into the next one around the figure that separates them
+  const x0 = -W3 / 2 - 1.5, GREY = "#8a9590";
+  const cOf = i => col(!pts[i]?.r ? GREY : pts[i].r.lp.delta > 0 ? BLUE : pts[i].r.lp.delta < 0 ? ORANGE : GREY);
+  const xs = [];   // x of every vertex along the ridge: each stretch at 0, 30% and 70%
+  for (let i = 1; i < n; i++) for (const t of [0, .3, .7]) xs.push(x0 + (i - 1 + t) * ST);
+  xs.push(x0 + (n - 1) * ST);
+  const yAt = x => { const f = (x - x0) / ST, i = Math.min(n - 2, Math.max(0, Math.floor(f))), t = f - i; return sy(pts[i].v) + (sy(pts[i + 1].v) - sy(pts[i].v)) * t; };
+  const smooth = t => t * t * (3 - 2 * t);
+  const colorAt = x => {   // stretch k goes from game k-1 to game k and takes game k's colour
+    const f = (x - x0) / ST, k = Math.min(n - 1, Math.max(1, Math.floor(f) + 1)), t = f - (k - 1);
+    if (t < .3 && k > 1) return cOf(k - 1).clone().lerp(cOf(k), .5 + .5 * smooth(t / .3));
+    if (t > .7 && k < n - 1) return cOf(k).clone().lerp(cOf(k + 1), .5 * smooth((t - .7) / .3));
+    return cOf(k).clone(); };
+  // one thin strip per pair of neighbouring vertices (a single big face would blend colours along long diagonals)
+  const ridgeMat = new T.MeshStandardMaterial({vertexColors: true, roughness: .8, metalness: .05});
+  for (let j = 0; j < xs.length - 1; j++) {
+    const a = xs[j], b = xs[j + 1], sh = new T.Shape(); sh.moveTo(a, 0); sh.lineTo(a, yAt(a)); sh.lineTo(b, yAt(b)); sh.lineTo(b, 0); sh.lineTo(a, 0);
     const geo = new T.ExtrudeGeometry(sh, {depth: 1.6, bevelEnabled: false}); geo.translate(0, 0, -.8);
-    const dd = pts[i].r?.lp.delta ?? 0; sc.add(new T.Mesh(geo, dd > 0 ? slabMat[BLUE] : dd < 0 ? slabMat[ORANGE] : (slabMat.n ??= new T.MeshStandardMaterial({color: col("#8a9590"), roughness: .8}))));
-  }
+    const pos = geo.attributes.position, cols = [];
+    for (let v = 0; v < pos.count; v++) { const c = colorAt(Math.min(b, Math.max(a, pos.getX(v)))); c.multiplyScalar(.72 + .28 * Math.min(1, pos.getY(v) / top)); cols.push(c.r, c.g, c.b); }
+    geo.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
+    sc.add(new T.Mesh(geo, ridgeMat)); }
   // each game: the champion's portrait in a ring (blue won, orange lost) on a little pole on the ridge
   // (hover: the game; click: open it). The portrait comes through the app, so the canvas stays clean.
   const picks = [], figs = [];
@@ -4236,6 +4250,7 @@ async function lp3d(){
   r.domElement.addEventListener("wheel", e => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12); }, {passive: false});
   r.domElement.addEventListener("dblclick", () => { zoom = 1; panX = panY = 0; rot = 0; tilt = .07; fit(); draw(); });
   box.querySelector(".lp3zoom")?.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.z === "fs") { const card = box.closest(".lpcard") || box; if (document.fullscreenElement) document.exitFullscreen?.(); else card.requestFullscreen?.().catch(() => {}); return; }
     if (b.dataset.z === "0") { zoom = 1; panX = panY = 0; rot = 0; tilt = .07; fit(); draw(); } else zoomBy(+b.dataset.z); });
   const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; if (W && w !== W) delete box.dataset.fixed; W = w; H = h; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); fit(); draw(); };
   new ResizeObserver(size).observe(box); size();
