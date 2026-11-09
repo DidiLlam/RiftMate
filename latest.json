@@ -1,7 +1,7 @@
 {
- "version": "2.0.49",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.49.exe",
- "size": 9175552,
- "sha256": "70f698645ddc05e4755ab6ba9dc3538f525d144f5fd5dca76c892b3bab2124c6",
- "notes": "- El coach ja no diu frases de la partida quan s'ha acabat: les que quedaven a la cua es descarten\n- Una frase de la partida que arriba més de 40 s tard no es diu\n- Una resposta de la IA que arriba amb la partida acabada no es diu"
+ "version": "2.0.50",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.50.exe",
+ "size": 9302016,
+ "sha256": "dc54634cd75b83de795971a38c815721be2b5026f12b3c67cf1908ba5f5f4e13",
+ "notes": "- Coach de vídeo: en acabar la partida, l'app obre la repetició, grava uns segons de cada mort i la IA els mira i t'explica què ha fallat (en veu i a l'informe)\n- Ajust a Coach: que ho faci sola o només quan ho demanis; botó Atura\n- Clips de les morts a l'informe"
 }
