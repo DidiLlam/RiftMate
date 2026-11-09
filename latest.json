@@ -1,7 +1,7 @@
 {
- "version": "2.0.53",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.53.exe",
- "size": 9321984,
- "sha256": "26b63be742c1b0c20e5fc520041ca25c9f305cde1d099a37ad7b80b486215db1",
- "notes": "- Partida sense morts: la IA t'explica què has fet bé (on i com has matat) i què pots millorar (farm, visió, objectius), en veu i a l'informe"
+ "version": "2.0.54",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.54.exe",
+ "size": 9326080,
+ "sha256": "996868ce8a173511da3ffae3662fb745619f1cb4a217e433936fb5237591aa9a",
+ "notes": "- Historial de LP a la pestanya Historial: una franja per divisió, la línia de la divisió següent i les pujades i baixades marcades"
 }
