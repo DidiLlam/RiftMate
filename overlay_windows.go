@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 	"unsafe"
@@ -24,20 +25,28 @@ var (
 
 const overlayTitle = "RM·Overlay"
 
-func overlayWindows() []uintptr {
-	found := []uintptr{}
-	cb := syscall.NewCallback(func(h uintptr, _ uintptr) uintptr {
+// one callback for the whole run: syscall.NewCallback has a fixed number of slots and they are never freed
+var (
+	ovFound []uintptr
+	ovMu    sync.Mutex
+	ovEnum  = syscall.NewCallback(func(h uintptr, _ uintptr) uintptr {
 		buf := make([]uint16, 128)
 		procGetWindowText.Call(h, uintptr(unsafe.Pointer(&buf[0])), 128)
 		cls := make([]uint16, 64)
 		procGetClassName.Call(h, uintptr(unsafe.Pointer(&cls[0])), 64)
 		if strings.HasPrefix(syscall.UTF16ToString(buf), overlayTitle) && strings.HasPrefix(syscall.UTF16ToString(cls), "Chrome_WidgetWin") {
-			found = append(found, h)
+			ovFound = append(ovFound, h)
 		}
 		return 1
 	})
-	procEnumWindows.Call(cb, 0)
-	return found
+)
+
+func overlayWindows() []uintptr {
+	ovMu.Lock()
+	defer ovMu.Unlock()
+	ovFound = nil
+	procEnumWindows.Call(ovEnum, 0)
+	return append([]uintptr{}, ovFound...)
 }
 
 func overlayOpenWindow() {
@@ -90,10 +99,11 @@ func overlayApply(c overlayCfg, frame bool) {
 		}
 		procSetWindowLongPtr.Call(hw, uintptr(ge), ex)
 		a := c.Alpha
-		if a < 80 || a > 255 {
-			a = 225
+		if a < 40 || a > 255 {
+			a = 170
 		}
-		procSetLayeredAttr.Call(hw, 0, uintptr(a), 2) // LWA_ALPHA
+		// LWA_COLORKEY|LWA_ALPHA: the page's background colour (#010101) becomes fully see-through, the rest gets the opacity
+		procSetLayeredAttr.Call(hw, 0x010101, uintptr(a), 1|2)
 		procSetWindowPos.Call(hw, ^uintptr(0), uintptr(x), uintptr(y), uintptr(w), uintptr(h), swpNoActivate|swpFrameChanged|swpSh)
 	}
 }
@@ -107,21 +117,25 @@ func overlayCloseWindow() {
 // overlayKeep: while it's on, keep it on top (the game or the client may come above it) and hidden outside games
 func overlayKeep() {
 	for {
-		time.Sleep(2 * time.Second)
+		time.Sleep(3 * time.Second)
 		c := overlayLoad()
 		if !c.On {
 			continue
 		}
-		ws := overlayWindows()
-		if len(ws) == 0 {
-			continue
-		}
-		inGame := liveNow.Load()
-		for _, hw := range ws {
-			if inGame || c.Always {
+		show := liveNow.Load() || c.Always
+		ge := int32(-20)
+		for _, hw := range overlayWindows() {
+			// only touch the window when something changed: every z-order change makes the desktop recompose the game
+			vis, _, _ := procIsWindowVisible.Call(hw)
+			switch {
+			case show && vis == 0:
 				procShowWindow.Call(hw, 4) // SW_SHOWNOACTIVATE
 				procSetWindowPos.Call(hw, ^uintptr(0), 0, 0, 0, 0, 0x1|0x2|0x10)
-			} else {
+			case show:
+				if ex, _, _ := procGetWindowLongPtr.Call(hw, uintptr(ge)); ex&0x8 == 0 { // lost "always on top"
+					procSetWindowPos.Call(hw, ^uintptr(0), 0, 0, 0, 0, 0x1|0x2|0x10)
+				}
+			case vis != 0:
 				procShowWindow.Call(hw, 0) // SW_HIDE
 			}
 		}

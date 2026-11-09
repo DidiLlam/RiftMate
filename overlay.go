@@ -10,7 +10,7 @@ import (
 type overlayCfg struct {
 	On      bool   `json:"on"`
 	Pos     string `json:"pos"`     // tr, tl, br, bl
-	Alpha   int    `json:"alpha"`   // 80..255
+	Alpha   int    `json:"alpha"`   // 40..255
 	Through bool   `json:"through"` // clicks go through to the game (timers by voice only); off = the spells can be clicked
 	Always  bool   `json:"always"`  // also outside games (to place it)
 }
@@ -18,7 +18,7 @@ type overlayCfg struct {
 func overlayFile() string { return profileFile("overlay.json") }
 
 func overlayLoad() overlayCfg {
-	c := overlayCfg{Pos: "tr", Alpha: 225, Through: true}
+	c := overlayCfg{Pos: "tr", Alpha: 170, Through: true}
 	if b, err := os.ReadFile(overlayFile()); err == nil {
 		json.Unmarshal(b, &c)
 	}
@@ -38,7 +38,7 @@ func overlayHandler(send func(http.ResponseWriter, int, string, []byte)) http.Ha
 			if v := q.Get("pos"); v == "tr" || v == "tl" || v == "br" || v == "bl" {
 				c.Pos = v
 			}
-			if v, err := strconv.Atoi(q.Get("alpha")); err == nil && v >= 80 && v <= 255 {
+			if v, err := strconv.Atoi(q.Get("alpha")); err == nil && v >= 40 && v <= 255 {
 				c.Alpha = v
 			}
 			if v := q.Get("through"); v != "" {

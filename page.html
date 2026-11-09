@@ -521,7 +521,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="cOverlay"><input type="checkbox" id="cOverlay"><span>Mostrar els temporitzadors en una finestreta a sobre del joc</span></label>
     <div id="ovOpts" hidden>
       <div class="ovrow"><label>Cantonada <select id="ovPos"><option value="tr">Dalt a la dreta</option><option value="tl">Dalt a l'esquerra</option><option value="br">Baix a la dreta</option><option value="bl">Baix a l'esquerra</option></select></label>
-        <label>Opacitat <input type="range" id="ovAlpha" min="80" max="255" step="5"></label></div>
+        <label>Opacitat <input type="range" id="ovAlpha" min="40" max="255" step="5"></label></div>
       <label class="ph-item" for="ovThrough"><input type="checkbox" id="ovThrough"><span>Només amb la veu: els clics passen al joc (si ho treus, pots clicar un encanteri per marcar-lo o cancel·lar-lo)</span></label>
       <label class="ph-item" for="ovAlways"><input type="checkbox" id="ovAlways"><span>Mostrar-la també fora de partida (per veure on queda)</span></label>
     </div>
@@ -1993,7 +1993,7 @@ let ovOn = false;
 async function ovRefresh(q){
   let st = null; try { st = await (await fetch("/api/overlay" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
   ovOn = !!st.on; const cb = $("#cOverlay"); if (!cb) return;
-  cb.checked = ovOn; $("#ovOpts").hidden = !ovOn; $("#ovPos").value = st.pos || "tr"; $("#ovAlpha").value = st.alpha || 225;
+  cb.checked = ovOn; $("#ovOpts").hidden = !ovOn; $("#ovPos").value = st.pos || "tr"; $("#ovAlpha").value = st.alpha || 170;
   $("#ovThrough").checked = !!st.through; $("#ovAlways").checked = !!st.always;
 }
 $("#cOverlay")?.addEventListener("change", e => ovRefresh(`?on=${e.target.checked ? 1 : 0}`));

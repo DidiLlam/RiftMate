@@ -4,6 +4,7 @@ package main
 
 import (
 	"strings"
+	"sync"
 	"syscall"
 	"unsafe"
 )
@@ -21,9 +22,10 @@ var (
 	procSetWindowPos    = user32.NewProc("SetWindowPos")
 )
 
-func bringToFront() bool {
-	found := []uintptr{}
-	cb := syscall.NewCallback(func(h uintptr, _ uintptr) uintptr {
+var (
+	frontFound []uintptr
+	frontMu    sync.Mutex
+	frontEnum  = syscall.NewCallback(func(h uintptr, _ uintptr) uintptr {
 		if v, _, _ := procIsWindowVisible.Call(h); v == 0 {
 			if ic, _, _ := procIsIconic.Call(h); ic == 0 {
 				return 1
@@ -35,11 +37,18 @@ func bringToFront() bool {
 		cls := make([]uint16, 128)
 		procGetClassName.Call(h, uintptr(unsafe.Pointer(&cls[0])), 128)
 		if strings.HasPrefix(title, appName) && strings.HasPrefix(syscall.UTF16ToString(cls), "Chrome_WidgetWin") {
-			found = append(found, h)
+			frontFound = append(frontFound, h)
 		}
 		return 1
 	})
-	procEnumWindows.Call(cb, 0)
+)
+
+func bringToFront() bool {
+	frontMu.Lock()
+	frontFound = nil
+	procEnumWindows.Call(frontEnum, 0)
+	found := append([]uintptr{}, frontFound...)
+	frontMu.Unlock()
 	const (
 		swShowNoActivate = 4
 		swpNoSize        = 0x1
