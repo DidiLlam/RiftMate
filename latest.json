@@ -1,7 +1,7 @@
 {
- "version": "2.0.69",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.69.exe",
- "size": 9355776,
- "sha256": "0e80580dba7748ba26b4b64a2d3d35324297756c51430dcb08ee9f0606b17515",
- "notes": "- L'explicació de les morts també es fa quan l'app s'ha actualitzat just en acabar la partida\n- La veu ja no s'encalla amb explicacions llargues: les diu frase a frase\n- Arreglat un avís intern del gràfic de LP (ResizeObserver)"
+ "version": "2.0.70",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.70.exe",
+ "size": 9362944,
+ "sha256": "fc0cc23d32cffd684f4f0816c6d000537d8b40fd450aea30fd3af84a01d3260d",
+ "notes": "- Historial de LP: tria el període (últimes 15, setmana, mes, 6 mesos, any)\n- Amb moltes partides les agrupa per dies, amb el campió que més has jugat\n- Les partides d'abans que l'app apuntés els LP surten aproximades"
 }
