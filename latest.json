@@ -1,7 +1,7 @@
 {
- "version": "2.0.72",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.72.exe",
- "size": 9515008,
- "sha256": "7027299fdd55d5a4d45514fff7e48b2002822d5db14c732bb9623d1dc94cc206",
- "notes": "- Dreceres de teclat: Ctrl+Shift+1..5 Flash dels rivals, Ctrl+Alt+1..5 l'altre encanteri (Ajustos, En partida)\n- El mòbil com a segona pantalla: temporitzadors i objectius al mòbil per la wifi de casa, amb codi QR (Ajustos, En partida)\n- Còpia de seguretat i restauració (Ajustos, Compte i app)\n- Més seguretat: cap altra web pot canviar res de l'app"
+ "version": "2.0.73",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.73.exe",
+ "size": 9531904,
+ "sha256": "dfae34e50e106f84c11432c534164237e5231faf6fe7932603b3fefa33d56952",
+ "notes": "- Prova: overlay dins del joc (Ajustos → En partida). Mostra els temporitzadors que actives amb la veu en una finestreta a sobre del LoL\n- Per defecte els clics passen al joc; si vols, pots clicar un encanteri per marcar-lo o cancel·lar-lo\n- Cal tenir el LoL en mode Sense vores"
 }
