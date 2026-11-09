@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -153,6 +154,9 @@ func vcAnalyse(date string) error {
 	if i := strings.LastIndex(matchID, "_"); i >= 0 {
 		matchID = matchID[i+1:]
 	}
+	if matchID == "" && g.GameID > 0 {
+		matchID = fmt.Sprint(g.GameID)
+	}
 	if matchID == "" {
 		return errors.New("encara no tinc la partida de Riot")
 	}
@@ -184,9 +188,9 @@ func vcAnalyse(date string) error {
 	vcSet(true, date, "obrint la repetició per mirar les teves morts…")
 	err = replayOpen(matchID, func(t string) { vcSet(true, date, t) })
 	// just after the game Riot may not have the replay ready yet: try again a few minutes later
-	for try := 0; err != nil && strings.Contains(err.Error(), "Riot ja no té") && try < 4 && !vcStopped(); try++ {
-		vcSet(true, date, "la repetició encara no està a punt: ho torno a provar d'aquí 3 minuts")
-		for k := 0; k < 18 && !vcStopped(); k++ {
+	for try := 0; err != nil && strings.Contains(err.Error(), "Riot ja no té") && try < 10 && !vcStopped(); try++ {
+		vcSet(true, date, "Riot encara està preparant la repetició: ho torno a provar d'aquí un minut")
+		for k := 0; k < 6 && !vcStopped(); k++ {
 			time.Sleep(10 * time.Second)
 		}
 		if !vcWaitFree(date) {
@@ -523,4 +527,23 @@ func clipHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "video/webm")
 	http.ServeFile(w, req, filepath.Join(clipsRoot(), gd, f))
+}
+
+// curGameID: the id of the game being played, read from the client's gameflow session (the replay's id)
+var curGameID atomic.Int64
+
+func captureGameID() {
+	for i := 0; i < 20; i++ {
+		var sess struct {
+			GameData struct {
+				GameID int64 `json:"gameId"`
+			} `json:"gameData"`
+		}
+		if code, err := lcuGet("/lol-gameflow/v1/session", &sess); err == nil && code == 200 && sess.GameData.GameID > 0 {
+			curGameID.Store(sess.GameData.GameID)
+			logf("Partida %d (per a la repetició)", sess.GameData.GameID)
+			return
+		}
+		time.Sleep(15 * time.Second)
+	}
 }

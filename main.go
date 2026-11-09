@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.50"
+	version = "2.0.51"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -166,6 +166,7 @@ func (r *Recorder) step(g *AllGame) {
 			return // spectating or unknown
 		}
 		r.warnedNoMe = false
+		go captureGameID()
 		logf("Enregistrant partida: %s (%s, posicio %q, equip %s), %d jugadors, minut %.1f", me.ChampionName, myID, me.Position, me.Team, len(g.AllPlayers), t/60)
 		r.rec = &Record{Date: time.Now().Format("2006-01-02 15:04"), Me: *me}
 		go lpAtStart(r.rec.Date, pidOf(me))
@@ -239,13 +240,17 @@ func (r *Recorder) finish(result string) {
 	os.MkdirAll(dir, 0o755)
 	stamp := strings.NewReplacer(":", "", " ", "_").Replace(rec.Date)
 	go replaySave(stamp)
-	b, _ := json.Marshal(map[string]any{"report": report, "raw": rec, "end_unix": time.Now().Unix()})
+	gid := curGameID.Swap(0)
+	b, _ := json.Marshal(map[string]any{"report": report, "raw": rec, "end_unix": time.Now().Unix(), "game_id": gid})
 	if err := os.WriteFile(filepath.Join(dir, stamp+".json"), b, 0o644); err != nil {
 		logf("ERROR guardant l'informe: %v", err)
 	} else {
 		logf("Informe guardat: %s.json", stamp)
 	}
 	go autoMap(rec.Date)
+	if gid > 0 { // the game's id is known (from the client): the video coach starts now, without waiting for Riot's API
+		go vcEnqueue(rec.Date, false)
+	}
 	go func() { // the new game into the season stats (Riot publishes it a few minutes after the end)
 		for _, m := range []int{3, 7, 15} {
 			time.Sleep(time.Duration(m) * time.Minute)

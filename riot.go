@@ -565,6 +565,7 @@ type savedGame struct {
 	Report  map[string]any  `json:"report"`
 	Raw     json.RawMessage `json:"raw"`
 	EndUnix int64           `json:"end_unix"`
+	GameID  int64           `json:"game_id,omitempty"` // from the client during the game (the replay's id)
 }
 
 func gameFile(date string) string {
