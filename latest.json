@@ -1,7 +1,7 @@
 {
- "version": "2.0.61",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.61.exe",
+ "version": "2.0.62",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.62.exe",
  "size": 9348608,
- "sha256": "451c7209434e8f3fa7f9d705a4689e592cd86416807207c98ac821d942d0197c",
- "notes": "- Historial de LP 3D: omple tot el requadre (l'alçada s'adapta al dibuix)\n- El nom del campió sota cada figura"
+ "sha256": "414c20bedcd5fef7a3cbb3856330f73c387d1063b6ca382a6b1a5a724d2f64ae",
+ "notes": "- Historial de LP 3D més gran: vista més de cara, menys perspectiva i figures més grans, omple tot el requadre\n- Les divisions com a línies al fons en lloc de plaques"
 }
