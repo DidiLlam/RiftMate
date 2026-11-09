@@ -4155,6 +4155,11 @@ async function lp3d(){
     paint(null);
     const tex = new T.CanvasTexture(cv), spr = new T.Sprite(new T.SpriteMaterial({map: tex, transparent: true}));
     spr.scale.set(wd, ht, 1); spr.position.set(x, y + ht / 2 + .05, 0); spr.userData = p; sc.add(spr); picks.push(spr);
+    { const nc = document.createElement("canvas"); nc.width = 320; nc.height = 64; const q = nc.getContext("2d");
+      q.font = `800 50px ${getComputedStyle(document.body).fontFamily}`; q.textAlign = "center"; q.lineWidth = 10; q.lineJoin = "round"; q.strokeStyle = "rgba(0,0,0,.7)"; q.strokeText(displayChamp(p.r.champion), 160, 48);
+      q.fillStyle = "#fff"; q.fillText(displayChamp(p.r.champion), 160, 48);
+      const ns = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(nc), transparent: true, depthWrite: false, depthTest: false}));
+      ns.scale.set(1.75, .35, 1); ns.position.set(x, y - .42, 1.3); ns.renderOrder = 5; sc.add(ns); }
     const base = new T.Mesh(new T.CylinderGeometry(wd * .45, wd * .5, .08, 24), mat(ring)); base.position.set(x, y + .02, 0); sc.add(base);
     const img = new Image(); img.onload = () => { paint(img); tex.needsUpdate = true; draw(); };
     img.src = `/api/ddimg?p=${encodeURIComponent(`cdn/img/champion/loading/${champId(p.r.champion)}_0.jpg`)}`;
@@ -4187,15 +4192,23 @@ async function lp3d(){
   // it turns only a little, so it can't end up looking from a strange side
   let rot = -.22, tilt = .16, R = 24, W = 0, H = 0, zoom = 1, offX = 0, offY = 0, panX = 0, panY = 0;
   const yTop = Math.max(top, ...pts.map(p => sy(p.v) + 2.9)) + .2, cx = (x0 + xc + 5.5) / 2, cy = (-.9 + yTop) / 2;
-  const corners = []; for (const X of [x0 - .4, xc + 6.4]) for (const Y of [-.95, yTop]) for (const Z of [-1.2, 1.9]) corners.push(new T.Vector3(X, Y, Z));
+  // the points that must be in view: the ridge (top and foot, front and back), the figures' heads, the dates,
+  // the column and the labels to its right
+  const corners = [], V = (x, y, z) => corners.push(new T.Vector3(x, y, z));
+  pts.forEach((p, i) => { const x = x0 + i * ST, y = sy(p.v); V(x, y, -1.2); V(x, y + (p.r ? (i === n - 1 ? 2.95 : 2.45) : .3), 0); V(x, 0, 1.2); V(x, -.8, 1.9); });
+  V(xc, sy(HI) + .1, 0); V(xc, 0, 1); V(xc + 6.2, sy(HI) - .3, 0); V(xc + 6.2, sy(LO) + .3, 0);
   const pose = (z = 1) => { const d = R / z; cam.position.set(cx + Math.sin(rot) * d * Math.cos(tilt), cy + Math.sin(tilt) * d, Math.cos(rot) * d * Math.cos(tilt)); cam.lookAt(cx, cy, 0); cam.updateMatrixWorld(); };
   // fit: move the camera in or out until everything fills ~94% of the box, then centre it (a view offset, no turning)
   const fit = () => { cam.clearViewOffset();
     for (let k = 0; k < 6; k++) { pose(); let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity;
       for (const v of corners) { const q = v.clone().project(cam); a = Math.min(a, q.x); b = Math.max(b, q.x); c = Math.min(c, q.y); d = Math.max(d, q.y); }
       const ext = Math.max((b - a) / 2, (d - c) / 2);
-      if (k === 5 || Math.abs(ext - .94) < .01) { offX = (a + b) / 2 * W / 2; offY = -(c + d) / 2 * H / 2; return; }
-      R *= ext / .94; } };
+      if (k === 5 || Math.abs(ext - .96) < .01) { offX = (a + b) / 2 * W / 2; offY = -(c + d) / 2 * H / 2;
+        // the box's height follows the drawing's shape, so there are no empty bands above and below
+        const wantH = Math.round(Math.max(W * .32, Math.min(W * .62, ((d - c) * H) / ((b - a) * W) * W / .98)));
+        if (Math.abs(wantH - H) > 6 && !box.dataset.fixed) { box.dataset.fixed = "1"; box.style.aspectRatio = "auto"; box.style.height = wantH + "px"; }
+        return; }
+      R *= ext / .96; } };
   // zoom (wheel, or the + and − buttons) and, when zoomed in, drag to move around; double-click puts it back
   const draw = () => { cam.setViewOffset(W, H, offX * zoom + panX, offY * zoom + panY, W, H); pose(zoom); r.render(sc, cam); };
   const zoomBy = f => { const z = Math.max(.7, Math.min(3, zoom * f)); panX *= z / zoom; panY *= z / zoom; zoom = z; if (zoom <= 1) panX = panY = 0; draw(); };
@@ -4203,7 +4216,7 @@ async function lp3d(){
   r.domElement.addEventListener("dblclick", () => { zoom = 1; panX = panY = 0; rot = -.22; tilt = .16; fit(); draw(); });
   box.querySelector(".lp3zoom")?.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.z === "0") { zoom = 1; panX = panY = 0; rot = -.22; tilt = .16; fit(); draw(); } else zoomBy(+b.dataset.z); });
-  const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; W = w; H = h; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); fit(); draw(); };
+  const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; if (W && w !== W) delete box.dataset.fixed; W = w; H = h; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); fit(); draw(); };
   new ResizeObserver(size).observe(box); size();
   const ray = new T.Raycaster(), tip = box.querySelector(".lp3tip"); ray.camera = cam;
   const pick = e => { const b = r.domElement.getBoundingClientRect(); ray.setFromCamera({x: (e.clientX - b.left) / b.width * 2 - 1, y: -(e.clientY - b.top) / b.height * 2 + 1}, cam); return ray.intersectObjects(picks)[0]?.object; };
