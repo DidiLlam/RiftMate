@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -340,5 +341,37 @@ func seasonHandler(send func(http.ResponseWriter, int, string, []byte)) http.Han
 			time.Sleep(150 * time.Millisecond) // let it start, so this answer already says it's reading
 		}
 		send(w, 200, "application/json", seasonJSON())
+	}
+}
+
+// seasonGamesHandler: the season's Solo/Duo games one by one (oldest first), for the LP history's longer ranges.
+// /api/season/games?days=30
+func seasonGamesHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		days, _ := strconv.Atoi(req.URL.Query().Get("days"))
+		if days <= 0 || days > 400 {
+			days = 30
+		}
+		from := time.Now().Add(-time.Duration(days) * 24 * time.Hour).Unix()
+		c := loadSeason()
+		type g struct {
+			End   int64  `json:"e"`
+			Champ string `json:"c"`
+			Win   bool   `json:"w"`
+			K     int    `json:"k"`
+			D     int    `json:"d"`
+			A     int    `json:"a"`
+			Opp   string `json:"o,omitempty"`
+		}
+		out := []g{}
+		for _, m := range c.Games {
+			if m.Queue != 420 || m.Remake || m.End < from {
+				continue
+			}
+			out = append(out, g{m.End, m.Champ, m.Win, m.K, m.D, m.A, m.Opp})
+		}
+		sort.Slice(out, func(i, j int) bool { return out[i].End < out[j].End })
+		b, _ := json.Marshal(map[string]any{"games": out})
+		send(w, 200, "application/json", b)
 	}
 }
