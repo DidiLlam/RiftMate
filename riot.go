@@ -721,7 +721,13 @@ func addMap(date string) (string, error) {
 		g.Report["queue"] = q
 	}
 	b, _ := json.Marshal(g)
-	return "ok", os.WriteFile(gameFile(date), b, 0o644)
+	err = os.WriteFile(gameFile(date), b, 0o644)
+	// a recent game whose Riot data came by another way (the app restarted for an update, the history asked for it):
+	// its deaths are explained too
+	if err == nil && time.Since(time.Unix(g.EndUnix, 0)) < 3*time.Hour {
+		go vcEnqueue(date, false)
+	}
+	return "ok", err
 }
 
 // autoMap retries for a few minutes after a game: Riot publishes the match with some delay.

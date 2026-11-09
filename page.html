@@ -4241,7 +4241,7 @@ async function lp3d(){
       if (k === 9 || Math.abs(ext - .985) < .005) { offX = (a + b) / 2 * W / 2; offY = -(c + d) / 2 * H / 2;
         // the box's height follows the drawing's shape, so there are no empty bands above and below
         const wantH = Math.round(Math.max(W * .32, Math.min(W * .62, ((d - c) * H) / ((b - a) * W) * W / .98)));
-        if (Math.abs(wantH - H) > 6 && !box.dataset.fixed) { box.dataset.fixed = "1"; box.style.aspectRatio = "auto"; box.style.height = wantH + "px"; }
+        if (Math.abs(wantH - H) > 6 && !box.dataset.fixed) { box.dataset.fixed = "1"; requestAnimationFrame(() => { box.style.aspectRatio = "auto"; box.style.height = wantH + "px"; }); }
         return; }
       R *= ext / .985; } };
   // zoom (wheel, or the + and − buttons) and, when zoomed in, drag to move around; double-click puts it back
@@ -5900,7 +5900,10 @@ function vcExplain(date){
   coachSayRaw([intro, v.summary, ...v.deaths.filter(d => d.error).map(d => `${at(d.t)} ${d.error} ${d.fix || ""}`)].join(" "));
 }
 // already in the voice's language: straight to the voice
-function coachSayRaw(text){ plog("Coach (vídeo): " + text); sayQ.push({t: text, done: true, live: false, at: Date.now()}); sayPump(); }
+// one sentence per utterance: a long text in a single one makes the Windows voices get stuck
+function coachSayRaw(text){ plog("Coach (morts): " + text);
+  for (const t of String(text).match(/[^.!?]+[.!?]+["»”]?|\S[^.!?]*$/g) || []) if (t.trim()) sayQ.push({t: t.trim(), done: true, live: false, at: Date.now()});
+  sayPump(); }
 document.addEventListener("click", e => {
   if (e.target.id === "vcGo") { vcPoll("?date=" + encodeURIComponent(e.target.dataset.date)); e.target.disabled = true; }
   if (e.target.id === "vcStop") vcPoll("?stop=1");
