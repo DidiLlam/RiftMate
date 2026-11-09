@@ -1,7 +1,7 @@
 {
- "version": "2.0.66",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.66.exe",
- "size": 9352704,
- "sha256": "015bdc3536458ff3283ae0e71a14bf8882a430e15a29411ef79b4577c353c192",
- "notes": "- Historial de LP 3D: arreglat que les figures ballessin o es moguessin soles (agafava animacions equivocades); ara totes estan en posició d'espera i només balla la partida on puges de divisió\n- Les partides perdudes tenen la figura més fosca\n- Partides de 0 LP (remake) en gris"
+ "version": "2.0.67",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.67.exe",
+ "size": 9353216,
+ "sha256": "73a35d6c2ffeea79aad78d177f9b6e05772850812a9dd8d6b3ef5e822448987c",
+ "notes": "- Clicar una figura de l'historial de LP obre sempre la partida a l'historial (carrega més partides si cal); només obre l'informe si Riot no la té"
 }
