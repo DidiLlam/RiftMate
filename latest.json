@@ -1,7 +1,7 @@
 {
- "version": "2.0.62",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.62.exe",
+ "version": "2.0.63",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.63.exe",
  "size": 9348608,
- "sha256": "414c20bedcd5fef7a3cbb3856330f73c387d1063b6ca382a6b1a5a724d2f64ae",
- "notes": "- Historial de LP 3D més gran: vista més de cara, menys perspectiva i figures més grans, omple tot el requadre\n- Les divisions com a línies al fons en lloc de plaques"
+ "sha256": "e780443fbd2ed7f5e5c803b915b874af54c02c39f56a07a7dbb7d44bbd21dc45",
+ "notes": "- Historial de LP 3D fix: no es pot girar ni moure, sempre ajustat al requadre\n- El zoom només apropa; el botó − torna a la vista ajustada"
 }
