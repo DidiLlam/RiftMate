@@ -1,7 +1,7 @@
 {
- "version": "2.0.75",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.75.exe",
+ "version": "2.0.76",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.76.exe",
  "size": 9708544,
- "sha256": "08410441921eeafb3980c13ed87deb6c048b37288f06d1554c586dc0b4c49c71",
- "notes": "- Overlay nou, dibuixat per RiftMate mateix (sense finestra de navegador): sense barra de títol, fons invisible i molt més lleuger\n- Es pot arrossegar on vulguis i es queda on el deixes; opció per bloquejar-lo\n- Amb la foto del campió i les icones dels encanteris, la ulti i la Zhonya; clicar-les també les marca\n- Surt també en pantalla completa a la majoria d'ordinadors amb Windows 10/11"
+ "sha256": "9fbc768c84d54117febd539faa879c7056ba7a44ad6b19b0c30437819cc4fe47",
+ "notes": "- Overlay: els clics passen al joc (et pots moure amb el botó dret per sobre); mantén Ctrl per moure'l o clicar-hi\n- Overlay: la Zhonya surt sempre, enfosquida si el rival no la té"
 }
