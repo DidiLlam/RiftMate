@@ -10,17 +10,17 @@
 /* Layout: five enemy rows (one per lane), each a strip of big tap targets; a running timer fills its button like a draining bar. */
 :root{
   --bg:#f3f5f4; --panel:#ffffff; --line:#d7dedb; --fg:#15201d; --muted:#5c6b66;
-  --accent:#0f8a6c; --accent-ink:#ffffff; --cool:#c9d3cf; --ready:#0f8a6c; --soon:#a8741a; --loss:#b4432f; --good:#178a5a; --map:#dfe8e3; --map-jg:#cfdcd5; --map-lane:#b9c8c0; --map-river:#b7d3e6; --blue:#2f6fd6; --red:#d0453a; --kill:#0f8a6c;
+  --accent:#0f8a6c; --accent-ink:#ffffff; --cool:#c9d3cf; --ready:#0f8a6c; --soon:#a8741a; --loss:#b4432f; --good:#178a5a; --map:#dfe8e3; --map-jg:#cfdcd5; --map-lane:#b9c8c0; --map-river:#b7d3e6; --blue:#2f6fd6; --red:#d0453a; --lpblue:#1f6fe5; --lporange:#e8701a; --kill:#0f8a6c;
   --display:"Chakra Petch","Arial Narrow",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0c1312; --panel:#131d1b; --line:#24332f; --fg:#e4ece9; --muted:#8fa29c;
-  --accent:#2fc49c; --accent-ink:#06120f; --cool:#2a3a36; --ready:#2fc49c; --soon:#e0b25a; --loss:#f07a62; --good:#3cc489; --map:#16231f; --map-jg:#1b2c27; --map-lane:#2b3d37; --map-river:#1d3346; --blue:#5b93ff; --red:#ff6b5e; --kill:#2fc49c; color-scheme:dark}}
+  --accent:#2fc49c; --accent-ink:#06120f; --cool:#2a3a36; --ready:#2fc49c; --soon:#e0b25a; --loss:#f07a62; --good:#3cc489; --map:#16231f; --map-jg:#1b2c27; --map-lane:#2b3d37; --map-river:#1d3346; --blue:#5b93ff; --red:#ff6b5e; --lpblue:#4b93ff; --lporange:#ff8f3a; --kill:#2fc49c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0c1312; --panel:#131d1b; --line:#24332f; --fg:#e4ece9; --muted:#8fa29c;
-  --accent:#2fc49c; --accent-ink:#06120f; --cool:#2a3a36; --ready:#2fc49c; --soon:#e0b25a; --loss:#f07a62; --good:#3cc489; --map:#16231f; --map-jg:#1b2c27; --map-lane:#2b3d37; --map-river:#1d3346; --blue:#5b93ff; --red:#ff6b5e; --kill:#2fc49c; color-scheme:dark}
+  --accent:#2fc49c; --accent-ink:#06120f; --cool:#2a3a36; --ready:#2fc49c; --soon:#e0b25a; --loss:#f07a62; --good:#3cc489; --map:#16231f; --map-jg:#1b2c27; --map-lane:#2b3d37; --map-river:#1d3346; --blue:#5b93ff; --red:#ff6b5e; --lpblue:#4b93ff; --lporange:#ff8f3a; --kill:#2fc49c; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;
@@ -81,7 +81,9 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom b{display:block}.kmom.bad b{color:var(--loss)}.kmom.good b{color:var(--good)}
 .trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}
 .poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
-.lpch{}.lpdot[data-date]{cursor:pointer}.lpdot[data-date]:hover .v{r:7px}.mh.flash{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color .3s}.lpcard{margin-top:10px}.lpch svg{width:100%;height:auto;display:block}.lpch-h{display:flex;gap:10px;align-items:baseline;font-size:.88rem;margin-bottom:4px}.lpch-h span{color:var(--muted);font-size:.8rem}
+.lpch{}.lpch-h{justify-content:space-between;flex-wrap:wrap}.lpch-h .lpgoal{font-size:1.15rem}.lpt.up{color:var(--lpblue)}.lpt.down{color:var(--lporange)}
+#lp3d{position:relative}#lp3d.is3d{aspect-ratio:16/8;cursor:grab;touch-action:none}#lp3d canvas{display:block;border-radius:10px}
+.lp3tip{position:absolute;left:10px;top:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:.8rem;pointer-events:none}.lpdot[data-date]{cursor:pointer}.lpdot[data-date]:hover .v{r:7px}.mh.flash{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color .3s}.lpcard{margin-top:10px}.lpch svg{width:100%;height:auto;display:block}.lpch-h{display:flex;gap:10px;align-items:baseline;font-size:.88rem;margin-bottom:4px}.lpch-h span{color:var(--muted);font-size:.8rem}
 .rbgoal{flex-basis:100%;font-size:.88rem;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center}
 .rbstep{display:inline-flex;align-items:center;gap:8px}.rankbadge img.rbemb{width:34px;height:34px}
 .csban.goal{font-weight:600}.csban.bad{color:var(--loss)}
@@ -4052,6 +4054,7 @@ const TIER_ORDER = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "
 // Built backwards from your LP now and each game's LP change, so it's right even when an old snapshot is missing.
 const TIER_COL = {IRON: "#8a7f7a", BRONZE: "#b0703f", SILVER: "#9aa7b0", GOLD: "#d4a64a", PLATINUM: "#3fb7a8", EMERALD: "#2fbf6a", DIAMOND: "#6f8cff", MASTER: "#b06cff"};
 function absName(v){ if (v >= 2800) return {tier: "MASTER", rank: "I", lp: v - 2800}; const t = Math.floor(v / 400), d = Math.floor((v % 400) / 100); return {tier: TIER_ORDER[t], rank: ["IV", "III", "II", "I"][d], lp: v % 100}; }
+let lpChartData = null;
 function lpChart(){
   if (myRankAbs == null || !mySolo || TIER_IDX[mySolo.tier] >= 7) return "";
   const games = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number").slice(0, 30);
@@ -4075,22 +4078,99 @@ function lpChart(){
     const tip = p.r ? `${p.r.date} · ${displayChamp(p.r.champion)} · ${p.r.lp.delta > 0 ? "+" : ""}${p.r.lp.delta} LP · ${tierTxt(n)} ${n.lp} LP` : `Inici: ${tierTxt(n)} ${n.lp} LP`;
     g += `<g class="lpdot"${p.r ? ` data-date="${esc(p.r.date)}"` : ""}><circle cx="${X(i)}" cy="${Y(p.v)}" r="12" fill="transparent"/><circle class="v" cx="${X(i)}" cy="${Y(p.v)}" r="${last ? 6 : 4}" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/><title>${esc(tip)}${p.r ? " · clica per obrir-la" : ""}</title></g>`;
   });
-  const total = myRankAbs - pts[0].v, w = games.filter(r => r.lp.delta > 0).length;
-  return `<div class="lpch"><div class="lpch-h"><b>Historial de LP</b><span>${games.length} partides · ${w}V ${games.length - w}D</span><b class="${total >= 0 ? "good" : "bad"}" style="margin-left:auto">${total >= 0 ? "+" : ""}${total} LP</b></div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg></div>`;
+  const total = myRankAbs - pts[0].v, w = games.filter(r => r.lp.delta > 0).length, next = Math.floor(myRankAbs / 100) * 100 + 100;
+  lpChartData = {pts, LO: lo, HI: Math.max(hi, next), next};
+  return `<div class="lpch"><div class="lpch-h"><b class="lpgoal">Et falten ${next - myRankAbs} LP per a ${esc(tierTxt(absName(next)))}</b><span>${games.length} partides · ${w}V ${games.length - w}D · <b class="lpt ${total >= 0 ? "up" : "down"}">${total >= 0 ? "+" : ""}${total} LP</b></span></div>
+    <div id="lp3d"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg><div class="lp3tip" hidden></div></div></div>`;
 }
 // a dot of the LP history: that game opened in the match history below (or its report, if it's older than the list)
 let pendingReport = "";
 document.addEventListener("click", e => {
-  const d = e.target.closest?.(".lpdot[data-date]"); if (!d) return;
-  const r = histCache.find(x => x.date === d.dataset.date); if (!r) return;
+  const d = e.target.closest?.(".lpdot[data-date]"); if (d) openLpGame(d.dataset.date);
+});
+function openLpGame(date){
+  const r = histCache.find(x => x.date === date); if (!r) return;
   const card = r.map?.match_id && document.querySelector(`#mhList .mh[data-id="${CSS.escape(r.map.match_id)}"]`);
   if (card) {
     if (!mhOpen.has(r.map.match_id)) card.click();
     const c2 = document.querySelector(`#mhList .mh[data-id="${CSS.escape(r.map.match_id)}"]`);
     c2?.scrollIntoView({behavior: "smooth", block: "start"}); c2?.classList.add("flash"); setTimeout(() => c2?.classList.remove("flash"), 1600);
   } else { pendingReport = r.date; showTab("R"); }
-});
-function renderLpChart(){ const el = $("#lpChart"); if (!el) return; const h = lpChart(); el.innerHTML = h; el.hidden = !h; }
+}
+function renderLpChart(){ const el = $("#lpChart"); if (!el) return; const h = lpChart(); el.innerHTML = h; el.hidden = !h; if (h) lp3d(); }
+
+// ---------- the LP history in 3D: the games as a ridge (blue won, orange lost) and, at the end, the column of
+// divisions filled up to where you are, with the next one marked. Still (it doesn't spin); drag to turn it.
+// three.js is loaded from cdnjs the first time; without it the 2D chart stays.
+let threeP = null, lp3dState = null;
+function loadThree(){
+  if (window.THREE) return Promise.resolve(true);
+  return threeP ??= new Promise(res => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
+    s.onload = () => res(!!window.THREE); s.onerror = () => { threeP = null; res(false); }; document.head.appendChild(s); setTimeout(() => res(!!window.THREE), 15000); });
+}
+async function lp3d(){
+  const box = $("#lp3d"), data = lpChartData; if (!box || !data) return;
+  if (!(await loadThree())) return;   // no internet for the library: the 2D chart stays
+  if (!document.body.contains(box)) return;
+  if (lp3dState) { try { lp3dState.r.dispose(); } catch (e) {} lp3dState = null; }
+  const T = window.THREE, cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim();
+  const BLUE = tok("--lpblue") || "#4b93ff", ORANGE = tok("--lporange") || "#ff8f3a", col = c => new T.Color(c);
+  const {pts, LO, HI, next} = data, n = pts.length, top = 9, sy = v => (v - LO) / (HI - LO) * top;
+  const r = new T.WebGLRenderer({antialias: true, alpha: true}); r.setPixelRatio(Math.min(2, devicePixelRatio));
+  box.querySelector("svg")?.remove(); box.appendChild(r.domElement); box.classList.add("is3d");
+  const sc = new T.Scene(), cam = new T.PerspectiveCamera(36, 2, .1, 300);
+  sc.add(new T.AmbientLight(0xffffff, .62)); const dl = new T.DirectionalLight(0xffffff, .85); dl.position.set(6, 14, 9); sc.add(dl);
+  const mat = (c, o = {}) => new T.MeshStandardMaterial(Object.assign({color: col(c), roughness: .5, metalness: .12}, o));
+  const sprite = (txt, c, x, y, w = 3.6) => { const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96; const k = cv.getContext("2d");
+    k.font = `700 50px ${getComputedStyle(document.body).fontFamily}`; k.fillStyle = c; k.fillText(txt, 6, 64);
+    const s = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(cv), transparent: true, depthWrite: false})); s.scale.set(w, w * .1875, 1); s.position.set(x, y, 0); sc.add(s); };
+  // the ridge
+  const x0 = -(n - 1) / 2 - 1.5, shape = new T.Shape(); shape.moveTo(x0, 0);
+  pts.forEach((p, i) => shape.lineTo(x0 + i, sy(p.v))); shape.lineTo(x0 + n - 1, 0); shape.lineTo(x0, 0);
+  const geo = new T.ExtrudeGeometry(shape, {depth: 2.4, bevelEnabled: false}); geo.translate(0, 0, -1.2);
+  const pos = geo.attributes.position, cols = [], cB = col(BLUE), cO = col(ORANGE);
+  for (let k = 0; k < pos.count; k++) { const i = Math.round(pos.getX(k) - x0), y = pos.getY(k), p = pts[Math.max(0, Math.min(n - 1, i))];
+    const c = (p.r ? p.r.lp.delta > 0 : true) ? cB.clone() : cO.clone(); c.multiplyScalar(.45 + .55 * Math.min(1, y / top)); cols.push(c.r, c.g, c.b); }
+  geo.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
+  sc.add(new T.Mesh(geo, new T.MeshStandardMaterial({vertexColors: true, roughness: .7, metalness: .05, flatShading: true})));
+  // one marker per game on the ridge (hover: the game; click: open it)
+  const picks = [];
+  pts.forEach((p, i) => { const m = new T.Mesh(new T.SphereGeometry(i === n - 1 ? .3 : .17, 16, 12), mat(!p.r ? "#888" : p.r.lp.delta > 0 ? BLUE : ORANGE));
+    m.position.set(x0 + i, sy(p.v) + .05, 1.25); m.userData = p; sc.add(m); picks.push(m); });
+  // the divisions: a plate at each start, and the glass column at the end
+  const xc = (n - 1) / 2 + 1.2, Rt = .9;
+  for (let b = LO; b <= HI; b += 100) {
+    const nm = absName(b), c = TIER_COL[nm.tier] || "#888";
+    const pl = new T.Mesh(new T.PlaneGeometry(n + 2, 3.4), new T.MeshBasicMaterial({color: col(c), transparent: true, opacity: b % 400 === 0 ? .22 : .08, side: T.DoubleSide, depthWrite: false}));
+    pl.rotation.x = -Math.PI / 2; pl.position.set(-1.5, sy(b), 0); sc.add(pl);
+    const ring = new T.Mesh(new T.TorusGeometry(Rt + .02, .05, 8, 50), mat(c)); ring.rotation.x = Math.PI / 2; ring.position.set(xc, sy(b), 0); sc.add(ring);
+    if (b < HI) { const h = sy(b + 100) - sy(b) - .08, gl = new T.Mesh(new T.CylinderGeometry(Rt, Rt, h, 36, 1, true), new T.MeshStandardMaterial({color: col(c), transparent: true, opacity: .18, side: T.DoubleSide, depthWrite: false}));
+      gl.position.set(xc, sy(b) + h / 2 + .04, 0); sc.add(gl); sprite(tierTxt(nm), c, xc + 3, sy(b) + (sy(b + 100) - sy(b)) / 2); }
+  }
+  const now = pts[n - 1].v, fh = Math.max(.05, sy(now));
+  const fill = new T.Mesh(new T.CylinderGeometry(Rt * .85, Rt * .85, fh, 36), mat(BLUE, {emissive: col(BLUE), emissiveIntensity: .35})); fill.position.set(xc, fh / 2, 0); sc.add(fill);
+  const goal = new T.Mesh(new T.TorusGeometry(Rt + .06, .08, 8, 50), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); goal.rotation.x = Math.PI / 2; goal.position.set(xc, sy(next), 0); sc.add(goal);
+  const arrow = new T.Mesh(new T.ConeGeometry(.3, .7, 20), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); arrow.rotation.z = Math.PI / 2; arrow.position.set(xc + Rt + .6, fh, 0); sc.add(arrow);
+  sprite(`+${next - now} LP`, ORANGE, xc + 3.1, (fh + sy(next)) / 2 + .1, 3);
+  // camera: fixed; drag to turn, then it stays where you leave it
+  let rot = -.7, tilt = .4; const R = 24, look = top * .6;
+  const draw = () => { cam.position.set(Math.sin(rot) * R * Math.cos(tilt), look + Math.sin(tilt) * R, Math.cos(rot) * R * Math.cos(tilt)); cam.lookAt(0, look, 0); r.render(sc, cam); };
+  const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); };
+  new ResizeObserver(size).observe(box); size();
+  const ray = new T.Raycaster(), tip = box.querySelector(".lp3tip");
+  const pick = e => { const b = r.domElement.getBoundingClientRect(); ray.setFromCamera({x: (e.clientX - b.left) / b.width * 2 - 1, y: -(e.clientY - b.top) / b.height * 2 + 1}, cam); return ray.intersectObjects(picks)[0]?.object; };
+  let drag = null;
+  r.domElement.addEventListener("pointerdown", e => { drag = {x: e.clientX, y: e.clientY, r: rot, t: tilt, moved: false}; r.domElement.setPointerCapture(e.pointerId); });
+  r.domElement.addEventListener("pointermove", e => {
+    if (drag) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true; rot = drag.r + (e.clientX - drag.x) * .008; tilt = Math.max(.05, Math.min(1.25, drag.t + (e.clientY - drag.y) * .005)); draw(); return; }
+    const o = pick(e), p = o?.userData; r.domElement.style.cursor = p?.r ? "pointer" : "grab";
+    if (p) { const nm = absName(p.v); tip.textContent = p.r ? `${p.r.date} · ${displayChamp(p.r.champion)} · ${p.r.lp.delta > 0 ? "+" : ""}${p.r.lp.delta} LP · ${tierTxt(nm)} ${nm.lp} LP` : `Inici: ${tierTxt(nm)} ${nm.lp} LP`; tip.hidden = false; }
+    else tip.hidden = true;
+  });
+  r.domElement.addEventListener("pointerup", e => { const d = drag; drag = null; if (d && !d.moved) { const p = pick(e)?.userData; if (p?.r) openLpGame(p.r.date); } });
+  r.domElement.addEventListener("pointerleave", () => tip.hidden = true);
+  lp3dState = {r};
+}
 function lpGoal(){
   const q = mySolo; if (!q) return null;
   const ti = TIER_ORDER.indexOf(q.tier); if (ti < 0 || ti >= 7) return null;   // Master and above: no divisions
