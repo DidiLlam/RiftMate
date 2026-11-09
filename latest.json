@@ -1,7 +1,7 @@
 {
- "version": "2.0.67",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.67.exe",
- "size": 9353216,
- "sha256": "73a35d6c2ffeea79aad78d177f9b6e05772850812a9dd8d6b3ef5e822448987c",
- "notes": "- Clicar una figura de l'historial de LP obre sempre la partida a l'historial (carrega més partides si cal); només obre l'informe si Riot no la té"
+ "version": "2.0.68",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.68.exe",
+ "size": 9354752,
+ "sha256": "3342edd012746dfb9b4a6d9ba45174bd22e9bac92f2bded72855dc04782a1854",
+ "notes": "- Historial de LP 3D: el blau, el taronja i el gris es difuminen entre partides\n- Botó de pantalla completa"
 }
