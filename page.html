@@ -4057,7 +4057,7 @@ function absName(v){ if (v >= 2800) return {tier: "MASTER", rank: "I", lp: v - 2
 let lpChartData = null;
 function lpChart(){
   if (myRankAbs == null || !mySolo || TIER_IDX[mySolo.tier] >= 7) return "";
-  const games = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number").slice(0, 30);
+  const games = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number").slice(0, 15);
   if (games.length < 2) return "";
   let cur = myRankAbs; const pts = [];
   for (const r of games) { pts.unshift({v: cur, r}); cur -= r.lp.delta; }
@@ -4115,7 +4115,10 @@ async function lp3d(){
   if (lp3dState) { try { lp3dState.r.dispose(); } catch (e) {} lp3dState = null; }
   const T = window.THREE, cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim();
   const BLUE = tok("--lpblue") || "#4b93ff", ORANGE = tok("--lporange") || "#ff8f3a", col = c => new T.Color(c);
-  const {pts, LO, HI, next} = data, n = pts.length, top = 9, sy = v => (v - LO) / (HI - LO) * top;
+  // the last 15 games, each with the champion you played standing on the ridge
+  const {next} = data, pts = data.pts.slice(-16), n = pts.length, ST = 1.45, top = 8;
+  const vs = pts.map(p => p.v), LO = Math.floor((Math.min(...vs) - 5) / 100) * 100, HI = Math.max(Math.ceil((Math.max(...vs) + 5) / 100) * 100, next);
+  const sy = v => (v - LO) / (HI - LO) * top, W3 = (n - 1) * ST;
   const r = new T.WebGLRenderer({antialias: true, alpha: true}); r.setPixelRatio(Math.min(2, devicePixelRatio));
   box.querySelector("svg")?.remove(); box.appendChild(r.domElement); box.classList.add("is3d");
   const sc = new T.Scene(), cam = new T.PerspectiveCamera(36, 2, .1, 300);
@@ -4125,39 +4128,53 @@ async function lp3d(){
     k.font = `700 50px ${getComputedStyle(document.body).fontFamily}`; k.fillStyle = c; k.fillText(txt, 6, 64);
     const s = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(cv), transparent: true, depthWrite: false})); s.scale.set(w, w * .1875, 1); s.position.set(x, y, 0); sc.add(s); };
   // the ridge
-  const x0 = -(n - 1) / 2 - 1.5, shape = new T.Shape(); shape.moveTo(x0, 0);
-  pts.forEach((p, i) => shape.lineTo(x0 + i, sy(p.v))); shape.lineTo(x0 + n - 1, 0); shape.lineTo(x0, 0);
+  const x0 = -W3 / 2 - 1.5, shape = new T.Shape(); shape.moveTo(x0, 0);
+  pts.forEach((p, i) => shape.lineTo(x0 + i * ST, sy(p.v))); shape.lineTo(x0 + W3, 0); shape.lineTo(x0, 0);
   const geo = new T.ExtrudeGeometry(shape, {depth: 2.4, bevelEnabled: false}); geo.translate(0, 0, -1.2);
   const pos = geo.attributes.position, cols = [], cB = col(BLUE), cO = col(ORANGE);
-  for (let k = 0; k < pos.count; k++) { const i = Math.round(pos.getX(k) - x0), y = pos.getY(k), p = pts[Math.max(0, Math.min(n - 1, i))];
+  for (let k = 0; k < pos.count; k++) { const i = Math.round((pos.getX(k) - x0) / ST), y = pos.getY(k), p = pts[Math.max(0, Math.min(n - 1, i))];
     const c = (p.r ? p.r.lp.delta > 0 : true) ? cB.clone() : cO.clone(); c.multiplyScalar(.45 + .55 * Math.min(1, y / top)); cols.push(c.r, c.g, c.b); }
   geo.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
   sc.add(new T.Mesh(geo, new T.MeshStandardMaterial({vertexColors: true, roughness: .7, metalness: .05, flatShading: true})));
-  // one marker per game on the ridge (hover: the game; click: open it)
+  // each game: the champion's portrait in a ring (blue won, orange lost) on a little pole on the ridge
+  // (hover: the game; click: open it). The portrait comes through the app, so the canvas stays clean.
   const picks = [];
-  pts.forEach((p, i) => { const m = new T.Mesh(new T.SphereGeometry(i === n - 1 ? .3 : .17, 16, 12), mat(!p.r ? "#888" : p.r.lp.delta > 0 ? BLUE : ORANGE));
-    m.position.set(x0 + i, sy(p.v) + .05, 1.25); m.userData = p; sc.add(m); picks.push(m); });
+  pts.forEach((p, i) => {
+    const x = x0 + i * ST, y = sy(p.v);
+    if (!p.r) { const m = new T.Mesh(new T.SphereGeometry(.16, 14, 10), mat("#888")); m.position.set(x, y + .05, 0); m.userData = p; sc.add(m); picks.push(m); return; }
+    const ring = p.r.lp.delta > 0 ? BLUE : ORANGE, last = i === n - 1, sz = last ? 1.35 : 1.1, hgt = .75;
+    const pole = new T.Mesh(new T.CylinderGeometry(.035, .035, hgt, 6), mat(ring)); pole.position.set(x, y + hgt / 2, 0); sc.add(pole);
+    const cv = document.createElement("canvas"); cv.width = cv.height = 128; const k = cv.getContext("2d");
+    const paint = img => { k.clearRect(0, 0, 128, 128); k.save(); k.beginPath(); k.arc(64, 64, 52, 0, Math.PI * 2); k.clip();
+      if (img) k.drawImage(img, 8, 8, 112, 112); else { k.fillStyle = "#26332f"; k.fillRect(0, 0, 128, 128); k.fillStyle = "#fff"; k.font = "700 40px sans-serif"; k.textAlign = "center"; k.fillText(displayChamp(p.r.champion).slice(0, 2), 64, 78); }
+      k.restore(); k.lineWidth = 10; k.strokeStyle = ring; k.beginPath(); k.arc(64, 64, 56, 0, Math.PI * 2); k.stroke(); };
+    paint(null);
+    const tex = new T.CanvasTexture(cv), spr = new T.Sprite(new T.SpriteMaterial({map: tex, transparent: true}));
+    spr.scale.set(sz, sz, 1); spr.position.set(x, y + hgt + sz / 2 - .05, 0); spr.userData = p; sc.add(spr); picks.push(spr);
+    const img = new Image(); img.onload = () => { paint(img); tex.needsUpdate = true; draw(); };
+    img.src = `/api/ddimg?p=${encodeURIComponent(`cdn/${iconVer}/img/champion/${champId(p.r.champion)}.png`)}`;
+  });
   // the divisions: a plate at each start, and the glass column at the end
-  const xc = (n - 1) / 2 + 1.2, Rt = .9;
+  const xc = W3 / 2 + 1.2, Rt = .9;
   for (let b = LO; b <= HI; b += 100) {
     const nm = absName(b), c = TIER_COL[nm.tier] || "#888";
-    const pl = new T.Mesh(new T.PlaneGeometry(n + 2, 3.4), new T.MeshBasicMaterial({color: col(c), transparent: true, opacity: b % 400 === 0 ? .22 : .08, side: T.DoubleSide, depthWrite: false}));
+    const pl = new T.Mesh(new T.PlaneGeometry(W3 + 3, 3.4), new T.MeshBasicMaterial({color: col(c), transparent: true, opacity: b % 400 === 0 ? .22 : .08, side: T.DoubleSide, depthWrite: false}));
     pl.rotation.x = -Math.PI / 2; pl.position.set(-1.5, sy(b), 0); sc.add(pl);
     const ring = new T.Mesh(new T.TorusGeometry(Rt + .02, .05, 8, 50), mat(c)); ring.rotation.x = Math.PI / 2; ring.position.set(xc, sy(b), 0); sc.add(ring);
     if (b < HI) { const h = sy(b + 100) - sy(b) - .08, gl = new T.Mesh(new T.CylinderGeometry(Rt, Rt, h, 36, 1, true), new T.MeshStandardMaterial({color: col(c), transparent: true, opacity: .18, side: T.DoubleSide, depthWrite: false}));
-      gl.position.set(xc, sy(b) + h / 2 + .04, 0); sc.add(gl); sprite(tierTxt(nm), c, xc + 3, sy(b) + (sy(b + 100) - sy(b)) / 2); }
+      gl.position.set(xc, sy(b) + h / 2 + .04, 0); sc.add(gl); sprite(tierTxt(nm), c, xc + 3.4, sy(b) + (sy(b + 100) - sy(b)) / 2, 4.4); }
   }
   const now = pts[n - 1].v, fh = Math.max(.05, sy(now));
   const fill = new T.Mesh(new T.CylinderGeometry(Rt * .85, Rt * .85, fh, 36), mat(BLUE, {emissive: col(BLUE), emissiveIntensity: .35})); fill.position.set(xc, fh / 2, 0); sc.add(fill);
   const goal = new T.Mesh(new T.TorusGeometry(Rt + .06, .08, 8, 50), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); goal.rotation.x = Math.PI / 2; goal.position.set(xc, sy(next), 0); sc.add(goal);
   const arrow = new T.Mesh(new T.ConeGeometry(.3, .7, 20), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); arrow.rotation.z = Math.PI / 2; arrow.position.set(xc + Rt + .6, fh, 0); sc.add(arrow);
-  sprite(`+${next - now} LP`, ORANGE, xc + 3.1, (fh + sy(next)) / 2 + .1, 3);
+  sprite(`+${next - now} LP`, ORANGE, xc + 3.4, (fh + sy(next)) / 2 + .1, 3.6);
   // camera: fixed; drag to turn, then it stays where you leave it
-  let rot = -.7, tilt = .4; const R = 24, look = top * .6;
+  let rot = -.55, tilt = .32; const R = 27, look = top * .55;
   const draw = () => { cam.position.set(Math.sin(rot) * R * Math.cos(tilt), look + Math.sin(tilt) * R, Math.cos(rot) * R * Math.cos(tilt)); cam.lookAt(0, look, 0); r.render(sc, cam); };
   const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); };
   new ResizeObserver(size).observe(box); size();
-  const ray = new T.Raycaster(), tip = box.querySelector(".lp3tip");
+  const ray = new T.Raycaster(), tip = box.querySelector(".lp3tip"); ray.camera = cam;
   const pick = e => { const b = r.domElement.getBoundingClientRect(); ray.setFromCamera({x: (e.clientX - b.left) / b.width * 2 - 1, y: -(e.clientY - b.top) / b.height * 2 + 1}, cam); return ray.intersectObjects(picks)[0]?.object; };
   let drag = null;
   r.domElement.addEventListener("pointerdown", e => { drag = {x: e.clientX, y: e.clientY, r: rot, t: tilt, moved: false}; r.domElement.setPointerCapture(e.pointerId); });
