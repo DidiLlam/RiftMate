@@ -81,7 +81,7 @@ a.opg.sm{font-weight:400;color:var(--muted);font-size:.82rem}
 td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom b{display:block}.kmom.bad b{color:var(--loss)}.kmom.good b{color:var(--good)}
 .trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}
 .poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
-.lpch{}.lpcard{margin-top:10px}.lpch svg{width:100%;height:auto;display:block}.lpch-h{display:flex;gap:10px;align-items:baseline;font-size:.88rem;margin-bottom:4px}.lpch-h span{color:var(--muted);font-size:.8rem}
+.lpch{}.lpdot[data-date]{cursor:pointer}.lpdot[data-date]:hover .v{r:7px}.mh.flash{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color .3s}.lpcard{margin-top:10px}.lpch svg{width:100%;height:auto;display:block}.lpch-h{display:flex;gap:10px;align-items:baseline;font-size:.88rem;margin-bottom:4px}.lpch-h span{color:var(--muted);font-size:.8rem}
 .rbgoal{flex-basis:100%;font-size:.88rem;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center}
 .rbstep{display:inline-flex;align-items:center;gap:8px}.rankbadge img.rbemb{width:34px;height:34px}
 .csban.goal{font-weight:600}.csban.bad{color:var(--loss)}
@@ -1560,7 +1560,7 @@ const I18N = {
   "No s'ha pogut connectar amb el programa.": ["No se ha podido conectar con el programa.", "Couldn't connect to the program."],
   // LP and ranks
   "Ferro": ["Hierro", "Iron"], "Bronze": ["Bronce", "Bronze"], "Plata": ["Plata", "Silver"], "Or": ["Oro", "Gold"], "Platí": ["Platino", "Platinum"],
-  "Maragda": ["Esmeralda", "Emerald"], "Diamant": ["Diamante", "Diamond"], "Mestre": ["Maestro", "Master"], "Gran Mestre": ["Gran Maestro", "Grandmaster"],
+  "Esmeralda": ["Esmeralda", "Emerald"], "Diamant": ["Diamante", "Diamond"], "Mestre": ["Maestro", "Master"], "Gran Mestre": ["Gran Maestro", "Grandmaster"],
   "{x} {n} · {m} LP": ["{x} {n} · {m} LP", "{x} {n} · {m} LP"],
   "+{n} LP de mitjana quan guanyes, −{m} LP quan perds ({k} partides). {x}": ["+{n} LP de media cuando ganas, −{m} LP cuando pierdes ({k} partidas). {x}", "+{n} LP on average per win, −{m} LP per loss ({k} games). {x}"],
   "Guanyes més del que perds: el teu MMR està per sobre del teu rang i pujaràs ràpid.": ["Ganas más de lo que pierdes: tu MMR está por encima de tu rango y subirás rápido.", "You gain more than you lose: your MMR is above your rank and you'll climb fast."],
@@ -4059,27 +4059,37 @@ function lpChart(){
   let cur = myRankAbs; const pts = [];
   for (const r of games) { pts.unshift({v: cur, r}); cur -= r.lp.delta; }
   pts.unshift({v: cur, r: null});   // where you started
-  const W = 640, H = 180, L = 8, R = 100, T = 26, B = 8;
-  const vs = pts.map(p => p.v), lo = Math.floor((Math.min(...vs) - 10) / 100) * 100, hi = Math.ceil((Math.max(...vs) + 10) / 100) * 100;
+  const W = 640, H = 200, L = 14, R = 14, T = 16, B = 10;
+  const vs = pts.map(p => p.v), lo = Math.floor((Math.min(...vs) - 5) / 100) * 100, hi = Math.ceil((Math.max(...vs) + 5) / 100) * 100;
   const X = i => L + (W - L - R) * i / (pts.length - 1), Y = v => T + (H - T - B) * (hi - v) / Math.max(100, hi - lo);
   let g = "";
-  for (let b = lo; b < hi; b += 100) {   // one band per division, its name on the right
-    const n = absName(b), c = TIER_COL[n.tier] || "#888";
-    g += `<rect x="${L}" y="${Y(b + 100)}" width="${W - L - R}" height="${Y(b) - Y(b + 100)}" fill="${c}" opacity="${(b / 100) % 2 ? .07 : .13}"/>`;
-    g += `<text x="${W - R + 8}" y="${(Y(b) + Y(b + 100)) / 2 + 4}" fill="${c}" font-size="12" font-weight="600">${esc(tierTxt(n))}</text>`;
-    if (b > lo) g += `<line x1="${L}" x2="${W - R}" y1="${Y(b)}" y2="${Y(b)}" stroke="${b % 400 ? "var(--line)" : c}" stroke-width="${b % 400 ? 1 : 2}" ${b % 400 ? 'stroke-dasharray="4 4"' : ""}/>`;
+  // only the lines where a division starts, with its name just above: the one you go up to is on top
+  for (let b = lo; b <= hi; b += 100) {
+    const n = absName(b), c = TIER_COL[n.tier] || "#888", tier = b % 400 === 0;
+    g += `<line x1="${L}" x2="${W - R}" y1="${Y(b)}" y2="${Y(b)}" stroke="${tier ? c : "var(--line)"}" stroke-width="${tier ? 2 : 1}"${tier ? "" : ' stroke-dasharray="3 5"'}/>`;
+    g += `<text x="${W - R}" y="${Y(b) - 6}" text-anchor="end" fill="${c}" font-size="12" font-weight="700">${esc(tierTxt(n))}</text>`;
   }
-  { const n = absName(hi), c = TIER_COL[n.tier] || "#888";   // the next division: its line on top, so the goal is in sight
-    g += `<line x1="${L}" x2="${W - R}" y1="${Y(hi)}" y2="${Y(hi)}" stroke="${c}" stroke-width="${hi % 400 ? 1.5 : 2.5}" stroke-dasharray="${hi % 400 ? "6 4" : ""}"/><text x="${W - R + 8}" y="${Y(hi) + 4}" fill="${c}" font-size="12" font-weight="700">${esc(tierTxt(n))}</text>`; }
-  g += `<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" points="${pts.map((p, i) => `${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(" ")}"/>`;
+  g += `<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${pts.map((p, i) => `${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(" ")}"/>`;
   pts.forEach((p, i) => {
-    const prev = pts[i - 1], up = prev && Math.floor(p.v / 100) > Math.floor(prev.v / 100), down = prev && Math.floor(p.v / 100) < Math.floor(prev.v / 100);
-    const n = absName(p.v), tip = p.r ? `${p.r.date} · ${displayChamp(p.r.champion)} · ${p.r.lp.delta > 0 ? "+" : ""}${p.r.lp.delta} LP · ${tierTxt(n)} ${n.lp} LP` : `Inici: ${tierTxt(n)} ${n.lp} LP`;
-    if (up || down) g += `<text x="${X(i)}" y="${Y(p.v) + (up ? -12 : 20)}" text-anchor="middle" font-size="11" font-weight="700" paint-order="stroke" stroke="var(--panel)" stroke-width="4" stroke-linejoin="round" fill="${up ? "var(--good)" : "var(--loss)"}">${up ? "▲" : "▼"} ${esc(tierTxt(n))}</text>`;
-    g += `<circle cx="${X(i)}" cy="${Y(p.v)}" r="${i === pts.length - 1 ? 5 : 3.5}" fill="${!p.r ? "var(--muted)" : p.r.lp.delta > 0 ? "var(--good)" : "var(--loss)"}" stroke="var(--panel)" stroke-width="1.5"><title>${esc(tip)}</title></circle>`;
+    const n = absName(p.v), last = i === pts.length - 1;
+    const tip = p.r ? `${p.r.date} · ${displayChamp(p.r.champion)} · ${p.r.lp.delta > 0 ? "+" : ""}${p.r.lp.delta} LP · ${tierTxt(n)} ${n.lp} LP` : `Inici: ${tierTxt(n)} ${n.lp} LP`;
+    g += `<g class="lpdot"${p.r ? ` data-date="${esc(p.r.date)}"` : ""}><circle cx="${X(i)}" cy="${Y(p.v)}" r="12" fill="transparent"/><circle class="v" cx="${X(i)}" cy="${Y(p.v)}" r="${last ? 6 : 4}" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/><title>${esc(tip)}${p.r ? " · clica per obrir-la" : ""}</title></g>`;
   });
-  return `<div class="lpch"><div class="lpch-h"><b>Historial de LP</b><span>últimes ${pts.length - 1} partides de Solo/Duo amb l'app</span></div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg></div>`;
+  const total = myRankAbs - pts[0].v, w = games.filter(r => r.lp.delta > 0).length;
+  return `<div class="lpch"><div class="lpch-h"><b>Historial de LP</b><span>${games.length} partides · ${w}V ${games.length - w}D</span><b class="${total >= 0 ? "good" : "bad"}" style="margin-left:auto">${total >= 0 ? "+" : ""}${total} LP</b></div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg></div>`;
 }
+// a dot of the LP history: that game opened in the match history below (or its report, if it's older than the list)
+let pendingReport = "";
+document.addEventListener("click", e => {
+  const d = e.target.closest?.(".lpdot[data-date]"); if (!d) return;
+  const r = histCache.find(x => x.date === d.dataset.date); if (!r) return;
+  const card = r.map?.match_id && document.querySelector(`#mhList .mh[data-id="${CSS.escape(r.map.match_id)}"]`);
+  if (card) {
+    if (!mhOpen.has(r.map.match_id)) card.click();
+    const c2 = document.querySelector(`#mhList .mh[data-id="${CSS.escape(r.map.match_id)}"]`);
+    c2?.scrollIntoView({behavior: "smooth", block: "start"}); c2?.classList.add("flash"); setTimeout(() => c2?.classList.remove("flash"), 1600);
+  } else { pendingReport = r.date; showTab("R"); }
+});
 function renderLpChart(){ const el = $("#lpChart"); if (!el) return; const h = lpChart(); el.innerHTML = h; el.hidden = !h; }
 function lpGoal(){
   const q = mySolo; if (!q) return null;
@@ -4613,7 +4623,7 @@ function showResetAsk(){
 function resetBtn(){ $("#histReset").innerHTML = `<button class="b" id="histResetBtn" type="button">Posar l'historial a zero</button>`; $("#histResetBtn").addEventListener("click", showResetAsk); }
 $("#histResetBtn").addEventListener("click", showResetAsk);
 // ---------- LP ----------
-const TIER_NAME = {IRON: "Ferro", BRONZE: "Bronze", SILVER: "Plata", GOLD: "Or", PLATINUM: "Platí", EMERALD: "Maragda", DIAMOND: "Diamant", MASTER: "Mestre", GRANDMASTER: "Gran Mestre", CHALLENGER: "Challenger"};
+const TIER_NAME = {IRON: "Ferro", BRONZE: "Bronze", SILVER: "Plata", GOLD: "Or", PLATINUM: "Platí", EMERALD: "Esmeralda", DIAMOND: "Diamant", MASTER: "Mestre", GRANDMASTER: "Gran Mestre", CHALLENGER: "Challenger"};
 const DIV = {I: 1, II: 2, III: 3, IV: 4};
 const rankTxt = e => e ? `${TIER_NAME[e.tier] || e.tier}${["MASTER","GRANDMASTER","CHALLENGER"].includes(e.tier) ? "" : " " + (DIV[e.rank] || e.rank)} · ${e.leaguePoints} LP` : "—";
 const queueTxt = q => q === "RANKED_FLEX_SR" ? "Flex" : "Solo/Duo";
@@ -5711,7 +5721,7 @@ async function loadHistory(){
     const fresh = histCount >= 0 && h.length > histCount;
     lpBackfill(h);
     if (fresh) [120, 300, 600].forEach(sec => setTimeout(() => loadRank(true).then(() => renderSession(histCache, false)), sec * 1000));
-    histCount = h.length; histCache = h; renderLpChart(); maybeReview(h[0]); renderTrends(); renderReport(h[0]); if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
+    histCount = h.length; histCache = h; renderLpChart(); maybeReview(h[0]); renderTrends(); renderReport((pendingReport && h.find(x => x.date === pendingReport)) || h[0]); if (pendingReport) { pendingReport = ""; window.scrollTo({top: 0}); } if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
   } catch(e) { $("#report").innerHTML = `<section class="card"><p class="note warn">Els informes només funcionen obrint la pàgina des del programa RiftMate.</p></section>`; }
 }
 
