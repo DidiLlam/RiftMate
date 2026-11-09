@@ -9,7 +9,8 @@ import (
 
 type hotkeyPress struct {
 	Row  int    `json:"row"`  // 0..4: enemy top, jungle, mid, ADC, support
-	Kind string `json:"kind"` // flash / other
+	Kind string `json:"kind"` // flash / other (and R / Zhonya from the overlay)
+	Src  string `json:"src"`  // key / phone / overlay
 	At   int64  `json:"at"`
 }
 
@@ -18,14 +19,19 @@ var (
 	hkQueue []hotkeyPress
 )
 
-func hotkeyPush(row int, kind string) {
+func hotkeyPush(row int, kind string) { hotkeyPushFrom(row, kind, "key") }
+
+func hotkeyPushFrom(row int, kind, src string) {
+	if row < 0 || row > 4 || (kind != "flash" && kind != "other" && kind != "R" && kind != "Zhonya") {
+		return
+	}
 	hkMu.Lock()
-	hkQueue = append(hkQueue, hotkeyPress{row, kind, time.Now().UnixMilli()})
+	hkQueue = append(hkQueue, hotkeyPress{row, kind, src, time.Now().UnixMilli()})
 	if len(hkQueue) > 20 {
 		hkQueue = hkQueue[len(hkQueue)-20:]
 	}
 	hkMu.Unlock()
-	logf("Drecera: fila %d, %s", row+1, kind)
+	logf("Drecera (%s): fila %d, %s", src, row+1, kind)
 }
 
 // /api/hotkeys: the presses since the last time the page asked (and forgets them). POST ?row=&kind= simulates one (tests).
@@ -34,7 +40,11 @@ func hotkeysHandler(send func(http.ResponseWriter, int, string, []byte)) http.Ha
 		if req.Method == http.MethodPost {
 			var row int
 			json.Unmarshal([]byte(req.URL.Query().Get("row")), &row)
-			hotkeyPush(row, req.URL.Query().Get("kind"))
+			src := req.URL.Query().Get("src")
+			if src == "" {
+				src = "overlay"
+			}
+			hotkeyPushFrom(row, req.URL.Query().Get("kind"), src)
 		}
 		hkMu.Lock()
 		out := hkQueue

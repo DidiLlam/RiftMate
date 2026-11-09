@@ -5,27 +5,31 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type overlayCfg struct {
-	On      bool   `json:"on"`
-	Pos     string `json:"pos"`     // tr, tl, br, bl
-	Alpha   int    `json:"alpha"`   // 40..255
-	Through bool   `json:"through"` // clicks go through to the game (timers by voice only); off = the spells can be clicked
-	Always  bool   `json:"always"`  // also outside games (to place it)
+	On     bool   `json:"on"`
+	Pos    string `json:"pos"`   // tr, tl, br, bl
+	Alpha  int    `json:"alpha"` // 40..255
+	Lock   bool   `json:"lock"`  // every click goes through to the game (can't be moved or clicked)
+	X      int    `json:"x"`     // where you dragged it (screen pixels)
+	Y      int    `json:"y"`
+	Placed bool   `json:"placed"` // false: in the chosen corner
+	Always bool   `json:"always"` // also outside games (to place it)
 }
 
 func overlayFile() string { return profileFile("overlay.json") }
 
 func overlayLoad() overlayCfg {
-	c := overlayCfg{Pos: "tr", Alpha: 170, Through: true}
+	c := overlayCfg{Pos: "tr", Alpha: 210}
 	if b, err := os.ReadFile(overlayFile()); err == nil {
 		json.Unmarshal(b, &c)
 	}
 	return c
 }
 
-// /api/overlay: GET its settings; POST ?on=&pos=&alpha=&through=&always= to change them (opens or closes the window)
+// /api/overlay: GET its settings; POST ?on=&pos=&alpha=&lock=&always= to change them (opens or closes the window)
 func overlayHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		c := overlayLoad()
@@ -36,20 +40,18 @@ func overlayHandler(send func(http.ResponseWriter, int, string, []byte)) http.Ha
 				c.On = v == "1"
 			}
 			if v := q.Get("pos"); v == "tr" || v == "tl" || v == "br" || v == "bl" {
-				c.Pos = v
+				c.Pos, c.Placed = v, false
 			}
 			if v, err := strconv.Atoi(q.Get("alpha")); err == nil && v >= 40 && v <= 255 {
 				c.Alpha = v
 			}
-			if v := q.Get("through"); v != "" {
-				c.Through = v == "1"
+			if v := q.Get("lock"); v != "" {
+				c.Lock = v == "1"
 			}
 			if v := q.Get("always"); v != "" {
 				c.Always = v == "1"
 			}
-			if b, err := json.Marshal(c); err == nil {
-				os.WriteFile(overlayFile(), b, 0o644)
-			}
+			overlaySave(c)
 			switch {
 			case c.On && !was:
 				go overlayOpenWindow()
@@ -81,4 +83,22 @@ func overlayPageHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Write([]byte(overlayPage))
+}
+
+var ovCfgMu sync.Mutex
+
+func overlaySave(c overlayCfg) {
+	ovCfgMu.Lock()
+	defer ovCfgMu.Unlock()
+	if b, err := json.Marshal(c); err == nil {
+		os.WriteFile(overlayFile(), b, 0o644)
+	}
+}
+
+// overlaySavePos: where you dropped it after dragging
+func overlaySavePos(x, y int) {
+	c := overlayLoad()
+	c.X, c.Y, c.Placed = x, y, true
+	overlaySave(c)
+	logf("Overlay: mogut a %d,%d", x, y)
 }

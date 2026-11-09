@@ -518,14 +518,14 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>L'altre encanteri (Ignite, Teleport, Heal…)</td></tr></tbody></table>
     <p class="note">Si tornes a prémer la mateixa drecera mentre el temporitzador corre, el cancel·la. Sona un to per confirmar-ho.</p></section>
   <section class="card" data-g="partida" id="ovCard"><h2>Overlay dins del joc <span class="pill">prova</span></h2>
-    <label class="ph-item" for="cOverlay"><input type="checkbox" id="cOverlay"><span>Mostrar els temporitzadors en una finestreta a sobre del joc</span></label>
+    <label class="ph-item" for="cOverlay"><input type="checkbox" id="cOverlay"><span>Mostrar els temporitzadors a sobre del joc</span></label>
     <div id="ovOpts" hidden>
-      <div class="ovrow"><label>Cantonada <select id="ovPos"><option value="tr">Dalt a la dreta</option><option value="tl">Dalt a l'esquerra</option><option value="br">Baix a la dreta</option><option value="bl">Baix a l'esquerra</option></select></label>
-        <label>Opacitat <input type="range" id="ovAlpha" min="40" max="255" step="5"></label></div>
-      <label class="ph-item" for="ovThrough"><input type="checkbox" id="ovThrough"><span>Només amb la veu: els clics passen al joc (si ho treus, pots clicar un encanteri per marcar-lo o cancel·lar-lo)</span></label>
-      <label class="ph-item" for="ovAlways"><input type="checkbox" id="ovAlways"><span>Mostrar-la també fora de partida (per veure on queda)</span></label>
+      <div class="ovrow"><label>Opacitat <input type="range" id="ovAlpha" min="40" max="255" step="5"></label>
+        <label>Tornar a la cantonada <select id="ovPos"><option value="tr">Dalt a la dreta</option><option value="tl">Dalt a l'esquerra</option><option value="br">Baix a la dreta</option><option value="bl">Baix a l'esquerra</option></select></label></div>
+      <label class="ph-item" for="ovLock"><input type="checkbox" id="ovLock"><span>Bloquejar-lo: els clics passen al joc (no es pot moure ni clicar)</span></label>
+      <label class="ph-item" for="ovAlways"><input type="checkbox" id="ovAlways"><span>Mostrar-lo també fora de partida (per col·locar-lo)</span></label>
     </div>
-    <p class="note">Els temporitzadors es continuen activant amb la veu, com fins ara; l'overlay només te'ls ensenya a sobre del joc. Perquè es vegi, posa el LoL en mode de pantalla <b>"Sense vores"</b> (Opcions → Vídeo → Mode de finestra): en pantalla completa exclusiva no hi pot haver res a sobre. És una finestra apart: no toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></section>
+    <p class="note">Arrossega'l per on vulguis: es queda on el deixes. Els temporitzadors s'activen amb la veu, com sempre; si cliques un encanteri, la ulti o la Zhonya, també el marques o el cancel·les. Surt a sobre del joc en "Sense vores" i, a la majoria d'ordinadors amb Windows 10/11, també en pantalla completa. No toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></section>
   <section class="card" data-g="partida" id="mobCard"><h2>El mòbil com a segona pantalla</h2>
     <label class="ph-item" for="cMobile"><input type="checkbox" id="cMobile"><span>Veure els temporitzadors al mòbil (a la mateixa wifi de casa)</span></label>
     <div id="mobBody" class="mob"></div>
@@ -1981,8 +1981,11 @@ function mirrorPush(){
   const now = Date.now(), rows = [];
   for (let i = 0; i < 5; i++) { const name = $(`#name${i}`)?.value.trim(); if (!name) continue;
     const sps = [$(`#s1-${i}`)?.value, $(`#s2-${i}`)?.value].filter(Boolean);
-    rows.push({row: i, name, lane: LANE_NAMES[i], spells: sps.map((sp, k) => { const t = timers[`${i}-${slotFor(i, sp)}`];
-      return {spell: sp, kind: sp === "Flash" ? "flash" : sps.includes("Flash") ? "other" : k === 0 ? "flash" : "other", left: t ? Math.max(0, (t.end - now) / 1000) : 0}; })}); }
+    const known = CHAMPS.find(c => c.toLowerCase() === name.toLowerCase()), ri = $(`#i${i}-R`);
+    rows.push({row: i, name, lane: LANE_NAMES[i], icon: known ? champImg(champId(known)) : "", spells: sps.map((sp, k) => { const t = timers[`${i}-${slotFor(i, sp)}`];
+      return {spell: sp, icon: SPELL_IMG[sp] ? spellIcon(sp) : "", kind: sp === "Flash" ? "flash" : sps.includes("Flash") ? "other" : k === 0 ? "flash" : "other", left: t ? Math.max(0, (t.end - now) / 1000) : 0}; }),
+      ult: {left: timers[`${i}-R`] ? Math.max(0, (timers[`${i}-R`].end - now) / 1000) : 0, has: true, icon: ri && ri.style.display !== "none" && ri.src ? ri.src : ""},
+      zh: {left: timers[`${i}-Zhonya`] ? Math.max(0, (timers[`${i}-Zhonya`].end - now) / 1000) : 0, has: !!$(`#t${i}-Zhonya`)?.classList.contains("owned"), icon: itemIcon(3157)}}); }
   const gt = lastData?.gameData?.gameTime, obj = [];
   if (game && gt != null && typeof help !== "undefined" && help?.obj) for (const [k, n] of [["drag", "Drac"], ["baron", "Baró"], ["herald", "Herald"], ["grubs", "Larves"]]) { const at = help.obj[k]; if (at > 0 && at < Infinity) obj.push({name: n, left: at - gt}); }
   fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
@@ -1993,13 +1996,15 @@ let ovOn = false;
 async function ovRefresh(q){
   let st = null; try { st = await (await fetch("/api/overlay" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
   ovOn = !!st.on; const cb = $("#cOverlay"); if (!cb) return;
-  cb.checked = ovOn; $("#ovOpts").hidden = !ovOn; $("#ovPos").value = st.pos || "tr"; $("#ovAlpha").value = st.alpha || 170;
-  $("#ovThrough").checked = !!st.through; $("#ovAlways").checked = !!st.always;
+  cb.checked = ovOn; $("#ovOpts").hidden = !ovOn; $("#ovPos").value = st.pos || "tr"; $("#ovAlpha").value = st.alpha || 210;
+  $("#ovLock").checked = !!st.lock; $("#ovAlways").checked = !!st.always;
 }
 $("#cOverlay")?.addEventListener("change", e => ovRefresh(`?on=${e.target.checked ? 1 : 0}`));
 $("#ovPos")?.addEventListener("change", e => ovRefresh(`?pos=${e.target.value}`));
+$("#ovAlpha")?.addEventListener("input", e => { clearTimeout(ovAT); ovAT = setTimeout(() => ovRefresh(`?alpha=${e.target.value}`), 150); });
+let ovAT = 0;
 $("#ovAlpha")?.addEventListener("change", e => ovRefresh(`?alpha=${e.target.value}`));
-$("#ovThrough")?.addEventListener("change", e => ovRefresh(`?through=${e.target.checked ? 1 : 0}`));
+$("#ovLock")?.addEventListener("change", e => ovRefresh(`?lock=${e.target.checked ? 1 : 0}`));
 $("#ovAlways")?.addEventListener("change", e => ovRefresh(`?always=${e.target.checked ? 1 : 0}`));
 if (location.protocol.startsWith("http")) ovRefresh();
 // ---------- backup: restore a copy ----------
@@ -2012,10 +2017,13 @@ $("#bkFile")?.addEventListener("change", async e => { const f = e.target.files?.
 // Pressing it again while the timer runs cancels it, like a second tap.
 async function hotkeysPoll(){
   let list = []; try { list = await (await fetch("/api/hotkeys", {cache: "no-store"})).json(); } catch (e) { return; }
-  if (!store.get("hotkeys", true)) return;
   for (const h of list) {
     if (Date.now() - h.at > 5000) continue;
+    if ((h.src || "key") === "key" && !store.get("hotkeys", true)) continue; // the switch is for the keyboard; phone and overlay always work
     const i = h.row; if (!$(`#name${i}`)?.value.trim()) continue;
+    if (h.kind === "R" || h.kind === "Zhonya") { const key = `${i}-${h.kind}`, was = !!timers[key];
+      startTimer(i, h.kind, h.kind, false); unlockAudio(); tone(was ? [520] : [700, 940], .18);
+      plog(`Overlay: ${NAMES[h.kind]} de ${$(`#name${i}`).value.trim()}${was ? " (cancel·lat)" : ""}`); continue; }
     const sp = game?.spells?.[i] || [$(`#s1-${i}`)?.value, $(`#s2-${i}`)?.value].filter(Boolean);
     const spell = h.kind === "flash" ? "Flash" : sp.find(x => x !== "Flash") || sp[1];
     if (!spell || !CD[spell]) continue;

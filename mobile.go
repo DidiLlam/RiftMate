@@ -23,11 +23,12 @@ type mobileCfg struct {
 }
 
 var (
-	mobMu     sync.Mutex
-	mobState  = []byte(`{}`)
-	mobLn     net.Listener
-	mobPort   = 8766
-	mobSeenAt time.Time
+	mobMu      sync.Mutex
+	mobState   = []byte(`{}`)
+	mobStateAt time.Time
+	mobLn      net.Listener
+	mobPort    = 8766
+	mobSeenAt  time.Time
 )
 
 func mobileFile() string { return profileFile("mobil.json") }
@@ -107,9 +108,7 @@ func mobileStart() {
 		}
 		row, _ := strconv.Atoi(r.URL.Query().Get("row"))
 		kind := r.URL.Query().Get("kind")
-		if row >= 0 && row < 5 && (kind == "flash" || kind == "other") {
-			hotkeyPush(row, kind)
-		}
+		hotkeyPushFrom(row, kind, "phone")
 		w.WriteHeader(204)
 	})
 	go http.Serve(ln, mux)
@@ -181,7 +180,7 @@ func mirrorHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	mobMu.Lock()
-	mobState = v
+	mobState, mobStateAt = v, time.Now()
 	mobMu.Unlock()
 	w.WriteHeader(204)
 }
