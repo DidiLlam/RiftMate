@@ -82,7 +82,8 @@ td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom 
 .trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}
 .poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
 .lpch{}.lpch-h{justify-content:space-between;flex-wrap:wrap}.lpch-h .lpgoal{font-size:1.15rem}.lpt.up{color:var(--lpblue)}.lpt.down{color:var(--lporange)}
-#lp3d{position:relative}#lp3d.is3d{aspect-ratio:16/8;cursor:grab;touch-action:none}#lp3d canvas{display:block;border-radius:10px}
+#lp3d{position:relative}#lp3d.is3d{aspect-ratio:16/7.2;cursor:grab;touch-action:none}#lp3d canvas{display:block;border-radius:10px}
+.lp3zoom{position:absolute;right:8px;bottom:8px;display:none;gap:4px;z-index:2}#lp3d.is3d .lp3zoom{display:flex}.lp3zoom button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-weight:700;cursor:pointer;line-height:1}
 .lp3tip{position:absolute;left:10px;top:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:.8rem;pointer-events:none}.lpdot[data-date]{cursor:pointer}.lpdot[data-date]:hover .v{r:7px}.mh.flash{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color .3s}.lpcard{margin-top:10px}.lpch svg{width:100%;height:auto;display:block}.lpch-h{display:flex;gap:10px;align-items:baseline;font-size:.88rem;margin-bottom:4px}.lpch-h span{color:var(--muted);font-size:.8rem}
 .rbgoal{flex-basis:100%;font-size:.88rem;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center}
 .rbstep{display:inline-flex;align-items:center;gap:8px}.rankbadge img.rbemb{width:34px;height:34px}
@@ -4081,7 +4082,7 @@ function lpChart(){
   const total = myRankAbs - pts[0].v, w = games.filter(r => r.lp.delta > 0).length, next = Math.floor(myRankAbs / 100) * 100 + 100;
   lpChartData = {pts, LO: lo, HI: Math.max(hi, next), next};
   return `<div class="lpch"><div class="lpch-h"><b class="lpgoal">Et falten ${next - myRankAbs} LP per a ${esc(tierTxt(absName(next)))}</b><span>${games.length} partides · ${w}V ${games.length - w}D · <b class="lpt ${total >= 0 ? "up" : "down"}">${total >= 0 ? "+" : ""}${total} LP</b></span></div>
-    <div id="lp3d"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg><div class="lp3tip" hidden></div></div></div>`;
+    <div id="lp3d"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de LP">${g}</svg><div class="lp3tip" hidden></div><div class="lp3zoom"><button type="button" data-z="1.25" title="Apropa">+</button><button type="button" data-z="0.8" title="Allunya">−</button><button type="button" data-z="0" title="Torna a la vista inicial">⟲</button></div></div></div>`;
 }
 // a dot of the LP history: that game opened in the match history below (or its report, if it's older than the list)
 let pendingReport = "";
@@ -4129,12 +4130,16 @@ async function lp3d(){
     k.font = `700 50px ${getComputedStyle(document.body).fontFamily}`; k.fillStyle = c; k.fillText(txt, 6, 64);
     const s = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(cv), transparent: true, depthWrite: false})); s.scale.set(w, w * .1875, 1); s.position.set(x, y, z); sc.add(s); };
   // the ridge
-  const x0 = -W3 / 2 - 1.5, shape = new T.Shape(); shape.moveTo(x0, 0);
-  pts.forEach((p, i) => shape.lineTo(x0 + i * ST, sy(p.v))); shape.lineTo(x0 + W3, 0); shape.lineTo(x0, 0);
-  const geo = new T.ExtrudeGeometry(shape, {depth: 2.4, bevelEnabled: false}); geo.translate(0, 0, -1.2);
-  const ridge = col(BLUE).lerp(col(tok("--panel") || "#141e1b"), .78);
-  sc.add(new T.Mesh(geo, new T.MeshStandardMaterial({color: ridge, roughness: .8, metalness: .05, transparent: true, opacity: .92})));
-  const edge = new T.Line(new T.BufferGeometry().setFromPoints(pts.map((p, i) => new T.Vector3(x0 + i * ST, sy(p.v) + .01, 1.21))), new T.LineBasicMaterial({color: col(BLUE)})); sc.add(edge);
+  // the ridge: one slab per game, from the LP before to the LP after, blue when you won and orange when you lost
+  const x0 = -W3 / 2 - 1.5;
+  const slabMat = {[BLUE]: new T.MeshStandardMaterial({color: col(BLUE), roughness: .8, metalness: .05}),
+    [ORANGE]: new T.MeshStandardMaterial({color: col(ORANGE), roughness: .8, metalness: .05})};
+  for (let i = 1; i < n; i++) {
+    const xa = x0 + (i - 1) * ST, xb = x0 + i * ST, sh = new T.Shape();
+    sh.moveTo(xa, 0); sh.lineTo(xa, sy(pts[i - 1].v)); sh.lineTo(xb, sy(pts[i].v)); sh.lineTo(xb, 0); sh.lineTo(xa, 0);
+    const geo = new T.ExtrudeGeometry(sh, {depth: 2.4, bevelEnabled: false}); geo.translate(0, 0, -1.2);
+    sc.add(new T.Mesh(geo, slabMat[pts[i].r?.lp.delta > 0 ? BLUE : ORANGE]));
+  }
   // each game: the champion's portrait in a ring (blue won, orange lost) on a little pole on the ridge
   // (hover: the game; click: open it). The portrait comes through the app, so the canvas stays clean.
   const picks = [], figs = [];
@@ -4178,16 +4183,36 @@ async function lp3d(){
       const tk = new T.Mesh(new T.BoxGeometry(.04, .04, .3), mat(tok("--muted") || "#888")); tk.position.set(x0 + i * ST, .02, 1.55); sc.add(tk);
       sprite(lbl, tok("--fg") || "#ddd", x0 + i * ST + 1.15, -.55, 3.2, 1.9); }); }
   // camera: fixed; drag to turn, then it stays where you leave it
-  let rot = -.32, tilt = .22; const R = 24, look = top * .55;
-  const draw = () => { cam.position.set(Math.sin(rot) * R * Math.cos(tilt), look + Math.sin(tilt) * R, Math.cos(rot) * R * Math.cos(tilt)); cam.lookAt(0, look, 0); r.render(sc, cam); };
-  const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); };
+  // camera framed on what there is (the ridge, the figures on it, the column and its labels), so it fills the box;
+  // it turns only a little, so it can't end up looking from a strange side
+  let rot = -.22, tilt = .16, R = 24, W = 0, H = 0, zoom = 1, offX = 0, offY = 0, panX = 0, panY = 0;
+  const yTop = Math.max(top, ...pts.map(p => sy(p.v) + 2.9)) + .2, cx = (x0 + xc + 5.5) / 2, cy = (-.9 + yTop) / 2;
+  const corners = []; for (const X of [x0 - .4, xc + 6.4]) for (const Y of [-.95, yTop]) for (const Z of [-1.2, 1.9]) corners.push(new T.Vector3(X, Y, Z));
+  const pose = (z = 1) => { const d = R / z; cam.position.set(cx + Math.sin(rot) * d * Math.cos(tilt), cy + Math.sin(tilt) * d, Math.cos(rot) * d * Math.cos(tilt)); cam.lookAt(cx, cy, 0); cam.updateMatrixWorld(); };
+  // fit: move the camera in or out until everything fills ~94% of the box, then centre it (a view offset, no turning)
+  const fit = () => { cam.clearViewOffset();
+    for (let k = 0; k < 6; k++) { pose(); let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity;
+      for (const v of corners) { const q = v.clone().project(cam); a = Math.min(a, q.x); b = Math.max(b, q.x); c = Math.min(c, q.y); d = Math.max(d, q.y); }
+      const ext = Math.max((b - a) / 2, (d - c) / 2);
+      if (k === 5 || Math.abs(ext - .94) < .01) { offX = (a + b) / 2 * W / 2; offY = -(c + d) / 2 * H / 2; return; }
+      R *= ext / .94; } };
+  // zoom (wheel, or the + and − buttons) and, when zoomed in, drag to move around; double-click puts it back
+  const draw = () => { cam.setViewOffset(W, H, offX * zoom + panX, offY * zoom + panY, W, H); pose(zoom); r.render(sc, cam); };
+  const zoomBy = f => { const z = Math.max(.7, Math.min(3, zoom * f)); panX *= z / zoom; panY *= z / zoom; zoom = z; if (zoom <= 1) panX = panY = 0; draw(); };
+  r.domElement.addEventListener("wheel", e => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12); }, {passive: false});
+  r.domElement.addEventListener("dblclick", () => { zoom = 1; panX = panY = 0; rot = -.22; tilt = .16; fit(); draw(); });
+  box.querySelector(".lp3zoom")?.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.z === "0") { zoom = 1; panX = panY = 0; rot = -.22; tilt = .16; fit(); draw(); } else zoomBy(+b.dataset.z); });
+  const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; W = w; H = h; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); fit(); draw(); };
   new ResizeObserver(size).observe(box); size();
   const ray = new T.Raycaster(), tip = box.querySelector(".lp3tip"); ray.camera = cam;
   const pick = e => { const b = r.domElement.getBoundingClientRect(); ray.setFromCamera({x: (e.clientX - b.left) / b.width * 2 - 1, y: -(e.clientY - b.top) / b.height * 2 + 1}, cam); return ray.intersectObjects(picks)[0]?.object; };
   let drag = null;
-  r.domElement.addEventListener("pointerdown", e => { drag = {x: e.clientX, y: e.clientY, r: rot, t: tilt, moved: false}; r.domElement.setPointerCapture(e.pointerId); });
+  r.domElement.addEventListener("pointerdown", e => { drag = {x: e.clientX, y: e.clientY, r: rot, t: tilt, px: panX, py: panY, moved: false}; r.domElement.setPointerCapture(e.pointerId); });
   r.domElement.addEventListener("pointermove", e => {
-    if (drag) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true; rot = drag.r + (e.clientX - drag.x) * .008; tilt = Math.max(.05, Math.min(1.25, drag.t + (e.clientY - drag.y) * .005)); draw(); return; }
+    if (drag && zoom > 1.05) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true;   // zoomed in: drag moves the view
+      const b = r.domElement.getBoundingClientRect(); panX = drag.px - (e.clientX - drag.x) * W / b.width; panY = drag.py - (e.clientY - drag.y) * H / b.height; draw(); return; }
+    if (drag) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true; rot = Math.max(-.55, Math.min(.1, drag.r + (e.clientX - drag.x) * .003)); tilt = Math.max(.08, Math.min(.42, drag.t + (e.clientY - drag.y) * .002)); fit(); draw(); return; }
     const o = pick(e), p = o?.userData; r.domElement.style.cursor = p?.r ? "pointer" : "grab";
     if (p) { const nm = absName(p.v); tip.textContent = p.r ? `${p.r.date} · ${displayChamp(p.r.champion)} · ${p.r.lp.delta > 0 ? "+" : ""}${p.r.lp.delta} LP · ${tierTxt(nm)} ${nm.lp} LP` : `Inici: ${tierTxt(nm)} ${nm.lp} LP`; tip.hidden = false; }
     else tip.hidden = true;
