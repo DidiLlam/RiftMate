@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.71"
+	version = "2.0.72"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -328,7 +328,19 @@ func serve(ln net.Listener) {
 	rec := &Recorder{}
 	go rec.loop()
 	mux := http.NewServeMux()
-	srv := &http.Server{Handler: mux}
+	// only the app's own page may change things: a request another website makes the browser send (cross-site)
+	// is refused for anything but plain reading, and the backup file is never handed to another site
+	srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		cross := req.Header.Get("Sec-Fetch-Site") == "cross-site"
+		if o := req.Header.Get("Origin"); o != "" && !strings.HasPrefix(o, "http://127.0.0.1:") && !strings.HasPrefix(o, "http://localhost:") {
+			cross = true
+		}
+		if cross && (req.Method != http.MethodGet || req.URL.Path == "/api/backup") {
+			http.Error(w, "forbidden", 403)
+			return
+		}
+		mux.ServeHTTP(w, req)
+	})}
 	send := func(w http.ResponseWriter, code int, ctype string, body []byte) {
 		w.Header().Set("Content-Type", ctype)
 		w.Header().Set("Cache-Control", "no-store")
@@ -510,6 +522,11 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/replaywatch", replayWatchHandler(send))
 	mux.HandleFunc("/api/friends", friendsHandler(send))
 	mux.HandleFunc("/api/ddimg", ddImgHandler)
+	mux.HandleFunc("/api/hotkeys", hotkeysHandler(send))
+	mux.HandleFunc("/api/mobile", mobileHandler(send))
+	mux.HandleFunc("/api/mirror", mirrorHandler)
+	mux.HandleFunc("/api/backup", backupHandler)
+	mux.HandleFunc("/api/restore", restoreHandler(send))
 	mux.HandleFunc("/api/model", modelHandler)
 	mux.HandleFunc("/api/videocoach", videoCoachHandler(send))
 	mux.HandleFunc("/api/clip", clipHandler)
@@ -569,6 +586,8 @@ func main() {
 	}
 	logf("---- %s %s iniciat (dades a %s)", appName, version, filepath.Dir(dataDir()))
 	go cleanupOldExe()
+	startHotkeys()
+	go mobileAuto()
 	if !updated { // after an update the open window reloads itself
 		go func() {
 			time.Sleep(500 * time.Millisecond)

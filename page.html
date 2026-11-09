@@ -286,6 +286,8 @@ button.watch{font-size:.8em;padding:1px 7px;margin-left:6px;border-radius:10px;c
 #watchToast.bad{border-color:#c55}
 .frtab td,.frtab th{white-space:nowrap}.frtab img.emb.fr{width:22px;height:22px;vertical-align:middle}.frdel{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 2px}
 .goals td.gk{text-align:center;width:1.6em;padding:4px 2px;font-weight:700}.goals td.ok{color:var(--good)}.goals td.no{color:var(--loss)}.goals td.gs{white-space:nowrap;text-align:right}
+kbd{font:600 .8em var(--mono,monospace);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:var(--panel)}.hk td{vertical-align:middle}
+.mobq{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.mobq p{margin:.3em 0}#mobQR{background:#fff;padding:8px;border-radius:8px;line-height:0}#mobQR img,#mobQR canvas{display:block}.mobq code{word-break:break-all;font-size:.82rem}
 .wtab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}.wtab th,.wtab td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}.wtab th{font-weight:600;color:var(--muted);font-size:.9em}
 .keyrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .keyrow input{flex:1;min-width:14em;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
@@ -509,6 +511,15 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="aDeco"><input type="checkbox" id="aDeco" checked><span>Decoració de temporada (Halloween, Nadal, Sant Jordi…)</span></label>
     <div class="row2"><label for="aFont">Lletra</label><select id="aFont"><option value="orig">Original</option><option value="sys">La del sistema</option><option value="read">Molt llegible</option></select></div>
   </section>
+  <section class="card" data-g="partida" id="hkCard"><h2>Dreceres de teclat</h2>
+    <label class="ph-item" for="cHotkeys"><input type="checkbox" id="cHotkeys" checked><span>Marcar els encanteris dels rivals amb el teclat, amb el joc al davant</span></label>
+    <table class="wtab hk"><tbody><tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>Flash del top, jungla, mig, ADC i suport rivals</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>L'altre encanteri (Ignite, Teleport, Heal…)</td></tr></tbody></table>
+    <p class="note">Si tornes a prémer la mateixa drecera mentre el temporitzador corre, el cancel·la. Sona un to per confirmar-ho.</p></section>
+  <section class="card" data-g="partida" id="mobCard"><h2>El mòbil com a segona pantalla</h2>
+    <label class="ph-item" for="cMobile"><input type="checkbox" id="cMobile"><span>Veure els temporitzadors al mòbil (a la mateixa wifi de casa)</span></label>
+    <div id="mobBody" class="mob"></div>
+    <p class="note">La primera vegada, Windows et preguntarà si RiftMate pot fer servir la xarxa: digues que sí només a les xarxes privades. L'adreça porta una clau secreta: no la comparteixis. Des del mòbil també pots tocar un encanteri per marcar-lo.</p></section>
   <details data-g="partida" class="card">
     <summary>Temps de recàrrega base (segons, editables)</summary>
     <table id="cdTable"><tbody></tbody></table>
@@ -516,6 +527,10 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note">Botes Jòniques: +10 de pressa d'encanteri. Perspicàcia còsmica: +18. Recàrrega = base ÷ (1 + pressa/100). Comprova els valors si hi ha hagut un pedaç nou.</p>
   </details>
   </div>
+    <section class="card" data-g="app" id="bkCard"><h2>Còpia de seguretat</h2>
+      <p class="note">Desa en un sol fitxer els informes, l'historial, els ajustos i les claus, per no perdre res si canvies d'ordinador. Les repeticions i els models 3D no hi van (es tornen a descarregar).</p>
+      <div class="bar"><a class="b" href="/api/backup" download>Fer una còpia</a><label class="b" for="bkFile">Restaurar una còpia</label><input type="file" id="bkFile" accept=".zip" hidden></div>
+      <p class="note" id="bkNote"></p></section>
     <div class="bar" data-g="app"><button class="b" type="button" id="updCheck">Comprovar si hi ha versió nova</button><button class="b" type="button" id="welcomeShow">Veure la pantalla de benvinguda</button><button class="b" id="quitBtn" title="Atura el programa">Tancar el programa</button></div>
   </div>
   <div class="view" id="viewH" hidden>
@@ -1931,6 +1946,61 @@ function startTimer(i, slot, spell, fromVoice){
   render(); clipSoon();
 }
 $("#resetAll").addEventListener("click", () => { for (const k in timers) delete timers[k]; render(); });
+// ---------- the phone as a second screen ----------
+let mobOn = false;
+async function mobRefresh(post){
+  let st = null; try { st = await (await fetch("/api/mobile" + (post || ""), {method: post ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
+  mobOn = !!st.on; const cb = $("#cMobile"); if (cb) cb.checked = mobOn;
+  const el = $("#mobBody"); if (!el) return;
+  if (!st.on) { el.innerHTML = ""; return; }
+  const url = st.urls?.[0];
+  el.innerHTML = url ? `<div class="mobq"><div id="mobQR"></div><div><p>Escaneja el codi amb la càmera del mòbil o obre aquesta adreça:</p><p><code data-noi18n>${esc(url)}</code></p>
+      <p class="${st.connected ? "good" : "note"}">${st.connected ? "Mòbil connectat." : st.running ? "Encara no s'hi ha connectat cap mòbil." : "No he pogut obrir el port 8766."}</p>
+      <button class="b" type="button" id="mobNew">Canviar la clau</button></div></div>` : `<p class="note">No trobo cap xarxa de casa en aquest ordinador.</p>`;
+  if (url) loadQR().then(ok => { const q = $("#mobQR"); if (ok && q) { q.innerHTML = ""; new QRCode(q, {text: url, width: 168, height: 168, colorDark: "#000", colorLight: "#fff"}); } });
+}
+let qrP = null;
+function loadQR(){ if (window.QRCode) return Promise.resolve(true);
+  return qrP ??= new Promise(res => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; s.onload = () => res(!!window.QRCode); s.onerror = () => { qrP = null; res(false); }; document.head.appendChild(s); }); }
+$("#cMobile")?.addEventListener("change", e => mobRefresh(`?on=${e.target.checked ? 1 : 0}`));
+document.addEventListener("click", e => { if (e.target.id === "mobNew") mobRefresh("?new=1"); });
+// what the phone shows: the enemy rows with their two spells and the objectives, every second
+const LANE_NAMES = ["Top", "Jungla", "Mig", "ADC", "Suport"];
+function mirrorPush(){
+  if (!mobOn) return;
+  const now = Date.now(), rows = [];
+  for (let i = 0; i < 5; i++) { const name = $(`#name${i}`)?.value.trim(); if (!name) continue;
+    const sps = [$(`#s1-${i}`)?.value, $(`#s2-${i}`)?.value].filter(Boolean);
+    rows.push({row: i, name, lane: LANE_NAMES[i], spells: sps.map((sp, k) => { const t = timers[`${i}-${slotFor(i, sp)}`];
+      return {spell: sp, kind: sp === "Flash" ? "flash" : sps.includes("Flash") ? "other" : k === 0 ? "flash" : "other", left: t ? Math.max(0, (t.end - now) / 1000) : 0}; })}); }
+  const gt = lastData?.gameData?.gameTime, obj = [];
+  if (game && gt != null && typeof help !== "undefined" && help?.obj) for (const [k, n] of [["drag", "Drac"], ["baron", "Baró"], ["herald", "Herald"], ["grubs", "Larves"]]) { const at = help.obj[k]; if (at > 0 && at < Infinity) obj.push({name: n, left: at - gt}); }
+  fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
+}
+if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush, 1000); setInterval(() => { if (!$("#viewA").hidden && mobOn) mobRefresh(); }, 5000); }
+// ---------- backup: restore a copy ----------
+$("#bkFile")?.addEventListener("change", async e => { const f = e.target.files?.[0]; if (!f) return; const note = $("#bkNote"); note.textContent = "Restaurant…";
+  try { const r = await (await fetch("/api/restore", {method: "POST", body: f})).json(); note.textContent = r.error ? "No s'ha pogut restaurar: " + r.error : `Restaurats ${r.files} fitxers. Tanca i torna a obrir RiftMate perquè es carreguin.`; } catch (err) { note.textContent = "No s'ha pogut restaurar."; }
+  e.target.value = ""; });
+{ const cb = $("#cHotkeys"); if (cb) { cb.checked = store.get("hotkeys", true); cb.addEventListener("change", () => store.set("hotkeys", cb.checked)); } }
+// keyboard shortcuts (registered by the app with Windows, so they work with the game in front):
+// Ctrl+Shift+1..5 the Flash of the enemy top, jungle, mid, ADC, support; Ctrl+Alt+1..5 their other spell.
+// Pressing it again while the timer runs cancels it, like a second tap.
+async function hotkeysPoll(){
+  let list = []; try { list = await (await fetch("/api/hotkeys", {cache: "no-store"})).json(); } catch (e) { return; }
+  if (!store.get("hotkeys", true)) return;
+  for (const h of list) {
+    if (Date.now() - h.at > 5000) continue;
+    const i = h.row; if (!$(`#name${i}`)?.value.trim()) continue;
+    const sp = game?.spells?.[i] || [$(`#s1-${i}`)?.value, $(`#s2-${i}`)?.value].filter(Boolean);
+    const spell = h.kind === "flash" ? "Flash" : sp.find(x => x !== "Flash") || sp[1];
+    if (!spell || !CD[spell]) continue;
+    const key = `${i}-${slotFor(i, spell)}`, was = !!timers[key];
+    startTimer(i, slotFor(i, spell), spell, false); unlockAudio(); tone(was ? [520] : [700, 940], .18);
+    plog(`Drecera: ${spell} de ${$(`#name${i}`).value.trim()}${was ? " (cancel·lat)" : ""}`);
+  }
+}
+if (location.protocol.startsWith("http")) setInterval(() => { if (game || document.visibilityState === "visible") hotkeysPoll(); }, 400);
 
 // sound
 let actx = null;
