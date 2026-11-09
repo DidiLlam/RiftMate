@@ -1943,9 +1943,10 @@ function speak(text, cb){
   $("#status").textContent = text;
   if (!synth) { cb?.("no"); return; }
   const lang = speechChoice().lang, miss = lang !== "ca" && aiHasKey ? untranslated(text, lang) : "";
-  if (!miss) { sayQ.push({t: text, cb}); sayPump(); return; }
+  const live = !!game, at = Date.now();
+  if (!miss) { sayQ.push({t: text, cb, live, at}); sayPump(); return; }
   // a sentence without a translation: the AI translates it first (at most 4 s), so a Spanish voice doesn't read Catalan
-  const item = {t: text, cb, wait: true}; sayQ.push(item);
+  const item = {t: text, cb, wait: true, live, at}; sayQ.push(item);
   aiTranslate(text, lang).then(t => { if (t) { item.t = t; item.done = true; } }).finally(() => { item.wait = false; sayPump(); });
 }
 // the sentences of a text that the app's own translations don't cover (and that look Catalan)
@@ -1965,6 +1966,9 @@ async function aiTranslate(text, lang){
   return null;
 }
 function sayPump(){
+  // a game line still waiting when the game is over, or more than 40 s late (the voice was stuck, the report was
+  // being read): it's no longer true, so it's dropped instead of said minutes later
+  while (sayQ.length && sayQ[0].live && !sayQ[0].wait && (!game || Date.now() - sayQ[0].at > 40000)) { const o = sayQ.shift(); plog(`Coach (no dit, tard): ${o.t}`); o.cb?.("stale"); }
   if (sayCur || !sayQ.length || reportSpeaking) return;
   if (Date.now() < sayHold) { setTimeout(sayPump, sayHold - Date.now() + 10); return; }
   if (sayQ[0].wait) return;   // the first one is still being translated: it keeps its turn
@@ -2404,6 +2408,7 @@ function updateItems(data, silent){
   });
 }
 function onGameEnd(){
+  { const n = sayQ.length; for (let k = sayQ.length - 1; k >= 0; k--) if (sayQ[k].live) sayQ.splice(k, 1); if (n > sayQ.length) plog(`Coach: ${n - sayQ.length} frases de la partida que encara no havia dit, descartades`); }
   setTimeout(() => micOff("partida acabada"), 1500);
   helpEnd(); aiHistory = []; lastData = null; game = null; micTesting = false; setTimeout(() => renderUpdate(), 500); setTimeout(updateMic, 1600); coach = null; clearEnemies(); $("#mCard").hidden = true; if (on("vGame")) { tone([990,660], .3); speak("Partida acabada."); }
   [4000, 9000, 15000].forEach(ms => setTimeout(loadHistory, ms));
@@ -3118,14 +3123,16 @@ async function aiProactive(kind, question, extra){
   if (!aiBudgetOk(kind)) { plog(`IA (${kind}): no la faig servir per guardar el pressupost del dia (${aiUsed} de ${aiBudget()} peticions)`); return; }
   aiAutoBusy = true;
   try {
-    const lang = speechChoice().lang, t0 = Date.now();
+    const lang = speechChoice().lang, t0 = Date.now(), g0 = game;
     const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({question, state: (game ? aiState() : "") + (extra ? "\n" + extra : ""), lang, history: aiHistory})})).json(); aiNoteUsed(r);
     if (r.answer && !r.error) {
       plog(`IA (${kind}): ${r.answer} (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
       aiHistory.push({role: "user", text: question}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
       aiShow({pla: "Pla de partida", mort: "Després de morir", macro: "Macro"}[kind] || kind, r.answer);
-      speak(r.answer); aiAutoAt = Date.now();
+      if (g0 && game !== g0) plog(`IA (${kind}): la resposta ha arribat amb la partida ja acabada, no la dic`);   // the game ended meanwhile
+      else speak(r.answer);
+      aiAutoAt = Date.now();
     } else if (r.error) {
       plog(`IA (${kind}): error ${r.error}`);
       const note = aiLimitNote(r.error); if (note && !aiLimitSaid && aiLimitUntil - Date.now() > 10 * 60000) { aiLimitSaid = true; aiShow("IA", note); if (game) coachSay(note, 1); }
