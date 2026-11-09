@@ -274,6 +274,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .maplegend input{accent-color:var(--accent)}
 .maplegend svg{width:18px;height:18px;flex:none}
 .mapsel{font-size:.88rem;min-height:1.4em}
+.vcd{border-top:1px solid var(--line);padding:8px 0}.vcd p{margin:.25em 0}.vcd video{width:100%;max-width:640px;border-radius:8px;margin-top:6px}
 button.watch{font-size:.8em;padding:1px 7px;margin-left:6px;border-radius:10px;cursor:pointer;vertical-align:1px}
 #watchToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel);color:var(--fg);border:1px solid var(--line,#444);padding:10px 16px;border-radius:10px;box-shadow:0 4px 18px #0006;z-index:50;max-width:min(90vw,560px)}
 #watchToast.bad{border-color:#c55}
@@ -470,6 +471,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="vGame"><input type="checkbox" id="vGame" checked><span>Partida detectada, compres de Zhonya, partida acabada i informe llest</span></label>
   </section>
   <section class="card" id="aiCard"><h2>Coach amb IA</h2>
+    <div class="keyrow"><label for="vcMode">La IA mira les teves morts al replay</label><select id="vcMode" style="flex:0 0 auto"><option value="auto">Sola, en acabar cada partida</option><option value="manual">Només quan ho demani</option></select></div>
+    <p class="note">En acabar la partida, quan el client està lliure, l'app obre la repetició, grava uns segons de cada mort i la IA els mira. Triga uns 3 o 4 minuts i el LoL s'obre en pantalla durant la gravació; si vols jugar abans, clica "Atura" o tanca la repetició. Gasta 1 petició de la IA per partida.</p>
     <label class="ph-item" for="cAiAuto"><input type="checkbox" id="cAiAuto" checked><span>La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors, macro als minuts 14, 25 i 35, i tres lliçons a l'informe</span></label>
     <p class="note">Durant la partida, digues "coach" (o "entrenador") i, quan soni el to, fes la pregunta: "què em compro ara?", "com jugo contra Ahri?", "val la pena anar al drac?". Respon una IA que veu l'estat de la partida: campions, nivells, objectes, KDA, or, els temps que porta l'app i els objectius.</p>
     <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de peticions per dia, que torna a les 9 del matí (mitjanit a Califòrnia).</p>
@@ -5482,6 +5485,7 @@ function reportTop(r){
     ${(v => v ? `<p class="rpverdict ${v.c}">${esc(v.t)}</p>` : "")(reportVerdict(r))}
     <div class="kv"><div><span>KDA</span><b>${r.kda.join(" / ")}</b></div><div><span>Participació</span><b>${dash(kpOf(r))}${kpOf(r) != null ? "%" : ""}</b></div><div><span>CS/min</span><b>${dash(r.cs_rate.total)}</b></div><div><span>Morts abans del 15</span><b class="${r.deaths15 >= 2 ? "bad" : ""}">${r.deaths15}</b></div>${lpCell(r)}</div>
   </section>
+  ${videoCard(r)}
   ${r.ai_review ? `<section class="card"><h2>Lliçons de la IA</h2><p class="ailes">${esc(r.ai_review)}</p></section>` : aiHasKey ? `<section class="card"><h2>Lliçons de la IA</h2><p class="note">La IA llegeix aquest informe (morts, farm, visió, moments clau) i et diu les tres coses més importants a millorar d'aquesta partida. Normalment ho fa sola en acabar; si no hi ha sortit (la IA estava saturada o és una partida antiga), demana-les aquí.</p><button class="b" type="button" id="aiRevBtn">Que la IA em digui les tres lliçons</button></section>` : ""}
   ${reportBoard(r)}
   ${focusHtml(r)}
@@ -5574,6 +5578,48 @@ async function shareCard(kind){
 }
 document.addEventListener("click", e => { const b = e.target.closest?.("button.share"); if (b) shareCard(b.dataset.share); });
 let curReport = null;
+// ---------- video coach: the AI watched clips of your deaths in the replay ----------
+function videoCard(r){
+  const v = r.video, m = r.map?.match_id;
+  if (!v && !m) return "";
+  if (!aiHasKey && !v) return "";
+  const g = String(r.date).replace(/:/g, "").replace(" ", "_");
+  if (!v) return `<section class="card"><h2>La IA mira les teves morts</h2><p class="note" id="vcNote">${vcBusyDate === r.date ? esc(vcText) : "Encara no les ha mirat."}</p><button class="b" type="button" id="vcGo" data-date="${esc(r.date)}">Mirar-les ara</button> <button class="b" type="button" id="vcStop">Atura</button></section>`;
+  if (!v.deaths?.length) return "";
+  return `<section class="card"><h2>La IA ha mirat les teves morts</h2>${v.summary ? `<p class="ailes"><b>${esc(v.summary)}</b></p>` : ""}
+    ${v.deaths.map(d => `<div class="vcd"><p><b>${mm(d.t)}</b> · ${esc(d.kind || "")}${d.by?.length ? ` · ${esc(d.by.join(", "))}` : ""}${watchBtn(r, d.t)}</p>${d.error ? `<p>${esc(d.error)}</p>` : ""}${d.fix ? `<p class="good">${esc(d.fix)}</p>` : ""}${d.clip ? `<details><summary>Veure el clip</summary><video controls preload="none" src="/api/clip?g=${encodeURIComponent(g)}&f=${encodeURIComponent(d.clip)}"></video></details>` : ""}</div>`).join("")}
+    <p class="note">Clips de la repetició (22 s abans de cada mort), mirats per ${esc(v.model || "la IA")}.</p></section>`;
+}
+let vcBusyDate = "", vcText = "", vcWasBusy = false, vcSpoken = store.get("vcSpoken", "");
+async function vcPoll(post){
+  try {
+    const st = await (await fetch("/api/videocoach" + (post || ""), {method: post ? "POST" : "GET", cache: "no-store"})).json();
+    vcText = st.text || ""; vcBusyDate = st.busy ? st.date : "";
+    const note = $("#vcNote"); if (note && st.busy) note.textContent = vcText;
+    if (st.busy && !game) watchShow({busy: true, ok: true, pre: "Coach de vídeo", text: st.text});
+    if (vcWasBusy && !st.busy) {
+      watchShow({busy: false, ok: st.text === "fet", pre: "Coach de vídeo", text: st.text === "fet" ? "ja he mirat les teves morts: ho tens a l'informe" : st.text});
+      if (st.text === "fet") { await loadHistory(); vcExplain(st.date); }
+    }
+    vcWasBusy = !!st.busy;
+  } catch (e) {}
+}
+// says it out loud (not during a game): the main pattern and, for each death, what went wrong and what to do
+function vcExplain(date){
+  const r = histCache.find(x => x.date === date), v = r?.video; if (!v?.summary || game || vcSpoken === date) return;
+  vcSpoken = date; store.set("vcSpoken", date);
+  const intro = {es: "He visto tus muertes en la repetición.", en: "I watched your deaths in the replay.", ca: "He mirat les teves morts a la repetició."}[v.lang] || "";
+  const at = t => ({es: `Minuto ${Math.floor(t / 60)}:`, en: `Minute ${Math.floor(t / 60)}:`, ca: `Minut ${Math.floor(t / 60)}:`})[v.lang] || "";
+  coachSayRaw([intro, v.summary, ...v.deaths.filter(d => d.error).map(d => `${at(d.t)} ${d.error} ${d.fix || ""}`)].join(" "));
+}
+// already in the voice's language: straight to the voice
+function coachSayRaw(text){ plog("Coach (vídeo): " + text); sayQ.push({t: text, done: true, live: false, at: Date.now()}); sayPump(); }
+document.addEventListener("click", e => {
+  if (e.target.id === "vcGo") { vcPoll("?date=" + encodeURIComponent(e.target.dataset.date)); e.target.disabled = true; }
+  if (e.target.id === "vcStop") vcPoll("?stop=1");
+});
+{ const el = $("#vcMode"), v = store.get("vcMode", "auto"); if (el) { el.value = v; el.addEventListener("change", () => { store.set("vcMode", el.value); vcPoll(`?mode=${el.value}&lang=${speechChoice().lang}`); }); } }
+if (location.protocol.startsWith("http")) { setTimeout(() => vcPoll(`?mode=${store.get("vcMode", "auto")}&lang=${speechChoice().lang}`), 1500); setInterval(() => vcPoll(), 5000); }
 function renderReport(r){
   curReport = r;
   if (!r) { $("#report").innerHTML = `<section class="card"><h2>Última partida</h2><p class="note">Encara no hi ha cap informe. Juga una partida amb el programa obert.</p></section>`; return; }

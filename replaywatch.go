@@ -148,8 +148,25 @@ func replayWatch(gameID string, t float64) {
 			return
 		}
 	}
+	if err := replayOpen(gameID, func(text string) { rwSet(true, true, text) }); err != nil {
+		rwSet(false, false, err.Error())
+		return
+	}
+	time.Sleep(1500 * time.Millisecond)
+	if err := replayPlayback(jump); err == nil {
+		rwSet(false, true, fmt.Sprintf("oberta al minut %d:%02d", int(jump)/60, int(jump)%60))
+		return
+	}
+	rwSet(false, true, "oberta, però no he pogut saltar al minut: fes servir la barra de temps del replay (l'API s'activa la propera vegada que obris el LoL)")
+}
+
+// errReplayNoAPI: the replay opened, but its API (game.cfg) wasn't on when the game started
+var errReplayNoAPI = fmt.Errorf("la repetició s'ha obert, però l'API del replay encara no estava activada (ho estarà la propera vegada)")
+
+// replayOpen downloads (if needed) and opens a game's replay in the LoL, and waits until it has loaded.
+func replayOpen(gameID string, status func(string)) error {
 	if _, err := enableReplayAPI(); err != nil {
-		logf("Repetició: no he pogut activar l'API del replay (%v): s'obrirà des del principi", err)
+		logf("Repetició: no he pogut activar l'API del replay (%v)", err)
 	}
 	var meta struct {
 		State string `json:"state"`
@@ -157,53 +174,44 @@ func replayWatch(gameID string, t float64) {
 	for i := 0; ; i++ {
 		code, err := lcuGet("/lol-replays/v1/metadata/"+gameID, &meta)
 		if err != nil || code != 200 {
-			rwSet(false, false, "no trobo el client del LoL obert")
-			return
+			return fmt.Errorf("no trobo el client del LoL obert")
 		}
 		switch meta.State {
 		case "watch":
 		case "download", "lost", "error":
 			if i == 0 || meta.State != "download" || i%10 == 0 {
-				rwSet(true, true, "descarregant la repetició…")
+				status("descarregant la repetició…")
 				lcuDo("POST", "/lol-replays/v1/rofls/"+gameID+"/download/graceful", map[string]any{"componentType": "replay-button_match-history"}, nil)
 			}
 		case "checking", "downloading", "":
-			rwSet(true, true, "descarregant la repetició…")
+			status("descarregant la repetició…")
 		case "incompatible":
-			rwSet(false, false, "la repetició és d'un pedaç anterior i el LoL ja no la pot obrir")
-			return
+			return fmt.Errorf("la repetició és d'un pedaç anterior i el LoL ja no la pot obrir")
 		case "missingOrExpired", "unsupported":
-			rwSet(false, false, "Riot ja no té aquesta repetició (només es guarden uns dies)")
-			return
+			return fmt.Errorf("Riot ja no té aquesta repetició (només es guarden uns dies)")
 		default:
-			rwSet(true, true, "esperant la repetició ("+meta.State+")…")
+			status("esperant la repetició (" + meta.State + ")…")
 		}
 		if meta.State == "watch" {
 			break
 		}
 		if i > 90 {
-			rwSet(false, false, "la descàrrega triga massa: torna-ho a provar d'aquí una estona")
-			return
+			return fmt.Errorf("la descàrrega triga massa: torna-ho a provar d'aquí una estona")
 		}
 		time.Sleep(2 * time.Second)
 	}
 	if code, err := lcuDo("POST", "/lol-replays/v1/rofls/"+gameID+"/watch", map[string]any{"componentType": "replay-button_match-history"}, nil); err != nil || code >= 300 {
-		rwSet(false, false, fmt.Sprintf("el client no ha volgut obrir la repetició (%d)", code))
-		return
+		return fmt.Errorf("el client no ha volgut obrir la repetició (%d)", code)
 	}
 	rwOpen = gameID
-	rwSet(true, true, "obrint el LoL amb la repetició…")
+	status("obrint el LoL amb la repetició…")
 	for i := 0; i < 120; i++ { // the game takes a while to load
 		time.Sleep(time.Second)
 		if replayLoaded() {
-			time.Sleep(1500 * time.Millisecond)
-			if err := replayPlayback(jump); err == nil {
-				rwSet(false, true, fmt.Sprintf("oberta al minut %d:%02d", int(jump)/60, int(jump)%60))
-				return
-			}
+			return nil
 		}
 	}
-	rwSet(false, true, "oberta, però no he pogut saltar al minut: fes servir la barra de temps del replay (l'API s'activa la propera vegada que obris el LoL)")
+	return errReplayNoAPI
 }
 
 func replayWatchHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {

@@ -361,3 +361,17 @@ func allowMic(profile, url string) {
 func detach(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000008 | 0x00000200}
 }
+
+// killReplay closes the game window of a replay the app opened (only while the client says a replay is on)
+func killReplay() {
+	if gameflowPhase() != "WatchInProgress" {
+		phaseMu.Lock()
+		phaseAt = time.Time{}
+		phaseMu.Unlock()
+		if gameflowPhase() != "WatchInProgress" {
+			return
+		}
+	}
+	hidden("taskkill", "/IM", "League of Legends.exe", "/F").Run()
+	logf("Repetició tancada")
+}

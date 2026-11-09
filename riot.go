@@ -635,7 +635,11 @@ func autoMap(date string) {
 		time.Sleep(retryWait())
 		_, err := addMap(date)
 		logf("Mapa automatic, intent %d per a %s: %v", i+1, date, err)
-		if err == nil || (err.Error() != "not_yet" && err.Error() != "rate_limited" && !strings.Contains(err.Error(), "http_5")) {
+		if err == nil {
+			vcEnqueue(date, false) // the video coach: the replay exists now that Riot has the match
+			return
+		}
+		if err.Error() != "not_yet" && err.Error() != "rate_limited" && !strings.Contains(err.Error(), "http_5") {
 			return
 		}
 	}

@@ -31,3 +31,5 @@ func findLCU() *lcuCreds {
 
 // detach: the new copy started after an update must outlive this one.
 func detach(cmd *exec.Cmd) { cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true} }
+
+func killReplay() {}
