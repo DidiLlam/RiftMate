@@ -4114,31 +4114,30 @@ async function lp3d(){
   if (!document.body.contains(box)) return;
   if (lp3dState) { try { lp3dState.r.dispose(); } catch (e) {} lp3dState = null; }
   const T = window.THREE, cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim();
-  const BLUE = tok("--lpblue") || "#4b93ff", ORANGE = tok("--lporange") || "#ff8f3a", col = c => new T.Color(c);
+  const BLUE = tok("--lpblue") || "#4b93ff", ORANGE = tok("--lporange") || "#ff8f3a", col = c => new T.Color(c).convertSRGBToLinear();
   // the last 15 games, each with the champion you played standing on the ridge
   const {next} = data, pts = data.pts.slice(-16), n = pts.length, ST = 1.45, top = 8;
   const vs = pts.map(p => p.v), LO = Math.floor((Math.min(...vs) - 5) / 100) * 100, HI = Math.max(Math.ceil((Math.max(...vs) + 5) / 100) * 100, next);
   const sy = v => (v - LO) / (HI - LO) * top, W3 = (n - 1) * ST;
-  const r = new T.WebGLRenderer({antialias: true, alpha: true}); r.setPixelRatio(Math.min(2, devicePixelRatio));
+  const r = new T.WebGLRenderer({antialias: true, alpha: true}); r.setPixelRatio(Math.min(2, devicePixelRatio)); r.outputEncoding = T.sRGBEncoding;
   box.querySelector("svg")?.remove(); box.appendChild(r.domElement); box.classList.add("is3d");
   const sc = new T.Scene(), cam = new T.PerspectiveCamera(36, 2, .1, 300);
-  sc.add(new T.AmbientLight(0xffffff, .62)); const dl = new T.DirectionalLight(0xffffff, .85); dl.position.set(6, 14, 9); sc.add(dl);
+  sc.add(new T.AmbientLight(0xffffff, .75)); const dl = new T.DirectionalLight(0xffffff, 1); dl.position.set(4, 14, 14); sc.add(dl);
+  const fl = new T.DirectionalLight(0xffffff, .6); fl.position.set(-8, 6, 10); sc.add(fl);
   const mat = (c, o = {}) => new T.MeshStandardMaterial(Object.assign({color: col(c), roughness: .5, metalness: .12}, o));
-  const sprite = (txt, c, x, y, w = 3.6) => { const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96; const k = cv.getContext("2d");
+  const sprite = (txt, c, x, y, w = 3.6, z = 0) => { const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96; const k = cv.getContext("2d");
     k.font = `700 50px ${getComputedStyle(document.body).fontFamily}`; k.fillStyle = c; k.fillText(txt, 6, 64);
-    const s = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(cv), transparent: true, depthWrite: false})); s.scale.set(w, w * .1875, 1); s.position.set(x, y, 0); sc.add(s); };
+    const s = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(cv), transparent: true, depthWrite: false})); s.scale.set(w, w * .1875, 1); s.position.set(x, y, z); sc.add(s); };
   // the ridge
   const x0 = -W3 / 2 - 1.5, shape = new T.Shape(); shape.moveTo(x0, 0);
   pts.forEach((p, i) => shape.lineTo(x0 + i * ST, sy(p.v))); shape.lineTo(x0 + W3, 0); shape.lineTo(x0, 0);
   const geo = new T.ExtrudeGeometry(shape, {depth: 2.4, bevelEnabled: false}); geo.translate(0, 0, -1.2);
-  const pos = geo.attributes.position, cols = [], cB = col(BLUE), cO = col(ORANGE);
-  for (let k = 0; k < pos.count; k++) { const i = Math.round((pos.getX(k) - x0) / ST), y = pos.getY(k), p = pts[Math.max(0, Math.min(n - 1, i))];
-    const c = (p.r ? p.r.lp.delta > 0 : true) ? cB.clone() : cO.clone(); c.multiplyScalar(.45 + .55 * Math.min(1, y / top)); cols.push(c.r, c.g, c.b); }
-  geo.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
-  sc.add(new T.Mesh(geo, new T.MeshStandardMaterial({vertexColors: true, roughness: .7, metalness: .05, flatShading: true})));
+  const ridge = col(BLUE).lerp(col(tok("--panel") || "#141e1b"), .78);
+  sc.add(new T.Mesh(geo, new T.MeshStandardMaterial({color: ridge, roughness: .8, metalness: .05, transparent: true, opacity: .92})));
+  const edge = new T.Line(new T.BufferGeometry().setFromPoints(pts.map((p, i) => new T.Vector3(x0 + i * ST, sy(p.v) + .01, 1.21))), new T.LineBasicMaterial({color: col(BLUE)})); sc.add(edge);
   // each game: the champion's portrait in a ring (blue won, orange lost) on a little pole on the ridge
   // (hover: the game; click: open it). The portrait comes through the app, so the canvas stays clean.
-  const picks = [];
+  const picks = [], figs = [];
   pts.forEach((p, i) => {
     const x = x0 + i * ST, y = sy(p.v);
     if (!p.r) { const m = new T.Mesh(new T.SphereGeometry(.16, 14, 10), mat("#888")); m.position.set(x, y + .05, 0); m.userData = p; sc.add(m); picks.push(m); return; }
@@ -4154,24 +4153,32 @@ async function lp3d(){
     const base = new T.Mesh(new T.CylinderGeometry(wd * .45, wd * .5, .08, 24), mat(ring)); base.position.set(x, y + .02, 0); sc.add(base);
     const img = new Image(); img.onload = () => { paint(img); tex.needsUpdate = true; draw(); };
     img.src = `/api/ddimg?p=${encodeURIComponent(`cdn/img/champion/loading/${champId(p.r.champion)}_0.jpg`)}`;
+    figs.push({p, x, y, spr, base, ring, last});
   });
   // the divisions: a plate at each start, and the glass column at the end
   const xc = W3 / 2 + 1.2, Rt = .9;
   for (let b = LO; b <= HI; b += 100) {
     const nm = absName(b), c = TIER_COL[nm.tier] || "#888";
-    const pl = new T.Mesh(new T.PlaneGeometry(W3 + 3, 3.4), new T.MeshBasicMaterial({color: col(c), transparent: true, opacity: b % 400 === 0 ? .22 : .08, side: T.DoubleSide, depthWrite: false}));
+    const pl = new T.Mesh(new T.PlaneGeometry(W3 + 3, 3.4), new T.MeshBasicMaterial({color: col(c), transparent: true, opacity: b % 400 === 0 ? .14 : .05, side: T.DoubleSide, depthWrite: false}));
     pl.rotation.x = -Math.PI / 2; pl.position.set(-1.5, sy(b), 0); sc.add(pl);
     const ring = new T.Mesh(new T.TorusGeometry(Rt + .02, .05, 8, 50), mat(c)); ring.rotation.x = Math.PI / 2; ring.position.set(xc, sy(b), 0); sc.add(ring);
     if (b < HI) { const h = sy(b + 100) - sy(b) - .08, gl = new T.Mesh(new T.CylinderGeometry(Rt, Rt, h, 36, 1, true), new T.MeshStandardMaterial({color: col(c), transparent: true, opacity: .18, side: T.DoubleSide, depthWrite: false}));
-      gl.position.set(xc, sy(b) + h / 2 + .04, 0); sc.add(gl); sprite(tierTxt(nm), c, xc + 3.4, sy(b) + (sy(b + 100) - sy(b)) / 2, 4.4); }
+      gl.position.set(xc, sy(b) + h / 2 + .04, 0); sc.add(gl); sprite(tierTxt(nm), c, xc + 4.4, sy(b) + (sy(b + 100) - sy(b)) / 2, 6); }
   }
   const now = pts[n - 1].v, fh = Math.max(.05, sy(now));
   const fill = new T.Mesh(new T.CylinderGeometry(Rt * .85, Rt * .85, fh, 36), mat(BLUE, {emissive: col(BLUE), emissiveIntensity: .35})); fill.position.set(xc, fh / 2, 0); sc.add(fill);
   const goal = new T.Mesh(new T.TorusGeometry(Rt + .06, .08, 8, 50), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); goal.rotation.x = Math.PI / 2; goal.position.set(xc, sy(next), 0); sc.add(goal);
-  const arrow = new T.Mesh(new T.ConeGeometry(.3, .7, 20), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); arrow.rotation.z = Math.PI / 2; arrow.position.set(xc + Rt + .6, fh, 0); sc.add(arrow);
-  sprite(`+${next - now} LP`, ORANGE, xc + 3.4, (fh + sy(next)) / 2 + .1, 3.6);
+  const arrow = new T.Mesh(new T.ConeGeometry(.3, .7, 20), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); arrow.rotation.z = -Math.PI / 2; arrow.position.set(xc - Rt - .55, fh, 0); sc.add(arrow);
+  sprite(`+${next - now} LP`, ORANGE, xc + 4.1, (fh + sy(next)) / 2 + .1, 5);
+  // the time line along the front: the day under the first game of each day
+  { const line = new T.Mesh(new T.BoxGeometry(W3 + 1, .04, .04), mat(tok("--muted") || "#888")); line.position.set(x0 + W3 / 2, .02, 1.55); sc.add(line);
+    let prev = "";
+    pts.forEach((p, i) => { if (!p.r) return; const day = String(p.r.date).slice(0, 10); if (day === prev) return; prev = day;
+      const d = new Date(day + "T12:00:00"), lbl = isNaN(d) ? day : `${["dg", "dl", "dt", "dc", "dj", "dv", "ds"][d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`;
+      const tk = new T.Mesh(new T.BoxGeometry(.04, .04, .3), mat(tok("--muted") || "#888")); tk.position.set(x0 + i * ST, .02, 1.55); sc.add(tk);
+      sprite(lbl, tok("--fg") || "#ddd", x0 + i * ST + 1.15, -.55, 3.2, 1.9); }); }
   // camera: fixed; drag to turn, then it stays where you leave it
-  let rot = -.45, tilt = .26; const R = 28, look = top * .6;
+  let rot = -.32, tilt = .22; const R = 24, look = top * .55;
   const draw = () => { cam.position.set(Math.sin(rot) * R * Math.cos(tilt), look + Math.sin(tilt) * R, Math.cos(rot) * R * Math.cos(tilt)); cam.lookAt(0, look, 0); r.render(sc, cam); };
   const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); };
   new ResizeObserver(size).observe(box); size();
@@ -4188,6 +4195,46 @@ async function lp3d(){
   r.domElement.addEventListener("pointerup", e => { const d = drag; drag = null; if (d && !d.moved) { const p = pick(e)?.userData; if (p?.r) openLpGame(p.r.date); } });
   r.domElement.addEventListener("pointerleave", () => tip.hidden = true);
   lp3dState = {r};
+  lp3dModels(T, sc, figs, draw, r);
+}
+// the champions as they look in the game: their 3D model (from a fan collection of the game's models), standing on
+// the ridge in place of the loading-screen card. With an idle animation when the model has one.
+let gltfP = null; const modelBuf = {};
+function loadGltfLoader(){
+  if (window.THREE?.GLTFLoader) return Promise.resolve(true);
+  return gltfP ??= new Promise(res => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js";
+    s.onload = () => res(!!window.THREE?.GLTFLoader); s.onerror = () => { gltfP = null; res(false); }; document.head.appendChild(s); });
+}
+async function lp3dModels(T, sc, figs, draw, r){
+  if (!figs.length || !(await loadGltfLoader())) return;
+  const loader = new T.GLTFLoader(), mixers = [], me = lp3dState;
+  const key = c => String(champId(c)).toLowerCase().replace(/[^a-z]/g, "");
+  await Promise.all(figs.map(async f => {
+    const k = key(f.p.r.champion);
+    const buf = await (modelBuf[k] ??= fetch(`/api/model?c=${k}`).then(x => x.ok ? x.arrayBuffer() : null).catch(() => null));
+    if (!buf || lp3dState !== me) return;
+    await new Promise(done => loader.parse(buf.slice(0), "", g => {
+      try {
+        const m = g.scene, box = new T.Box3().setFromObject(m), size = new T.Vector3(); box.getSize(size);
+        if (!(size.y > 0)) return done();
+        const h = f.last ? 2.9 : 2.4; m.scale.multiplyScalar(h / size.y);
+        const b2 = new T.Box3().setFromObject(m), c = new T.Vector3(); b2.getCenter(c);
+        m.position.set(f.x - c.x, f.y + .06 - b2.min.y, -c.z);
+        m.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+        sc.add(m); f.spr.visible = false;   // the card stays only to pick (hover and click)
+        if (g.animations?.length) { const mx = new T.AnimationMixer(m), clip = g.animations.find(a => /idle/i.test(a.name)) || g.animations[0]; mx.clipAction(clip).play(); mixers.push(mx); }
+      } catch (e) {}
+      done();
+    }, () => done()));
+  }));
+  draw();
+  if (!mixers.length) return;
+  // the idle animations: ~30 frames a second, only while the chart is on screen
+  let vis = true; const box = r.domElement.parentElement; new IntersectionObserver(es => vis = es[0].isIntersecting).observe(box);
+  const clock = new T.Clock(); let last = 0, acc = 0;
+  (function loop(t){ if (lp3dState !== me) return; requestAnimationFrame(loop); acc += clock.getDelta();
+    if (!vis || document.hidden) { acc = 0; return; }
+    if (t - last < 33) return; last = t; const dt = Math.min(acc, .1); acc = 0; mixers.forEach(m => m.update(dt)); draw(); })(0);
 }
 function lpGoal(){
   const q = mySolo; if (!q) return null;

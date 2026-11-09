@@ -286,3 +286,59 @@ func ddImgHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=86400")
 	w.Write(b)
 }
+
+// modelHandler: a champion's 3D model (.glb) for the LP history, from a public fan collection of the game's models
+// (LongpanZhou/league-of-legends-models), kept on disk after the first time. /api/model?c=diana
+var (
+	modelHTTP = &http.Client{Timeout: 90 * time.Second}
+	modelMu   sync.Mutex
+	modelName = regexp.MustCompile(`^[a-z]{2,20}$`)
+)
+
+func modelBase() string {
+	if b := os.Getenv("LT_MODEL_BASE"); b != "" {
+		return b
+	}
+	return "https://raw.githubusercontent.com/LongpanZhou/league-of-legends-models/main/models/champions"
+}
+
+func modelHandler(w http.ResponseWriter, req *http.Request) {
+	c := req.URL.Query().Get("c")
+	if !modelName.MatchString(c) {
+		http.NotFound(w, req)
+		return
+	}
+	dir := filepath.Join(filepath.Dir(dataDir()), "models")
+	file := filepath.Join(dir, c+".glb")
+	miss := filepath.Join(dir, c+".none")
+	modelMu.Lock()
+	defer modelMu.Unlock()
+	if st, err := os.Stat(miss); err == nil && time.Since(st.ModTime()) < 7*24*time.Hour {
+		http.NotFound(w, req) // not in the collection (asked again after a week)
+		return
+	}
+	if _, err := os.Stat(file); err != nil {
+		r, err := modelHTTP.Get(modelBase() + "/" + c + ".glb")
+		if err != nil {
+			http.Error(w, err.Error(), 502)
+			return
+		}
+		defer r.Body.Close()
+		os.MkdirAll(dir, 0o755)
+		if r.StatusCode == 404 {
+			os.WriteFile(miss, nil, 0o644)
+			http.NotFound(w, req)
+			return
+		}
+		b, err := io.ReadAll(io.LimitReader(r.Body, 60<<20))
+		if err != nil || r.StatusCode != 200 || len(b) < 1000 || string(b[:4]) != "glTF" {
+			http.Error(w, "model", 502)
+			return
+		}
+		os.WriteFile(file, b, 0o644)
+		logf("Model 3D descarregat: %s (%d KB)", c, len(b)/1024)
+	}
+	w.Header().Set("Content-Type", "model/gltf-binary")
+	w.Header().Set("Cache-Control", "max-age=604800")
+	http.ServeFile(w, req, file)
+}
