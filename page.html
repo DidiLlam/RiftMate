@@ -4142,17 +4142,18 @@ async function lp3d(){
   pts.forEach((p, i) => {
     const x = x0 + i * ST, y = sy(p.v);
     if (!p.r) { const m = new T.Mesh(new T.SphereGeometry(.16, 14, 10), mat("#888")); m.position.set(x, y + .05, 0); m.userData = p; sc.add(m); picks.push(m); return; }
-    const ring = p.r.lp.delta > 0 ? BLUE : ORANGE, last = i === n - 1, sz = last ? 1.35 : 1.1, hgt = .75;
-    const pole = new T.Mesh(new T.CylinderGeometry(.035, .035, hgt, 6), mat(ring)); pole.position.set(x, y + hgt / 2, 0); sc.add(pole);
-    const cv = document.createElement("canvas"); cv.width = cv.height = 128; const k = cv.getContext("2d");
-    const paint = img => { k.clearRect(0, 0, 128, 128); k.save(); k.beginPath(); k.arc(64, 64, 52, 0, Math.PI * 2); k.clip();
-      if (img) k.drawImage(img, 8, 8, 112, 112); else { k.fillStyle = "#26332f"; k.fillRect(0, 0, 128, 128); k.fillStyle = "#fff"; k.font = "700 40px sans-serif"; k.textAlign = "center"; k.fillText(displayChamp(p.r.champion).slice(0, 2), 64, 78); }
-      k.restore(); k.lineWidth = 10; k.strokeStyle = ring; k.beginPath(); k.arc(64, 64, 56, 0, Math.PI * 2); k.stroke(); };
+    // the whole champion: the loading-screen art (the full figure, as in the game's loading screen), standing on the ridge
+    const ring = p.r.lp.delta > 0 ? BLUE : ORANGE, last = i === n - 1, wd = last ? 1.25 : 1.05, ht = wd * 560 / 308;
+    const cv = document.createElement("canvas"); cv.width = 154; cv.height = 280; const k = cv.getContext("2d");
+    const paint = img => { k.clearRect(0, 0, 154, 280); k.save(); k.beginPath(); k.roundRect(4, 4, 146, 272, 12); k.clip();
+      if (img) k.drawImage(img, 4, 4, 146, 272); else { k.fillStyle = "#26332f"; k.fillRect(0, 0, 154, 280); k.fillStyle = "#fff"; k.font = "700 34px sans-serif"; k.textAlign = "center"; k.fillText(displayChamp(p.r.champion).slice(0, 2), 77, 150); }
+      k.restore(); k.lineWidth = 7; k.strokeStyle = ring; k.beginPath(); k.roundRect(4, 4, 146, 272, 12); k.stroke(); };
     paint(null);
     const tex = new T.CanvasTexture(cv), spr = new T.Sprite(new T.SpriteMaterial({map: tex, transparent: true}));
-    spr.scale.set(sz, sz, 1); spr.position.set(x, y + hgt + sz / 2 - .05, 0); spr.userData = p; sc.add(spr); picks.push(spr);
+    spr.scale.set(wd, ht, 1); spr.position.set(x, y + ht / 2 + .05, 0); spr.userData = p; sc.add(spr); picks.push(spr);
+    const base = new T.Mesh(new T.CylinderGeometry(wd * .45, wd * .5, .08, 24), mat(ring)); base.position.set(x, y + .02, 0); sc.add(base);
     const img = new Image(); img.onload = () => { paint(img); tex.needsUpdate = true; draw(); };
-    img.src = `/api/ddimg?p=${encodeURIComponent(`cdn/${iconVer}/img/champion/${champId(p.r.champion)}.png`)}`;
+    img.src = `/api/ddimg?p=${encodeURIComponent(`cdn/img/champion/loading/${champId(p.r.champion)}_0.jpg`)}`;
   });
   // the divisions: a plate at each start, and the glass column at the end
   const xc = W3 / 2 + 1.2, Rt = .9;
@@ -4170,7 +4171,7 @@ async function lp3d(){
   const arrow = new T.Mesh(new T.ConeGeometry(.3, .7, 20), mat(ORANGE, {emissive: col(ORANGE), emissiveIntensity: .4})); arrow.rotation.z = Math.PI / 2; arrow.position.set(xc + Rt + .6, fh, 0); sc.add(arrow);
   sprite(`+${next - now} LP`, ORANGE, xc + 3.4, (fh + sy(next)) / 2 + .1, 3.6);
   // camera: fixed; drag to turn, then it stays where you leave it
-  let rot = -.55, tilt = .32; const R = 27, look = top * .55;
+  let rot = -.45, tilt = .26; const R = 28, look = top * .6;
   const draw = () => { cam.position.set(Math.sin(rot) * R * Math.cos(tilt), look + Math.sin(tilt) * R, Math.cos(rot) * R * Math.cos(tilt)); cam.lookAt(0, look, 0); r.render(sc, cam); };
   const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); draw(); };
   new ResizeObserver(size).observe(box); size();
