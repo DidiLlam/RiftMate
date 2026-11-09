@@ -1,7 +1,7 @@
 {
- "version": "2.0.64",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.64.exe",
- "size": 9348608,
- "sha256": "02c020afb996b08ddc178b281276da9c4472cf92e68f7eaca7551fb7fd383841",
- "notes": "- Historial de LP 3D vist de cara, recte, sense diagonal"
+ "version": "2.0.65",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.65.exe",
+ "size": 9351680,
+ "sha256": "483f42b57329bb321083ea8218aa867cd48f0de7c17fb8dbf42f64d89a302923",
+ "notes": "- Historial de LP 3D: els LP de cada partida sobre la muntanya\n- Les figures reaccionen: ballen a la partida on puges de divisió, l'última riu si portes 3 victòries i queda apagada si portes 3 derrotes\n- Línies entre dies\n- L'última partida destacada amb llum i ARA\n- En passar el ratolí: KDA i rival, i la figura fa el seu gest"
 }
