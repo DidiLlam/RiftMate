@@ -1,7 +1,7 @@
 {
- "version": "2.0.58",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.58.exe",
- "size": 9336832,
- "sha256": "26b257f47abf242eb7319359d7c0f9fabacfe36d3b490dba0aa31307d720183a",
- "notes": "- Historial de LP 3D: a cada partida, el campió sencer (l'art de la pantalla de càrrega) dret sobre la muntanya, amb vora blava o taronja"
+ "version": "2.0.59",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.59.exe",
+ "size": 9344512,
+ "sha256": "542f45235a67a8ce8d2b9f5306260a2219d72ed2c0a321fb7e1d8e339cc6fa26",
+ "notes": "- Historial de LP 3D: el campió sencer com es veu dins del joc (el model 3D, amb la seva animació d'espera) a cada partida\n- Línia del temps a sota amb el dia de cada partida\n- Colors i llums corregits"
 }
