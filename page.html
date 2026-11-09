@@ -4191,7 +4191,7 @@ async function lp3d(){
   // camera: fixed; drag to turn, then it stays where you leave it
   // camera framed on what there is (the ridge, the figures on it, the column and its labels), so it fills the box;
   // it turns only a little, so it can't end up looking from a strange side
-  let rot = -.15, tilt = .12, R = 24, W = 0, H = 0, zoom = 1, offX = 0, offY = 0, panX = 0, panY = 0;
+  let rot = 0, tilt = .07, R = 24, W = 0, H = 0, zoom = 1, offX = 0, offY = 0, panX = 0, panY = 0;
   const yTop = Math.max(top, ...pts.map(p => sy(p.v) + 2.9)) + .2, cx = (x0 + xc + 5.5) / 2, cy = (-.9 + yTop) / 2;
   // the points that must be in view: the ridge (top and foot, front and back), the figures' heads, the dates,
   // the column and the labels to its right
@@ -4214,9 +4214,9 @@ async function lp3d(){
   const draw = () => { cam.setViewOffset(W, H, offX * zoom + panX, offY * zoom + panY, W, H); pose(zoom); r.render(sc, cam); };
   const zoomBy = f => { const z = Math.max(1, Math.min(3, zoom * f)); panX *= z / zoom; panY *= z / zoom; zoom = z; if (zoom <= 1) panX = panY = 0; draw(); };
   r.domElement.addEventListener("wheel", e => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12); }, {passive: false});
-  r.domElement.addEventListener("dblclick", () => { zoom = 1; panX = panY = 0; rot = -.15; tilt = .12; fit(); draw(); });
+  r.domElement.addEventListener("dblclick", () => { zoom = 1; panX = panY = 0; rot = 0; tilt = .07; fit(); draw(); });
   box.querySelector(".lp3zoom")?.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.z === "0") { zoom = 1; panX = panY = 0; rot = -.15; tilt = .12; fit(); draw(); } else zoomBy(+b.dataset.z); });
+    if (b.dataset.z === "0") { zoom = 1; panX = panY = 0; rot = 0; tilt = .07; fit(); draw(); } else zoomBy(+b.dataset.z); });
   const size = () => { const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return; if (W && w !== W) delete box.dataset.fixed; W = w; H = h; r.setSize(w, h, false); r.domElement.style.width = "100%"; r.domElement.style.height = "100%"; cam.aspect = w / h; cam.updateProjectionMatrix(); fit(); draw(); };
   new ResizeObserver(size).observe(box); size();
   const ray = new T.Raycaster(), tip = box.querySelector(".lp3tip"); ray.camera = cam;
