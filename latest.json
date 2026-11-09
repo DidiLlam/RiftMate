@@ -1,7 +1,7 @@
 {
- "version": "2.0.71",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.71.exe",
- "size": 9372672,
- "sha256": "6d59fbe6e9ae0c17519cccec22725e73da87c015c055baac7c3bd59c554bee72",
- "notes": "- Nova targeta Els teus objectius (Coach): 80 de farm al minut 10, 2 wards cada 3 minuts i cap mort a la jungla rival sense wards, comprovats a cada partida\n- Avís de wards tota la partida si fa 3 minuts que no en poses\n- Fre de tilt amb les teves dades, també a la selecció de campions\n- Exercici de farm a l'eina de pràctica (no es guarda com a partida)\n- Abans de la partida, la lliçó de l'última vegada contra el mateix rival"
+ "version": "2.0.72",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.72.exe",
+ "size": 9515008,
+ "sha256": "7027299fdd55d5a4d45514fff7e48b2002822d5db14c732bb9623d1dc94cc206",
+ "notes": "- Dreceres de teclat: Ctrl+Shift+1..5 Flash dels rivals, Ctrl+Alt+1..5 l'altre encanteri (Ajustos, En partida)\n- El mòbil com a segona pantalla: temporitzadors i objectius al mòbil per la wifi de casa, amb codi QR (Ajustos, En partida)\n- Còpia de seguretat i restauració (Ajustos, Compte i app)\n- Més seguretat: cap altra web pot canviar res de l'app"
 }
