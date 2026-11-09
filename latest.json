@@ -1,7 +1,7 @@
 {
- "version": "2.0.48",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.48.exe",
- "size": 9175040,
- "sha256": "dd7c21fd9fef7355b4a0450bacbef5269c9325bd62f117684bfa7a3a9f607b62",
- "notes": "- Botó ▶ a l'informe (morts, kills, moments clau): obre la repetició del LoL 10 segons abans\n- Botó Compartir (partida i dia): imatge amb el resultat, KDA, LP i rang, copiada per enganxar a WhatsApp o Discord\n- Nova targeta Tu i els teus amics al Coach: els últims 7 dies de Solo/Duo comparats\n- Mentre mires una repetició, el coach i l'enregistrament no s'activen"
+ "version": "2.0.49",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.49.exe",
+ "size": 9175552,
+ "sha256": "70f698645ddc05e4755ab6ba9dc3538f525d144f5fd5dca76c892b3bab2124c6",
+ "notes": "- El coach ja no diu frases de la partida quan s'ha acabat: les que quedaven a la cua es descarten\n- Una frase de la partida que arriba més de 40 s tard no es diu\n- Una resposta de la IA que arriba amb la partida acabada no es diu"
 }
