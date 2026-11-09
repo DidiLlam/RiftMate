@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.70"
+	version = "2.0.71"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -168,7 +168,7 @@ func (r *Recorder) step(g *AllGame) {
 		r.warnedNoMe = false
 		go captureGameID()
 		logf("Enregistrant partida: %s (%s, posicio %q, equip %s), %d jugadors, minut %.1f", me.ChampionName, myID, me.Position, me.Team, len(g.AllPlayers), t/60)
-		r.rec = &Record{Date: time.Now().Format("2006-01-02 15:04"), Me: *me}
+		r.rec = &Record{Date: time.Now().Format("2006-01-02 15:04"), Me: *me, Mode: g.GameData.GameMode}
 		go lpAtStart(r.rec.Date, pidOf(me))
 	}
 	rec := r.rec
@@ -214,6 +214,10 @@ func (r *Recorder) finish(result string) {
 		return
 	}
 	logf("Final de partida (resultat %q, durada %.1f min, %d instantanies, %d esdeveniments)", result, rec.Duration/60, len(rec.Snaps), len(rec.Events))
+	if rec.Mode == "PRACTICETOOL" {
+		logf("Eina de pràctica: no es guarda com a partida")
+		return
+	}
 	if rec.Duration < 180 {
 		logf("Partida de menys de 3 minuts: no es guarda")
 		return // remakes and very short games are skipped

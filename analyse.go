@@ -44,6 +44,7 @@ type AllGame struct {
 	AllPlayers []Player `json:"allPlayers"`
 	GameData   struct {
 		GameTime *float64 `json:"gameTime"`
+		GameMode string   `json:"gameMode"`
 	} `json:"gameData"`
 	Events struct {
 		Events []Event `json:"Events"`
@@ -64,6 +65,7 @@ type Record struct {
 	Events   []Event  `json:"events"`
 	Duration float64  `json:"duration"`
 	Result   string   `json:"result"`
+	Mode     string   `json:"mode,omitempty"` // the game's mode (PRACTICETOOL is not kept)
 }
 
 type Death struct {
