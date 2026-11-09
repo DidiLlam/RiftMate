@@ -82,7 +82,7 @@ td.why{min-width:220px;line-height:1.4}.kmom{margin:6px 0;line-height:1.5}.kmom 
 .trainname{font-size:1.4rem;margin:10px 0 2px}#trainBox p.good{color:var(--good)}
 .poolrec{font-weight:600;margin:0 0 8px}.whengrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px}
 .lpch{}.lpch-h{justify-content:space-between;flex-wrap:wrap}.lpch-h .lpgoal{font-size:1.15rem}.lpt.up{color:var(--lpblue)}.lpt.down{color:var(--lporange)}
-#lp3d{position:relative}#lp3d.is3d{aspect-ratio:16/7.2;cursor:grab;touch-action:none}#lp3d canvas{display:block;border-radius:10px}
+#lp3d{position:relative}#lp3d.is3d{aspect-ratio:16/7.2;cursor:default;touch-action:none}#lp3d canvas{display:block;border-radius:10px}
 .lp3zoom{position:absolute;right:8px;bottom:8px;display:none;gap:4px;z-index:2}#lp3d.is3d .lp3zoom{display:flex}.lp3zoom button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-weight:700;cursor:pointer;line-height:1}
 .lp3tip{position:absolute;left:10px;top:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:.8rem;pointer-events:none}.lpdot[data-date]{cursor:pointer}.lpdot[data-date]:hover .v{r:7px}.mh.flash{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color .3s}.lpcard{margin-top:10px}.lpch svg{width:100%;height:auto;display:block}.lpch-h{display:flex;gap:10px;align-items:baseline;font-size:.88rem;margin-bottom:4px}.lpch-h span{color:var(--muted);font-size:.8rem}
 .rbgoal{flex-basis:100%;font-size:.88rem;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center}
@@ -4212,7 +4212,7 @@ async function lp3d(){
       R *= ext / .985; } };
   // zoom (wheel, or the + and − buttons) and, when zoomed in, drag to move around; double-click puts it back
   const draw = () => { cam.setViewOffset(W, H, offX * zoom + panX, offY * zoom + panY, W, H); pose(zoom); r.render(sc, cam); };
-  const zoomBy = f => { const z = Math.max(.7, Math.min(3, zoom * f)); panX *= z / zoom; panY *= z / zoom; zoom = z; if (zoom <= 1) panX = panY = 0; draw(); };
+  const zoomBy = f => { const z = Math.max(1, Math.min(3, zoom * f)); panX *= z / zoom; panY *= z / zoom; zoom = z; if (zoom <= 1) panX = panY = 0; draw(); };
   r.domElement.addEventListener("wheel", e => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12); }, {passive: false});
   r.domElement.addEventListener("dblclick", () => { zoom = 1; panX = panY = 0; rot = -.15; tilt = .12; fit(); draw(); });
   box.querySelector(".lp3zoom")?.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
@@ -4226,8 +4226,8 @@ async function lp3d(){
   r.domElement.addEventListener("pointermove", e => {
     if (drag && zoom > 1.05) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true;   // zoomed in: drag moves the view
       const b = r.domElement.getBoundingClientRect(); panX = drag.px - (e.clientX - drag.x) * W / b.width; panY = drag.py - (e.clientY - drag.y) * H / b.height; draw(); return; }
-    if (drag) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true; rot = Math.max(-.55, Math.min(.1, drag.r + (e.clientX - drag.x) * .003)); tilt = Math.max(.08, Math.min(.42, drag.t + (e.clientY - drag.y) * .002)); fit(); draw(); return; }
-    const o = pick(e), p = o?.userData; r.domElement.style.cursor = p?.r ? "pointer" : "grab";
+    if (drag) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true; return; }   // not zoomed: the chart stays put
+    const o = pick(e), p = o?.userData; r.domElement.style.cursor = p?.r ? "pointer" : zoom > 1.05 ? "grab" : "default";
     if (p) { const nm = absName(p.v); tip.textContent = p.r ? `${p.r.date} · ${displayChamp(p.r.champion)} · ${p.r.lp.delta > 0 ? "+" : ""}${p.r.lp.delta} LP · ${tierTxt(nm)} ${nm.lp} LP` : `Inici: ${tierTxt(nm)} ${nm.lp} LP`; tip.hidden = false; }
     else tip.hidden = true;
   });
