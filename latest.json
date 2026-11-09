@@ -1,7 +1,7 @@
 {
- "version": "2.0.68",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.68.exe",
- "size": 9354752,
- "sha256": "3342edd012746dfb9b4a6d9ba45174bd22e9bac92f2bded72855dc04782a1854",
- "notes": "- Historial de LP 3D: el blau, el taronja i el gris es difuminen entre partides\n- Botó de pantalla completa"
+ "version": "2.0.69",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.69.exe",
+ "size": 9355776,
+ "sha256": "0e80580dba7748ba26b4b64a2d3d35324297756c51430dcb08ee9f0606b17515",
+ "notes": "- L'explicació de les morts també es fa quan l'app s'ha actualitzat just en acabar la partida\n- La veu ja no s'encalla amb explicacions llargues: les diu frase a frase\n- Arreglat un avís intern del gràfic de LP (ResizeObserver)"
 }
