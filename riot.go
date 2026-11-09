@@ -324,6 +324,16 @@ type MapData struct {
 	Gold    [][3]int    `json:"gold,omitempty"`   // each minute: second, your team's gold, the enemy's
 	Fights  []MapFight  `json:"fights,omitempty"` // every champion kill of the game
 	Deaths  []DeathInfo `json:"death_info"`       // each of your deaths in detail (for the AI's explanation)
+	Kills   []KillInfo  `json:"kill_info"`        // your kills and assists (when there's no death to explain)
+}
+
+// KillInfo: a kill you took part in
+type KillInfo struct {
+	T       float64  `json:"t"`
+	Zone    string   `json:"zone"`
+	Victim  string   `json:"victim"`
+	Mine    bool     `json:"mine"`              // your kill (otherwise an assist)
+	Helpers []string `json:"helpers,omitempty"` // allies who helped (besides you)
 }
 
 // DeathInfo: one of your deaths as Riot's timeline tells it
@@ -613,6 +623,26 @@ func fetchMap(rec *Record, endUnix int64) (*MapData, error) {
 			roles[p.ParticipantID] = p.TeamPosition
 		}
 		md.Deaths = deathDetails(&tl, me, team, teams, champs, roles, md.Side)
+		md.Kills = []KillInfo{}
+		for _, f := range tl.Info.Frames {
+			for _, e := range f.Events {
+				if e.Type != "CHAMPION_KILL" || e.Position == nil || teams[e.VictimID] == team {
+					continue
+				}
+				k := KillInfo{T: float64(e.Timestamp) / 1000, Zone: zoneName(e.Position.X, e.Position.Y, md.Side), Victim: displayName(champs[e.VictimID]), Mine: e.KillerID == me}
+				in := k.Mine
+				for _, a := range append([]int{e.KillerID}, e.AssistingParticipantIDs...) {
+					if a == me {
+						in = true
+					} else if champs[a] != "" {
+						k.Helpers = append(k.Helpers, displayName(champs[a]))
+					}
+				}
+				if in {
+					md.Kills = append(md.Kills, k)
+				}
+			}
+		}
 		logf("Mapa creat a partir de %s: %d esdeveniments, %d punts de recorregut, costat %s", id, len(md.Events), len(md.Path), md.Side)
 		return md, nil
 	}
@@ -671,7 +701,7 @@ func addMap(date string) (string, error) {
 	}
 	// fetch again when the game's result is unknown (the game closed before its end event was read)
 	if g.Report["map"] != nil && g.Report["result"] != nil && g.Report["result"] != "" {
-		if mm, _ := g.Report["map"].(map[string]any); mm != nil && mm["board"] != nil && mm["gold"] != nil && mm["death_info"] != nil {
+		if mm, _ := g.Report["map"].(map[string]any); mm != nil && mm["board"] != nil && mm["gold"] != nil && mm["death_info"] != nil && mm["kill_info"] != nil {
 			return "ok", nil
 		} // saved before the scoreboard or the teams' gold existed: read it again (once)
 	}

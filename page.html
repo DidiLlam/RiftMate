@@ -5585,6 +5585,7 @@ function videoCard(r){
   if (!aiHasKey && !v) return "";
   const g = String(r.date).replace(/:/g, "").replace(" ", "_");
   if (!v) return `<section class="card"><h2>La IA t'explica les morts</h2><p class="note" id="vcNote">${vcBusyDate === r.date ? esc(vcText) : "Encara no les ha explicat."}</p><button class="b" type="button" id="vcGo" data-date="${esc(r.date)}">Explicar-les ara</button></section>`;
+  if (v.clean) return `<section class="card"><h2>Partida sense morts</h2><p class="ailes"><b>${esc(v.summary || "")}</b></p>${v.improve ? `<p><b>Per millorar:</b> ${esc(v.improve)}</p>` : ""}<p class="note">Llegit de la cronologia de Riot per ${esc(v.model || "la IA")}.</p></section>`;
   if (!v.deaths?.length) return "";
   return `<section class="card"><h2>Per què has mort</h2>${v.summary ? `<p class="ailes"><b>${esc(v.summary)}</b></p>` : ""}
     ${v.deaths.map(d => `<div class="vcd"><p><b>${mm(d.t)}</b> · ${esc(d.kind || "")}${d.by?.length ? ` · ${esc(d.by.join(", "))}` : ""}${watchBtn(r, d.t)}</p>${d.error ? `<p>${esc(d.error)}</p>` : ""}${d.fix ? `<p class="good">${esc(d.fix)}</p>` : ""}${d.clip ? `<details><summary>Veure el clip</summary><video controls preload="none" src="/api/clip?g=${encodeURIComponent(g)}&f=${encodeURIComponent(d.clip)}"></video></details>` : ""}</div>`).join("")}
@@ -5610,6 +5611,7 @@ function vcExplain(date){
   vcSpoken = date; store.set("vcSpoken", date);
   const intro = {es: "He mirado tus muertes.", en: "I looked at your deaths.", ca: "He mirat les teves morts."}[v.lang] || "";
   const at = t => ({es: `Minuto ${Math.floor(t / 60)}:`, en: `Minute ${Math.floor(t / 60)}:`, ca: `Minut ${Math.floor(t / 60)}:`})[v.lang] || "";
+  if (v.clean) return coachSayRaw([{es: "No has muerto ni una vez, muy bien.", en: "You didn't die once, well done.", ca: "No has mort ni una vegada, molt bé."}[v.lang] || "", v.summary, v.improve || ""].join(" "));
   coachSayRaw([intro, v.summary, ...v.deaths.filter(d => d.error).map(d => `${at(d.t)} ${d.error} ${d.fix || ""}`)].join(" "));
 }
 // already in the voice's language: straight to the voice

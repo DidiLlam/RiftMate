@@ -35,6 +35,8 @@ type vcResult struct {
 	Model   string    `json:"model"`
 	Lang    string    `json:"lang"`
 	Summary string    `json:"summary"`
+	Improve string    `json:"improve,omitempty"` // (a game without deaths) what's still to improve
+	Clean   bool      `json:"clean,omitempty"`   // no deaths
 	Deaths  []vcDeath `json:"deaths"`
 	Note    string    `json:"note,omitempty"`
 }
@@ -145,8 +147,23 @@ func vcAnalyse(date string) error {
 	if raw, err := json.Marshal(mm["death_info"]); err == nil {
 		json.Unmarshal(raw, &info)
 	}
-	if len(info) == 0 {
-		vcSet(false, date, "cap mort a explicar")
+	if len(info) == 0 { // no deaths: what was good and what's still to improve, from the kills and the numbers
+		var kills []KillInfo
+		if raw, err := json.Marshal(mm["kill_info"]); err == nil {
+			json.Unmarshal(raw, &kills)
+		}
+		var st MatchStats
+		if raw, err := json.Marshal(mm["stats"]); err == nil {
+			json.Unmarshal(raw, &st)
+		}
+		vcSet(true, date, "la IA està mirant la partida (no has mort cap vegada)…")
+		res, err := vcAsk(rec, g.Report, nil, nil, cleanGameText(rec, g.Report, kills, st))
+		if err != nil {
+			return err
+		}
+		res.Clean = true
+		vcSaveResult(date, res)
+		vcSet(false, date, "fet")
 		return nil
 	}
 	if len(info) > 8 {
@@ -167,7 +184,7 @@ func vcAnalyse(date string) error {
 		}
 	}
 	vcSet(true, date, fmt.Sprintf("la IA està mirant les teves %d morts…", len(deaths)))
-	res, err := vcAsk(rec, g.Report, deaths, info)
+	res, err := vcAsk(rec, g.Report, deaths, info, "")
 	if err != nil {
 		return err
 	}
@@ -185,7 +202,44 @@ No t'inventis el que les dades no diuen. Res de consells genèrics. Si dues mort
 Respon NOMÉS amb JSON vàlid, sense res més, amb aquesta forma:
 {"deaths":[{"n":1,"error":"què ha fet malament (1 o 2 frases)","fix":"què havia de fer (1 frase)"}],"summary":"el patró principal de totes les morts i el consell més important per a la propera partida (1 o 2 frases)"}`
 
-func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInfo) (vcResult, error) {
+// cleanGameText: a game without deaths, for the AI: your kills (where, solo or with whom) and your numbers
+func cleanGameText(rec *Record, report map[string]any, kills []KillInfo, st MatchStats) string {
+	var sb strings.Builder
+	sb.WriteString("No ha mort cap vegada en tota la partida. ")
+	m := st.Me
+	fmt.Fprintf(&sb, "KDA %d/%d/%d, farm %d, %d de dany a campions (%.0f%% del dany de l'equip), participació en kills %.0f%%, visió %d (wards posats %d, destruïts %d, de control %d), %d solo kills, %d plaques.",
+		m.K, m.D, m.A, m.CS, m.Damage, m.DamageShare*100, m.KP*100, m.Vision, m.Wards, m.WardsKilled, m.Control, m.SoloKills, m.Plates)
+	if mn, ok := report["duration"].(float64); ok && mn > 0 {
+		fmt.Fprintf(&sb, " Durada %.0f minuts (%.1f de farm per minut).", mn/60, float64(m.CS)/(mn/60))
+	}
+	if st.Opp != nil {
+		o := st.Opp
+		fmt.Fprintf(&sb, " El seu rival de línia (%s): KDA %d/%d/%d, farm %d, visió %d.", displayName(o.Champ), o.K, o.D, o.A, o.CS, o.Vision)
+	}
+	for _, d := range st.Diffs {
+		fmt.Fprintf(&sb, " Al minut %d: %+d d'or, %+d de farm respecte al rival.", d.Min, d.Gold, d.CS)
+	}
+	if len(kills) > 0 {
+		sb.WriteString("\nKills i assistències:")
+		for _, k := range kills {
+			fmt.Fprintf(&sb, "\n- minut %d:%02d, %s a %s", int(k.T)/60, int(k.T)%60, map[bool]string{true: "kill seva", false: "assistència"}[k.Mine], k.Victim)
+			if len(k.Helpers) == 0 {
+				sb.WriteString(" (sol)")
+			} else {
+				sb.WriteString(" amb " + strings.Join(k.Helpers, ", "))
+			}
+			sb.WriteString(", a " + k.Zone)
+		}
+	}
+	return sb.String()
+}
+
+const vcCleanSystem = `Ets un coach de League of Legends de nivell Challenger. El jugador, de Platí, ha fet una partida sense morir. Amb les dades de Riot que tens, digues-li en concret què ha fet bé (per què ha funcionat: on i com ha matat, si ha jugat amb el jungla, si ha anat sol...) i què encara pot millorar, que sempre hi ha alguna cosa (farm, visió, convertir l'avantatge en objectius...), comparant amb el que faria un jugador Challenger.
+No t'inventis el que les dades no diuen. Res de consells genèrics.
+Respon NOMÉS amb JSON vàlid, sense res més, amb aquesta forma:
+{"deaths":[],"summary":"què ha fet bé (1 o 2 frases)","improve":"què ha de millorar i com (1 o 2 frases)"}`
+
+func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInfo, clean string) (vcResult, error) {
 	c := loadConfig()
 	vcMu.Lock()
 	lang := vcLang
@@ -198,6 +252,7 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "El jugador porta %s (posició %s)%s. Escriu els textos del JSON en %s, parlant-li de tu.\n", rec.Me.ChampionName, rec.Me.Position,
 		map[bool]string{true: ", contra " + opp, false: ""}[opp != ""], langName)
+	sb.WriteString(clean)
 	for i, d := range info {
 		fmt.Fprintf(&sb, "\nMort %d, minut %d:%02d, a %s. ", i+1, int(d.T)/60, int(d.T)%60, d.Zone)
 		if deaths[i].Kind != "" {
@@ -225,7 +280,7 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 		fmt.Fprintf(&sb, "Wards posats els 3 minuts anteriors: %d.", d.Wards)
 	}
 	body, _ := json.Marshal(map[string]any{
-		"systemInstruction": map[string]any{"parts": []map[string]string{{"text": vcSystem}}},
+		"systemInstruction": map[string]any{"parts": []map[string]string{{"text": map[bool]string{true: vcCleanSystem, false: vcSystem}[clean != ""]}}},
 		"contents":          []map[string]any{{"role": "user", "parts": []map[string]string{{"text": sb.String()}}}},
 		"generationConfig":  map[string]any{"maxOutputTokens": 2000, "temperature": 0.4, "responseMimeType": "application/json"},
 	})
@@ -312,6 +367,7 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 				Fix   string `json:"fix"`
 			} `json:"deaths"`
 			Summary string `json:"summary"`
+			Improve string `json:"improve"`
 		}
 		if err := json.Unmarshal([]byte(txt), &ans); err != nil || ans.Summary == "" {
 			last = fmt.Errorf("la IA no ha respost en el format esperat")
@@ -319,7 +375,10 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 			continue
 		}
 		logf("Coach de morts: %s ha explicat %d morts (%d tokens, %.0f s)", model, len(deaths), out.Usage.In, time.Since(t0).Seconds())
-		res := vcResult{At: time.Now().Unix(), Model: model, Lang: lang, Summary: ans.Summary, Deaths: deaths}
+		res := vcResult{At: time.Now().Unix(), Model: model, Lang: lang, Summary: ans.Summary, Improve: ans.Improve, Deaths: deaths}
+		if res.Deaths == nil {
+			res.Deaths = []vcDeath{}
+		}
 		for _, a := range ans.Deaths {
 			if a.N >= 1 && a.N <= len(res.Deaths) {
 				res.Deaths[a.N-1].Error, res.Deaths[a.N-1].Fix = a.Error, a.Fix
