@@ -1,7 +1,7 @@
 {
- "version": "2.0.50",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.50.exe",
- "size": 9302016,
- "sha256": "dc54634cd75b83de795971a38c815721be2b5026f12b3c67cf1908ba5f5f4e13",
- "notes": "- Coach de vídeo: en acabar la partida, l'app obre la repetició, grava uns segons de cada mort i la IA els mira i t'explica què ha fallat (en veu i a l'informe)\n- Ajust a Coach: que ho faci sola o només quan ho demanis; botó Atura\n- Clips de les morts a l'informe"
+ "version": "2.0.51",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.51.exe",
+ "size": 9303552,
+ "sha256": "1ad771d8287f25326a19616d8882d5c33a3919f484d46a9a6974896efa8196c3",
+ "notes": "- Coach de vídeo: comença just en acabar la partida (agafa l'identificador de la partida del client), sense esperar que Riot la publiqui\n- Si la repetició encara no està a punt, ho torna a provar cada minut"
 }
