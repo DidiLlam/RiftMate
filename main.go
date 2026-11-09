@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.51"
+	version = "2.0.52"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -248,9 +248,6 @@ func (r *Recorder) finish(result string) {
 		logf("Informe guardat: %s.json", stamp)
 	}
 	go autoMap(rec.Date)
-	if gid > 0 { // the game's id is known (from the client): the video coach starts now, without waiting for Riot's API
-		go vcEnqueue(rec.Date, false)
-	}
 	go func() { // the new game into the season stats (Riot publishes it a few minutes after the end)
 		for _, m := range []int{3, 7, 15} {
 			time.Sleep(time.Duration(m) * time.Minute)

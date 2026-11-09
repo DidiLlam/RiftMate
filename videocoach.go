@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -55,7 +54,7 @@ func vcSet(busy bool, date, text string) {
 	vcState = map[string]any{"busy": busy, "date": date, "text": text, "at": time.Now().Unix()}
 	vcMu.Unlock()
 	if text != "" {
-		logf("Coach de vídeo: %s", text)
+		logf("Coach de morts: %s", text)
 	}
 }
 
@@ -90,7 +89,7 @@ func vcEnqueue(date string, manual bool) {
 func vcLoop() {
 	defer func() {
 		if e := recover(); e != nil {
-			logf("Coach de vídeo: error %v", e)
+			logf("Coach de morts: error %v", e)
 		}
 		vcMu.Lock()
 		vcActive = false
@@ -112,220 +111,81 @@ func vcLoop() {
 	}
 }
 
-// the client must be free: not queueing, not in champion select or a game. Waits up to 20 minutes.
-func vcWaitFree(date string) bool {
-	for i := 0; i < 60; i++ {
-		ph := gameflowPhase()
-		if ph == "None" || ph == "Lobby" || ph == "EndOfGame" {
-			if !liveNow.Load() {
-				return true
-			}
-		}
-		if i == 0 {
-			vcSet(true, date, "esperant que el client estigui lliure per obrir la repetició…")
-		}
-		vcMu.Lock()
-		stop := vcStop
-		vcMu.Unlock()
-		if stop {
-			return false
-		}
-		time.Sleep(20 * time.Second)
-	}
-	return false
-}
-
 func vcStopped() bool {
 	vcMu.Lock()
 	defer vcMu.Unlock()
 	return vcStop
 }
 
+// vcAnalyse: the AI explains each death from Riot's timeline (where, who, with what damage, who was near,
+// where the enemy jungler was, your wards). Nothing opens on screen.
 func vcAnalyse(date string) error {
 	g, rec, err := readGame(date)
 	if err != nil {
 		return err
 	}
-	if v, ok := g.Report["video"].(map[string]any); ok && v["summary"] != nil {
+	if v, ok := g.Report["video"].(map[string]any); ok && v["summary"] != nil && v["summary"] != "" {
 		return nil // already done
 	}
 	mm, _ := g.Report["map"].(map[string]any)
-	matchID, _ := mm["match_id"].(string)
-	if i := strings.LastIndex(matchID, "_"); i >= 0 {
-		matchID = matchID[i+1:]
+	if mm == nil || mm["death_info"] == nil { // an older game: read Riot's data again (now with the deaths' detail)
+		vcSet(true, date, "llegint la partida de Riot…")
+		if _, err := addMap(date); err != nil {
+			return errors.New("encara no tinc les dades de Riot d'aquesta partida")
+		}
+		if g, rec, err = readGame(date); err != nil {
+			return err
+		}
+		mm, _ = g.Report["map"].(map[string]any)
+		if mm == nil || mm["death_info"] == nil {
+			return errors.New("Riot no té el detall d'aquesta partida")
+		}
 	}
-	if matchID == "" && g.GameID > 0 {
-		matchID = fmt.Sprint(g.GameID)
+	var info []DeathInfo
+	if raw, err := json.Marshal(mm["death_info"]); err == nil {
+		json.Unmarshal(raw, &info)
 	}
-	if matchID == "" {
-		return errors.New("encara no tinc la partida de Riot")
-	}
-	// the deaths: up to 4, the ones of the first 25 minutes first (they decide the most), in order
-	var all []vcDeath
-	if raw, err := json.Marshal(g.Report["deaths"]); err == nil {
-		json.Unmarshal(raw, &all)
-	}
-	if len(all) == 0 {
-		vcSaveResult(date, vcResult{At: time.Now().Unix(), Summary: "", Note: "cap mort", Deaths: []vcDeath{}})
-		vcSet(false, date, "cap mort a analitzar")
+	if len(info) == 0 {
+		vcSet(false, date, "cap mort a explicar")
 		return nil
 	}
-	pick := []vcDeath{}
-	for _, d := range all {
-		if d.T < 1500 && len(pick) < 4 {
-			pick = append(pick, d)
+	if len(info) > 8 {
+		info = info[:8]
+	}
+	// the app's own label for each death (gank, 1v1, teamfight...)
+	var mine []vcDeath
+	if raw, err := json.Marshal(g.Report["deaths"]); err == nil {
+		json.Unmarshal(raw, &mine)
+	}
+	deaths := make([]vcDeath, len(info))
+	for i, d := range info {
+		deaths[i] = vcDeath{T: d.T, By: append([]string{d.Killer}, d.Helpers...)}
+		for _, m := range mine {
+			if m.T > d.T-15 && m.T < d.T+15 {
+				deaths[i].Kind = m.Kind
+			}
 		}
 	}
-	for _, d := range all {
-		if d.T >= 1500 && len(pick) < 4 {
-			pick = append(pick, d)
-		}
-	}
-	sort.Slice(pick, func(i, j int) bool { return pick[i].T < pick[j].T })
-	if !vcWaitFree(date) {
-		return errors.New("el client no ha estat lliure (estaves jugant o a la cua)")
-	}
-	vcSet(true, date, "obrint la repetició per mirar les teves morts…")
-	err = replayOpen(matchID, func(t string) { vcSet(true, date, t) })
-	// just after the game Riot may not have the replay ready yet: try again a few minutes later
-	for try := 0; err != nil && strings.Contains(err.Error(), "Riot ja no té") && try < 10 && !vcStopped(); try++ {
-		vcSet(true, date, "Riot encara està preparant la repetició: ho torno a provar d'aquí un minut")
-		for k := 0; k < 6 && !vcStopped(); k++ {
-			time.Sleep(10 * time.Second)
-		}
-		if !vcWaitFree(date) {
-			return errors.New("el client no ha estat lliure (estaves jugant o a la cua)")
-		}
-		err = replayOpen(matchID, func(t string) { vcSet(true, date, t) })
-	}
-	if err != nil {
-		if err == errReplayNoAPI {
-			killReplay()
-			// the API is on now (game.cfg): the next time the game starts it will work
-			return errors.New("he activat l'API del replay: es farà a partir de la propera partida")
-		}
-		return err
-	}
-	defer func() { time.Sleep(time.Second); killReplay() }()
-	time.Sleep(2 * time.Second)
-	name := rec.Me.RiotIDGameName
-	if name == "" {
-		name = strings.SplitN(rec.Me.RiotID, "#", 2)[0]
-	}
-	if name == "" {
-		name = rec.Me.SummonerName
-	}
-	// camera on you, the interface on (the minimap is what tells where everybody was)
-	replayPost("/replay/render", map[string]any{"cameraMode": "top", "selectionName": name, "cameraAttached": true,
-		"interfaceMinimap": true, "interfaceTimeline": true, "interfaceScore": true, "interfaceChat": false})
-	dir := filepath.Join(clipsRoot(), strings.NewReplacer(":", "", " ", "_").Replace(date))
-	os.MkdirAll(dir, 0o755)
-	clips := [][]byte{}
-	used := []vcDeath{}
-	for i, d := range pick {
-		if vcStopped() || gameflowPhase() != "WatchInProgress" {
-			return errors.New("aturat (s'ha tancat la repetició)")
-		}
-		vcSet(true, date, fmt.Sprintf("gravant la mort %d de %d (minut %d:%02d)…", i+1, len(pick), int(d.T)/60, int(d.T)%60))
-		file := filepath.Join(dir, fmt.Sprintf("mort_%d.webm", int(d.T)))
-		b, err := vcRecord(d.T-22, d.T+4, file)
-		if err != nil {
-			logf("Coach de vídeo: no he pogut gravar la mort del minut %d:%02d: %v", int(d.T)/60, int(d.T)%60, err)
-			continue
-		}
-		total := len(b)
-		for _, c := range clips {
-			total += len(c)
-		}
-		if total > 18<<20 { // Gemini takes up to 20 MB inline
-			break
-		}
-		d.Clip = filepath.Base(file)
-		clips = append(clips, b)
-		used = append(used, d)
-	}
-	killReplay()
-	if len(clips) == 0 {
-		return errors.New("no s'ha pogut gravar cap clip de la repetició")
-	}
-	vcSet(true, date, fmt.Sprintf("la IA està mirant %d clips…", len(clips)))
-	res, err := vcAsk(rec, g.Report, used, clips)
+	vcSet(true, date, fmt.Sprintf("la IA està mirant les teves %d morts…", len(deaths)))
+	res, err := vcAsk(rec, g.Report, deaths, info)
 	if err != nil {
 		return err
 	}
 	vcSaveResult(date, res)
-	vcPrune()
 	vcSet(false, date, "fet")
 	return nil
 }
 
-func replayPost(path string, body any) error {
-	raw, _ := json.Marshal(body)
-	req, _ := http.NewRequest("POST", replayAPIBase()+path, bytes.NewReader(raw))
-	req.Header.Set("Content-Type", "application/json")
-	r, err := liveClient.Do(req)
-	if err != nil {
-		return err
-	}
-	r.Body.Close()
-	if r.StatusCode != 200 {
-		return fmt.Errorf("status %d", r.StatusCode)
-	}
-	return nil
-}
+var vcHTTP = &http.Client{Timeout: 90 * time.Second}
 
-// vcRecord: the replay's own recorder, from..to seconds of game time, into a .webm file
-func vcRecord(from, to float64, file string) ([]byte, error) {
-	if from < 0 {
-		from = 0
-	}
-	os.Remove(file)
-	if err := replayPost("/replay/playback", map[string]any{"time": from, "paused": true, "speed": 1.0}); err != nil {
-		return nil, err
-	}
-	time.Sleep(800 * time.Millisecond)
-	if err := replayPost("/replay/recording", map[string]any{"recording": true, "path": file, "codec": "webm", "startTime": from, "endTime": to,
-		"currentTime": from, "framesPerSecond": 12, "width": 854, "height": 480, "lossless": false, "enforceFrameRate": true, "replaySpeed": 1.0}); err != nil {
-		return nil, err
-	}
-	replayPost("/replay/playback", map[string]any{"paused": false, "speed": 1.0})
-	deadline := time.Now().Add(time.Duration(to-from+25) * time.Second)
-	for time.Now().Before(deadline) {
-		time.Sleep(time.Second)
-		var st struct {
-			Recording bool `json:"recording"`
-		}
-		r, err := liveClient.Get(replayAPIBase() + "/replay/recording")
-		if err == nil {
-			json.NewDecoder(r.Body).Decode(&st)
-			r.Body.Close()
-			if !st.Recording {
-				break
-			}
-		}
-	}
-	replayPost("/replay/recording", map[string]any{"recording": false})
-	time.Sleep(1500 * time.Millisecond) // the file is finished writing
-	b, err := os.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-	if len(b) < 10000 {
-		return nil, fmt.Errorf("clip buit (%d bytes)", len(b))
-	}
-	return b, nil
-}
-
-var vcHTTP = &http.Client{Timeout: 150 * time.Second}
-
-const vcSystem = `Ets un coach de League of Legends de nivell Challenger. Mires clips de les morts d'un jugador de Platí (el campió que segueix la càmera és el seu) i li dius, amb franquesa i en concret, per què ha mort i què havia de fer.
-Mira sobretot: la seva posició respecte a la seva onada i les torres, si el jungla rival era visible al minimapa abans, quants rivals li faltaven al mapa, si tenia visió (wards), si ha entrat sol, si ha gastat el Flash o les habilitats clau abans, i on eren els seus aliats.
-La repetició mostra tot el mapa, sense boira de guerra: separa el que ell podia saber (wards, rivals que havien sortit al minimapa, rivals que faltaven) del que no podia veure.
-No t'inventis el que no es veu al clip: si no ho pots saber, digues-ho. Res de consells genèrics.
+const vcSystem = `Ets un coach de League of Legends de nivell Challenger. Analitzes les morts d'un jugador de Platí a partir de les dades de la cronologia de Riot de la partida i li dius, amb franquesa i en concret, per què ha mort i què havia de fer.
+Per a cada mort tens: el minut, el lloc, qui l'ha matat i qui ha ajudat, el dany que ha rebut (de qui i amb quines habilitats), el seu nivell i el del que l'ha matat, la diferència d'or, quants aliats i rivals hi havia a prop el minut d'abans, on era el jungla rival el minut d'abans i quants wards havia posat ell els 3 minuts anteriors.
+Fes-ne una lectura de coach: per exemple, si ha mort a la jungla rival amb 0 wards i 3 rivals a prop, o si el jungla rival era al seu costat del mapa el minut d'abans, o si ha lluitat amb 2 nivells menys, o si gairebé tot el dany ve d'una habilitat que podia esquivar o esperar. Les posicions són d'un minut abans: no t'hi jugues més del que diuen.
+No t'inventis el que les dades no diuen. Res de consells genèrics. Si dues morts tenen la mateixa causa, digues-ho al resum.
 Respon NOMÉS amb JSON vàlid, sense res més, amb aquesta forma:
-{"deaths":[{"clip":1,"error":"què ha fet malament (1 o 2 frases)","fix":"què havia de fer (1 frase)"}],"summary":"el patró principal de totes les morts i el consell més important per a la propera partida (1 o 2 frases)"}`
+{"deaths":[{"n":1,"error":"què ha fet malament (1 o 2 frases)","fix":"què havia de fer (1 frase)"}],"summary":"el patró principal de totes les morts i el consell més important per a la propera partida (1 o 2 frases)"}`
 
-func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, clips [][]byte) (vcResult, error) {
+func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInfo) (vcResult, error) {
 	c := loadConfig()
 	vcMu.Lock()
 	lang := vcLang
@@ -334,21 +194,40 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, clips [][]byte)
 	if langName == "" {
 		langName, lang = "castellà (d'Espanya)", "es"
 	}
-	parts := []map[string]any{}
-	champ := rec.Me.ChampionName
 	opp, _ := report["opponent"].(string)
-	parts = append(parts, map[string]any{"text": fmt.Sprintf("El jugador porta %s (posició %s)%s. Escriu els textos del JSON en %s, parlant-li de tu.", champ, rec.Me.Position,
-		map[bool]string{true: ", contra " + opp, false: ""}[opp != ""], langName)})
-	for i, d := range deaths {
-		who := strings.Join(d.By, ", ")
-		parts = append(parts, map[string]any{"text": fmt.Sprintf("Clip %d: mort al minut %d:%02d (el clip comença 22 s abans i acaba 4 s després). L'app ho ha classificat com a \"%s\"; l'han matat: %s.",
-			i+1, int(d.T)/60, int(d.T)%60, d.Kind, who)})
-		parts = append(parts, map[string]any{"inline_data": map[string]any{"mime_type": "video/webm", "data": base64.StdEncoding.EncodeToString(clips[i])}})
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "El jugador porta %s (posició %s)%s. Escriu els textos del JSON en %s, parlant-li de tu.\n", rec.Me.ChampionName, rec.Me.Position,
+		map[bool]string{true: ", contra " + opp, false: ""}[opp != ""], langName)
+	for i, d := range info {
+		fmt.Fprintf(&sb, "\nMort %d, minut %d:%02d, a %s. ", i+1, int(d.T)/60, int(d.T)%60, d.Zone)
+		if deaths[i].Kind != "" {
+			fmt.Fprintf(&sb, "L'app ho ha classificat com a \"%s\". ", deaths[i].Kind)
+		}
+		fmt.Fprintf(&sb, "L'ha matat %s", d.Killer)
+		if len(d.Helpers) > 0 {
+			fmt.Fprintf(&sb, " amb l'ajuda de %s", strings.Join(d.Helpers, ", "))
+		}
+		sb.WriteString(". ")
+		if len(d.Dmg) > 0 {
+			parts := []string{}
+			for _, x := range d.Dmg {
+				parts = append(parts, fmt.Sprintf("%s %d (%s)", x.Champ, x.Dmg, x.What))
+			}
+			sb.WriteString("Dany rebut: " + strings.Join(parts, "; ") + ". ")
+		}
+		if d.Lvl[0] > 0 && d.Lvl[1] > 0 {
+			fmt.Fprintf(&sb, "Nivell seu %d, del que l'ha matat %d; diferència d'or %+d. ", d.Lvl[0], d.Lvl[1], d.Gold)
+		}
+		fmt.Fprintf(&sb, "El minut d'abans hi havia %d aliats i %d rivals a menys de 2000 unitats d'aquell lloc. ", d.Allies, d.Enemies)
+		if d.JgWas != "" {
+			fmt.Fprintf(&sb, "El jungla rival: %s. ", d.JgWas)
+		}
+		fmt.Fprintf(&sb, "Wards posats els 3 minuts anteriors: %d.", d.Wards)
 	}
 	body, _ := json.Marshal(map[string]any{
 		"systemInstruction": map[string]any{"parts": []map[string]string{{"text": vcSystem}}},
-		"contents":          []map[string]any{{"role": "user", "parts": parts}},
-		"generationConfig":  map[string]any{"maxOutputTokens": 1500, "temperature": 0.4, "responseMimeType": "application/json"},
+		"contents":          []map[string]any{{"role": "user", "parts": []map[string]string{{"text": sb.String()}}}},
+		"generationConfig":  map[string]any{"maxOutputTokens": 2000, "temperature": 0.4, "responseMimeType": "application/json"},
 	})
 	if _, err := pickGeminiModel(c.AIKey); err != nil {
 		return vcResult{}, err
@@ -428,7 +307,7 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, clips [][]byte)
 		}
 		var ans struct {
 			Deaths []struct {
-				Clip  int    `json:"clip"`
+				N     int    `json:"n"`
 				Error string `json:"error"`
 				Fix   string `json:"fix"`
 			} `json:"deaths"`
@@ -436,14 +315,14 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, clips [][]byte)
 		}
 		if err := json.Unmarshal([]byte(txt), &ans); err != nil || ans.Summary == "" {
 			last = fmt.Errorf("la IA no ha respost en el format esperat")
-			logf("Coach de vídeo: resposta no vàlida de %s: %.300s", model, txt)
+			logf("Coach de morts: resposta no vàlida de %s: %.300s", model, txt)
 			continue
 		}
-		logf("Coach de vídeo: %s ha mirat %d clips (%d tokens, %.0f s)", model, len(clips), out.Usage.In, time.Since(t0).Seconds())
+		logf("Coach de morts: %s ha explicat %d morts (%d tokens, %.0f s)", model, len(deaths), out.Usage.In, time.Since(t0).Seconds())
 		res := vcResult{At: time.Now().Unix(), Model: model, Lang: lang, Summary: ans.Summary, Deaths: deaths}
 		for _, a := range ans.Deaths {
-			if a.Clip >= 1 && a.Clip <= len(res.Deaths) {
-				res.Deaths[a.Clip-1].Error, res.Deaths[a.Clip-1].Fix = a.Error, a.Fix
+			if a.N >= 1 && a.N <= len(res.Deaths) {
+				res.Deaths[a.N-1].Error, res.Deaths[a.N-1].Fix = a.Error, a.Fix
 			}
 		}
 		return res, nil
@@ -500,9 +379,6 @@ func videoCoachHandler(send func(http.ResponseWriter, int, string, []byte)) http
 				vcQueue = nil
 			}
 			vcMu.Unlock()
-			if q.Get("stop") != "" && gameflowPhase() == "WatchInProgress" {
-				killReplay()
-			}
 			if d := q.Get("date"); d != "" {
 				vcEnqueue(d, true)
 			}

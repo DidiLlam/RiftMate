@@ -471,8 +471,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="vGame"><input type="checkbox" id="vGame" checked><span>Partida detectada, compres de Zhonya, partida acabada i informe llest</span></label>
   </section>
   <section class="card" id="aiCard"><h2>Coach amb IA</h2>
-    <div class="keyrow"><label for="vcMode">La IA mira les teves morts al replay</label><select id="vcMode" style="flex:0 0 auto"><option value="auto">Sola, en acabar cada partida</option><option value="manual">Només quan ho demani</option></select></div>
-    <p class="note">En acabar la partida, quan el client està lliure, l'app obre la repetició, grava uns segons de cada mort i la IA els mira. Triga uns 3 o 4 minuts i el LoL s'obre en pantalla durant la gravació; si vols jugar abans, clica "Atura" o tanca la repetició. Gasta 1 petició de la IA per partida.</p>
+    <div class="keyrow"><label for="vcMode">La IA t'explica les morts</label><select id="vcMode" style="flex:0 0 auto"><option value="auto">Sola, en acabar cada partida</option><option value="manual">Només quan ho demani (a l'informe)</option></select></div>
+    <p class="note">Quan Riot publica la partida (2 o 3 minuts després d'acabar), la IA llegeix cada mort a la cronologia de Riot (on era, qui t'ha matat i amb què, qui hi havia a prop, on era el jungla rival, els teus wards) i t'explica en veu què ha fallat. No s'obre res a la pantalla. Gasta 1 petició de la IA per partida.</p>
     <label class="ph-item" for="cAiAuto"><input type="checkbox" id="cAiAuto" checked><span>La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors, macro als minuts 14, 25 i 35, i tres lliçons a l'informe</span></label>
     <p class="note">Durant la partida, digues "coach" (o "entrenador") i, quan soni el to, fes la pregunta: "què em compro ara?", "com jugo contra Ahri?", "val la pena anar al drac?". Respon una IA que veu l'estat de la partida: campions, nivells, objectes, KDA, or, els temps que porta l'app i els objectius.</p>
     <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de peticions per dia, que torna a les 9 del matí (mitjanit a Califòrnia).</p>
@@ -5584,11 +5584,11 @@ function videoCard(r){
   if (!v && !m) return "";
   if (!aiHasKey && !v) return "";
   const g = String(r.date).replace(/:/g, "").replace(" ", "_");
-  if (!v) return `<section class="card"><h2>La IA mira les teves morts</h2><p class="note" id="vcNote">${vcBusyDate === r.date ? esc(vcText) : "Encara no les ha mirat."}</p><button class="b" type="button" id="vcGo" data-date="${esc(r.date)}">Mirar-les ara</button> <button class="b" type="button" id="vcStop">Atura</button></section>`;
+  if (!v) return `<section class="card"><h2>La IA t'explica les morts</h2><p class="note" id="vcNote">${vcBusyDate === r.date ? esc(vcText) : "Encara no les ha explicat."}</p><button class="b" type="button" id="vcGo" data-date="${esc(r.date)}">Explicar-les ara</button></section>`;
   if (!v.deaths?.length) return "";
-  return `<section class="card"><h2>La IA ha mirat les teves morts</h2>${v.summary ? `<p class="ailes"><b>${esc(v.summary)}</b></p>` : ""}
+  return `<section class="card"><h2>Per què has mort</h2>${v.summary ? `<p class="ailes"><b>${esc(v.summary)}</b></p>` : ""}
     ${v.deaths.map(d => `<div class="vcd"><p><b>${mm(d.t)}</b> · ${esc(d.kind || "")}${d.by?.length ? ` · ${esc(d.by.join(", "))}` : ""}${watchBtn(r, d.t)}</p>${d.error ? `<p>${esc(d.error)}</p>` : ""}${d.fix ? `<p class="good">${esc(d.fix)}</p>` : ""}${d.clip ? `<details><summary>Veure el clip</summary><video controls preload="none" src="/api/clip?g=${encodeURIComponent(g)}&f=${encodeURIComponent(d.clip)}"></video></details>` : ""}</div>`).join("")}
-    <p class="note">Clips de la repetició (22 s abans de cada mort), mirats per ${esc(v.model || "la IA")}.</p></section>`;
+    <p class="note">${v.deaths.some(d => d.clip) ? "Clips de la repetició" : "Cronologia de Riot"}, explicada per ${esc(v.model || "la IA")}. El botó ▶ obre aquell moment al replay, si el vols veure.</p></section>`;
 }
 let vcBusyDate = "", vcText = "", vcWasBusy = false, vcSpoken = store.get("vcSpoken", "");
 async function vcPoll(post){
@@ -5596,9 +5596,9 @@ async function vcPoll(post){
     const st = await (await fetch("/api/videocoach" + (post || ""), {method: post ? "POST" : "GET", cache: "no-store"})).json();
     vcText = st.text || ""; vcBusyDate = st.busy ? st.date : "";
     const note = $("#vcNote"); if (note && st.busy) note.textContent = vcText;
-    if (st.busy && !game) watchShow({busy: true, ok: true, pre: "Coach de vídeo", text: st.text});
+    if (st.busy && !game && !$("#viewR").hidden) watchShow({busy: true, ok: true, pre: "Morts", text: st.text});
     if (vcWasBusy && !st.busy) {
-      watchShow({busy: false, ok: st.text === "fet", pre: "Coach de vídeo", text: st.text === "fet" ? "ja he mirat les teves morts: ho tens a l'informe" : st.text});
+      watchShow({busy: false, ok: st.text === "fet", pre: "Morts", text: st.text === "fet" ? "ja t'he explicat les morts: ho tens a l'informe" : st.text});
       if (st.text === "fet") { await loadHistory(); vcExplain(st.date); }
     }
     vcWasBusy = !!st.busy;
@@ -5608,7 +5608,7 @@ async function vcPoll(post){
 function vcExplain(date){
   const r = histCache.find(x => x.date === date), v = r?.video; if (!v?.summary || game || vcSpoken === date) return;
   vcSpoken = date; store.set("vcSpoken", date);
-  const intro = {es: "He visto tus muertes en la repetición.", en: "I watched your deaths in the replay.", ca: "He mirat les teves morts a la repetició."}[v.lang] || "";
+  const intro = {es: "He mirado tus muertes.", en: "I looked at your deaths.", ca: "He mirat les teves morts."}[v.lang] || "";
   const at = t => ({es: `Minuto ${Math.floor(t / 60)}:`, en: `Minute ${Math.floor(t / 60)}:`, ca: `Minut ${Math.floor(t / 60)}:`})[v.lang] || "";
   coachSayRaw([intro, v.summary, ...v.deaths.filter(d => d.error).map(d => `${at(d.t)} ${d.error} ${d.fix || ""}`)].join(" "));
 }

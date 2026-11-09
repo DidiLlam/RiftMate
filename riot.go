@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -272,6 +274,17 @@ type timelineDTO struct {
 				ItemID                  int    `json:"itemId"`
 				SkillSlot               int    `json:"skillSlot"`
 				Position                *pos   `json:"position"`
+				CreatorID               int    `json:"creatorId"`
+				WardType                string `json:"wardType"`
+				VictimDamageReceived    []struct {
+					Name     string `json:"name"`
+					Spell    string `json:"spellName"`
+					Slot     int    `json:"spellSlot"`
+					Basic    bool   `json:"basic"`
+					Magic    int    `json:"magicDamage"`
+					Physical int    `json:"physicalDamage"`
+					True     int    `json:"trueDamage"`
+				} `json:"victimDamageReceived"`
 			} `json:"events"`
 		} `json:"frames"`
 	} `json:"info"`
@@ -310,6 +323,55 @@ type MapData struct {
 	Board   *Board      `json:"board,omitempty"`  // the scoreboard of the 10 players
 	Gold    [][3]int    `json:"gold,omitempty"`   // each minute: second, your team's gold, the enemy's
 	Fights  []MapFight  `json:"fights,omitempty"` // every champion kill of the game
+	Deaths  []DeathInfo `json:"death_info"`       // each of your deaths in detail (for the AI's explanation)
+}
+
+// DeathInfo: one of your deaths as Riot's timeline tells it
+type DeathInfo struct {
+	T       float64   `json:"t"`
+	Zone    string    `json:"zone"`              // where (lane, river, which jungle)
+	Killer  string    `json:"killer"`            // champion, or "torre" / "minions"
+	Helpers []string  `json:"helpers,omitempty"` // the rest who helped
+	Dmg     []DmgPart `json:"dmg,omitempty"`     // the damage you took, by source, largest first
+	Lvl     [2]int    `json:"lvl"`               // your level, the killer's (at the minute before)
+	Gold    int       `json:"gold"`              // your total gold minus the killer's (at the minute before)
+	Allies  int       `json:"allies"`            // allies within ~2000 units of the place, the minute before
+	Enemies int       `json:"enemies"`           // enemies within ~2000 units, the minute before
+	JgWas   string    `json:"jg_was,omitempty"`  // where the enemy jungler was the minute before
+	Wards   int       `json:"wards"`             // wards you had placed in the 3 minutes before
+}
+type DmgPart struct {
+	Champ string `json:"champ"`
+	What  string `json:"what"` // spells and basic attacks
+	Dmg   int    `json:"dmg"`
+}
+
+// zoneName: a place on Summoner's Rift in words, from your side's point of view (blue base bottom-left)
+func zoneName(x, y float64, side string) string {
+	switch {
+	case x < 3500 && y < 3500:
+		return "base " + map[bool]string{true: "teva", false: "rival"}[side == "blue"]
+	case x > 11500 && y > 11500:
+		return "base " + map[bool]string{true: "rival", false: "teva"}[side == "blue"]
+	case x < 2200 || y > 12800:
+		return "carril de dalt"
+	case y < 2200 || x > 12800:
+		return "carril de baix"
+	case x-y < 1400 && y-x < 1400:
+		return "carril del mig"
+	}
+	d := x + y - 14800
+	if d < 1500 && d > -1500 {
+		if y > x {
+			return "riu de dalt"
+		}
+		return "riu de baix"
+	}
+	part := map[bool]string{true: "part de dalt", false: "part de baix"}[y > x]
+	if (d < 0) == (side == "blue") {
+		return "la teva jungla (" + part + ")"
+	}
+	return "la jungla rival (" + part + ")"
 }
 
 // MapFight: one champion kill anywhere on the map
@@ -546,6 +608,11 @@ func fetchMap(rec *Record, endUnix int64) (*MapData, error) {
 				}
 			}
 		}
+		roles := map[int]string{}
+		for _, p := range m.Info.Participants {
+			roles[p.ParticipantID] = p.TeamPosition
+		}
+		md.Deaths = deathDetails(&tl, me, team, teams, champs, roles, md.Side)
 		logf("Mapa creat a partir de %s: %d esdeveniments, %d punts de recorregut, costat %s", id, len(md.Events), len(md.Path), md.Side)
 		return md, nil
 	}
@@ -604,7 +671,7 @@ func addMap(date string) (string, error) {
 	}
 	// fetch again when the game's result is unknown (the game closed before its end event was read)
 	if g.Report["map"] != nil && g.Report["result"] != nil && g.Report["result"] != "" {
-		if mm, _ := g.Report["map"].(map[string]any); mm != nil && mm["board"] != nil && mm["gold"] != nil {
+		if mm, _ := g.Report["map"].(map[string]any); mm != nil && mm["board"] != nil && mm["gold"] != nil && mm["death_info"] != nil {
 			return "ok", nil
 		} // saved before the scoreboard or the teams' gold existed: read it again (once)
 	}
@@ -733,4 +800,111 @@ func fixUnknownResults() {
 		logf("Resultat pendent de %s: %s %v", date, st, err)
 		time.Sleep(1500 * time.Millisecond)
 	}
+}
+
+// deathDetails reads each of your deaths from the timeline: where, who and with what, who was near the minute before
+func deathDetails(tl *timelineDTO, me, team int, teams map[int]int, champs map[int]string, roles map[int]string, side string) []DeathInfo {
+	out := []DeathInfo{}
+	frames := tl.Info.Frames
+	wards := []int64{}
+	for _, f := range frames {
+		for _, e := range f.Events {
+			if e.Type == "WARD_PLACED" && e.CreatorID == me && e.WardType != "UNDEFINED" {
+				wards = append(wards, e.Timestamp)
+			}
+		}
+	}
+	dist := func(a, b pos) float64 { dx, dy := a.X-b.X, a.Y-b.Y; return math.Sqrt(dx*dx + dy*dy) }
+	jg := 0
+	for id, r := range roles {
+		if r == "JUNGLE" && teams[id] != team {
+			jg = id
+		}
+	}
+	for _, f := range frames {
+		for _, e := range f.Events {
+			if e.Type != "CHAMPION_KILL" || e.VictimID != me || e.Position == nil {
+				continue
+			}
+			d := DeathInfo{T: float64(e.Timestamp) / 1000, Zone: zoneName(e.Position.X, e.Position.Y, side), Killer: displayName(champs[e.KillerID])}
+			if champs[e.KillerID] == "" {
+				d.Killer = "torre o minions"
+			}
+			for _, a := range e.AssistingParticipantIDs {
+				d.Helpers = append(d.Helpers, displayName(champs[a]))
+			}
+			// the damage taken, grouped by source
+			agg := map[string]*DmgPart{}
+			order := []string{}
+			for _, v := range e.VictimDamageReceived {
+				src := displayName(v.Name)
+				if src == "" {
+					src = v.Name
+				}
+				if agg[src] == nil {
+					agg[src] = &DmgPart{Champ: src}
+					order = append(order, src)
+				}
+				agg[src].Dmg += v.Magic + v.Physical + v.True
+				what := v.Spell
+				if v.Basic {
+					what = "atacs bàsics"
+				} else if v.Slot >= 0 && v.Slot <= 3 {
+					what = []string{"Q", "W", "E", "R"}[v.Slot]
+				}
+				if what != "" && !strings.Contains(agg[src].What, what) {
+					if agg[src].What != "" {
+						agg[src].What += ", "
+					}
+					agg[src].What += what
+				}
+			}
+			for _, k := range order {
+				if agg[k].Dmg > 0 {
+					d.Dmg = append(d.Dmg, *agg[k])
+				}
+			}
+			sort.Slice(d.Dmg, func(i, j int) bool { return d.Dmg[i].Dmg > d.Dmg[j].Dmg })
+			if len(d.Dmg) > 4 {
+				d.Dmg = d.Dmg[:4]
+			}
+			// the frame of the minute before the death
+			fi := int(e.Timestamp / 60000)
+			if fi >= len(frames) {
+				fi = len(frames) - 1
+			}
+			if fi >= 0 {
+				pf := frames[fi].ParticipantFrames
+				if a, ok := pf[fmt.Sprint(me)]; ok {
+					if b, ok := pf[fmt.Sprint(e.KillerID)]; ok {
+						d.Lvl = [2]int{a.Level, b.Level}
+						d.Gold = a.TotalGold - b.TotalGold
+					} else {
+						d.Lvl = [2]int{a.Level, 0}
+					}
+				}
+				for k, p := range pf {
+					id, _ := strconv.Atoi(k)
+					if id == me || dist(p.Position, *e.Position) > 2000 {
+						continue
+					}
+					if teams[id] == team {
+						d.Allies++
+					} else {
+						d.Enemies++
+					}
+				}
+				if j, ok := pf[fmt.Sprint(jg)]; ok && jg > 0 {
+					d.JgWas = displayName(champs[jg]) + " era a " + zoneName(j.Position.X, j.Position.Y, side)
+				}
+			}
+			for _, w := range wards {
+				if w <= e.Timestamp && w > e.Timestamp-180000 {
+					d.Wards++
+				}
+			}
+			out = append(out, d)
+		}
+	}
+	return out
 }
