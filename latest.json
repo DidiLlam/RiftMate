@@ -1,7 +1,7 @@
 {
- "version": "2.0.54",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.54.exe",
- "size": 9326080,
- "sha256": "996868ce8a173511da3ffae3662fb745619f1cb4a217e433936fb5237591aa9a",
- "notes": "- Historial de LP a la pestanya Historial: una franja per divisió, la línia de la divisió següent i les pujades i baixades marcades"
+ "version": "2.0.55",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.55.exe",
+ "size": 9326592,
+ "sha256": "02535a555f611455b292ad15e3032ad448b12a0ef54772325b2c80d29e1bb494",
+ "notes": "- Historial de LP més net: una línia, les divisions marcades i el total de LP\n- Clica un punt i s'obre aquella partida a l'historial (o el seu informe si és més antiga)\n- Esmeralda en lloc de Maragda"
 }
