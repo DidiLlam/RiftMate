@@ -1,7 +1,7 @@
 {
- "version": "2.0.74",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.74.exe",
- "size": 9532416,
- "sha256": "908adb314e9fe5ba2593c4b3d774305f6192d692672965d013a9923597ed48e5",
- "notes": "- Overlay més lleuger: es redibuixa un cop per segon i només si canvia, i ja no reordena la finestra cada 2 segons\n- Overlay més translúcid: el fons és invisible (només es veuen les fitxes) i l'opacitat baixa fins al 15%\n- Arreglat: l'overlay i el botó de portar la finestra al davant podien fallar després de molta estona oberta"
+ "version": "2.0.75",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.75.exe",
+ "size": 9708544,
+ "sha256": "08410441921eeafb3980c13ed87deb6c048b37288f06d1554c586dc0b4c49c71",
+ "notes": "- Overlay nou, dibuixat per RiftMate mateix (sense finestra de navegador): sense barra de títol, fons invisible i molt més lleuger\n- Es pot arrossegar on vulguis i es queda on el deixes; opció per bloquejar-lo\n- Amb la foto del campió i les icones dels encanteris, la ulti i la Zhonya; clicar-les també les marca\n- Surt també en pantalla completa a la majoria d'ordinadors amb Windows 10/11"
 }
