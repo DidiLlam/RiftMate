@@ -142,6 +142,7 @@ type ovChip struct {
 	fresh     bool
 	clickable bool
 	icon      string
+	faded     bool
 }
 
 type ovFace struct {
@@ -170,6 +171,8 @@ var (
 )
 
 var gwlExStyle = int32(-20)
+
+var ovLock bool
 
 func rgb(r, g, b int) uintptr { return uintptr(r | g<<8 | b<<16) }
 
@@ -232,6 +235,7 @@ func ovThread() {
 	ovSig, ovH = "", 0
 	ovApplyCfg(h)
 	pSetTimer.Call(h, 1, 500, 0)
+	pSetTimer.Call(h, 2, 60, 0) // Ctrl held?
 	logf("Overlay: obert")
 	var m ovMsg
 	for {
@@ -253,14 +257,9 @@ func ovApplyCfg(h uintptr) {
 		a = 210
 	}
 	pSetLayeredAttr.Call(h, ovKey, uintptr(a), 1|2) // LWA_COLORKEY | LWA_ALPHA
-	ge := int32(-20)
-	ex, _, _ := pGetWindowLongPtr.Call(h, uintptr(ge))
-	if c.Lock {
-		ex |= 0x20 // WS_EX_TRANSPARENT: every click goes to the game
-	} else {
-		ex &^= 0x20
-	}
-	pSetWindowLongPtr.Call(h, uintptr(ge), ex)
+	ovLock = c.Lock
+	ovClickable = -1
+	ovInteract(h)
 	s := ovScale(h)
 	w := int32(math.Round(ovW * s))
 	x, y := int32(c.X), int32(c.Y)
@@ -377,8 +376,8 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 		if r.Ult != nil {
 			list = append(list, ovChip{row: r.Row, kind: "R", label: "R", left: r.Ult.Left - age, icon: r.Ult.Icon})
 		}
-		if r.Zh != nil && (r.Zh.Has || r.Zh.Left > 0) {
-			list = append(list, ovChip{row: r.Row, kind: "Zhonya", label: "Zhonya", left: r.Zh.Left - age, icon: r.Zh.Icon})
+		if r.Zh != nil { // always, dimmed while they don't have it (as in the Timers tab)
+			list = append(list, ovChip{row: r.Row, kind: "Zhonya", label: "Zhonya", left: r.Zh.Left - age, icon: r.Zh.Icon, faded: !r.Zh.Has})
 		}
 		x := pad + sc(ovPortrait) + sc(9)
 		top := y + pad + (sc(ovPortrait)-cw)/2
@@ -408,7 +407,7 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 		if cp.left > 0 {
 			v = ovFmt(cp.left)
 		}
-		fmt.Fprint(&b, "|", cp.kind, v, cp.fresh, cp.r.L, cp.r.T, ovImg(cp.icon) != nil)
+		fmt.Fprint(&b, "|", cp.kind, v, cp.fresh, cp.faded, cp.r.L, cp.r.T, ovImg(cp.icon) != nil)
 	}
 	return b.String(), plates, head, faces, chips, y
 }
@@ -497,7 +496,7 @@ func ovPaintAll(h uintptr) {
 		if cp.fresh { // just marked: an orange frame for a moment
 			box(ovRect{cp.r.L - sc(2), cp.r.T - sc(2), cp.r.R + sc(2), cp.r.B + sc(2)}, rgb(255, 154, 74), sc(5))
 		}
-		if b := ovBitmap(cp.icon, n, run); b != 0 {
+		if b := ovBitmap(cp.icon, n, run || cp.faded); b != 0 {
 			ovBlit(mdc, b, cp.r.L, cp.r.T, n)
 		} else {
 			lab := ovShort[cp.label]
@@ -535,6 +534,10 @@ func ovChipAt(x, y int32) int {
 func ovProc(h uintptr, msg uint32, wp, lp uintptr) uintptr {
 	switch msg {
 	case 0x0113: // WM_TIMER: redraw only when what it shows changed; resize to the content; keep it on top
+		if wp == 2 {
+			ovInteract(h)
+			return 0
+		}
 		sig, _, _, _, _, height := ovLayout(h)
 		vis, _, _ := procIsWindowVisible.Call(h)
 		if sig == "hidden" {
@@ -640,4 +643,32 @@ func ovProc(h uintptr, msg uint32, wp, lp uintptr) uintptr {
 	}
 	r, _, _ := pDefWindowProc.Call(h, uintptr(msg), wp, lp)
 	return r
+}
+
+// Clicks normally go through to the game (moving with the right button over it must work). Only while Ctrl is held
+// (or while it waits outside a game) can it be dragged or clicked. "Lock" turns that off completely.
+var (
+	pGetAsyncKeyState = user32.NewProc("GetAsyncKeyState")
+	ovClickable       = -1 // -1 unknown, 0 no, 1 yes
+)
+
+func ovInteract(h uintptr) {
+	want := 0
+	if !ovLock {
+		k, _, _ := pGetAsyncKeyState.Call(0x11) // VK_CONTROL
+		if k&0x8000 != 0 || ovDrag.on || ovSig == "wait" {
+			want = 1
+		}
+	}
+	if want == ovClickable {
+		return
+	}
+	ovClickable = want
+	ex, _, _ := pGetWindowLongPtr.Call(h, uintptr(gwlExStyle))
+	if want == 1 {
+		ex &^= 0x20
+	} else {
+		ex |= 0x20 // WS_EX_TRANSPARENT
+	}
+	pSetWindowLongPtr.Call(h, uintptr(gwlExStyle), ex)
 }
