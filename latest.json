@@ -1,7 +1,7 @@
 {
- "version": "2.0.56",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.56.exe",
- "size": 9334784,
- "sha256": "363e15f9619cfdab11f05663ec48f99c8afedd4326a34f7638e021444d400811",
- "notes": "- Historial de LP en 3D (opció L): muntanya de partides en blau i taronja i la columna de divisions plena fins on ets\n- No gira sol: arrossega per mirar-lo des d'un altre costat\n- Passa per sobre d'una partida per veure-la i clica per obrir-la"
+ "version": "2.0.57",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.57.exe",
+ "size": 9336320,
+ "sha256": "7e75cc2c7e4742a961d641efd5eeba70da3045892e032c74c8950d991e0e822a",
+ "notes": "- Historial de LP 3D: les últimes 15 partides, cadascuna amb la figureta del campió que vas jugar (vora blava si guanyes, taronja si perds)\n- Més espai entre partides i textos més grans"
 }
