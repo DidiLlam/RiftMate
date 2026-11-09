@@ -194,7 +194,10 @@ func openFolder(p string) {
 }
 
 // openApp opens the page in its own window (Chrome or Edge app mode), so the mic works.
-func openApp(url string) {
+func openApp(url string) { launchBrowser(url, "--window-size=720,900") }
+
+// launchBrowser opens the page as an app window (Edge first, then Chrome) with the app's own profile.
+func launchBrowser(url string, extra ...string) {
 	// Edge first: it comes with Windows and gives the page Microsoft's natural voices (Catalan and Spanish
 	// included), which sound much better than the voices Chrome can use.
 	cands := []string{
@@ -228,8 +231,9 @@ func openApp(url string) {
 				profile += "-edge" // a Chrome profile folder must not be opened by Edge
 			}
 			allowMic(profile, url)
-			err := exec.Command(c, "--app="+url, "--window-size=720,900", "--user-data-dir="+profile,
-				"--autoplay-policy=no-user-gesture-required", "--no-first-run", "--no-default-browser-check").Start()
+			args := append([]string{"--app=" + url}, extra...)
+			args = append(args, "--user-data-dir="+profile, "--autoplay-policy=no-user-gesture-required", "--no-first-run", "--no-default-browser-check")
+			err := exec.Command(c, args...).Start()
 			if err == nil {
 				logf("Finestra oberta amb %s", filepath.Base(c))
 				return

@@ -288,6 +288,7 @@ button.watch{font-size:.8em;padding:1px 7px;margin-left:6px;border-radius:10px;c
 .goals td.gk{text-align:center;width:1.6em;padding:4px 2px;font-weight:700}.goals td.ok{color:var(--good)}.goals td.no{color:var(--loss)}.goals td.gs{white-space:nowrap;text-align:right}
 kbd{font:600 .8em var(--mono,monospace);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:var(--panel)}.hk td{vertical-align:middle}
 .mobq{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.mobq p{margin:.3em 0}#mobQR{background:#fff;padding:8px;border-radius:8px;line-height:0}#mobQR img,#mobQR canvas{display:block}.mobq code{word-break:break-all;font-size:.82rem}
+.ovrow{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:6px 0}.ovrow label{display:flex;gap:8px;align-items:center}
 .wtab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}.wtab th,.wtab td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}.wtab th{font-weight:600;color:var(--muted);font-size:.9em}
 .keyrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .keyrow input{flex:1;min-width:14em;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
@@ -516,6 +517,15 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <table class="wtab hk"><tbody><tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>Flash del top, jungla, mig, ADC i suport rivals</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>L'altre encanteri (Ignite, Teleport, Heal…)</td></tr></tbody></table>
     <p class="note">Si tornes a prémer la mateixa drecera mentre el temporitzador corre, el cancel·la. Sona un to per confirmar-ho.</p></section>
+  <section class="card" data-g="partida" id="ovCard"><h2>Overlay dins del joc <span class="pill">prova</span></h2>
+    <label class="ph-item" for="cOverlay"><input type="checkbox" id="cOverlay"><span>Mostrar els temporitzadors en una finestreta a sobre del joc</span></label>
+    <div id="ovOpts" hidden>
+      <div class="ovrow"><label>Cantonada <select id="ovPos"><option value="tr">Dalt a la dreta</option><option value="tl">Dalt a l'esquerra</option><option value="br">Baix a la dreta</option><option value="bl">Baix a l'esquerra</option></select></label>
+        <label>Opacitat <input type="range" id="ovAlpha" min="80" max="255" step="5"></label></div>
+      <label class="ph-item" for="ovThrough"><input type="checkbox" id="ovThrough"><span>Només amb la veu: els clics passen al joc (si ho treus, pots clicar un encanteri per marcar-lo o cancel·lar-lo)</span></label>
+      <label class="ph-item" for="ovAlways"><input type="checkbox" id="ovAlways"><span>Mostrar-la també fora de partida (per veure on queda)</span></label>
+    </div>
+    <p class="note">Els temporitzadors es continuen activant amb la veu, com fins ara; l'overlay només te'ls ensenya a sobre del joc. Perquè es vegi, posa el LoL en mode de pantalla <b>"Sense vores"</b> (Opcions → Vídeo → Mode de finestra): en pantalla completa exclusiva no hi pot haver res a sobre. És una finestra apart: no toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></section>
   <section class="card" data-g="partida" id="mobCard"><h2>El mòbil com a segona pantalla</h2>
     <label class="ph-item" for="cMobile"><input type="checkbox" id="cMobile"><span>Veure els temporitzadors al mòbil (a la mateixa wifi de casa)</span></label>
     <div id="mobBody" class="mob"></div>
@@ -1964,10 +1974,10 @@ function loadQR(){ if (window.QRCode) return Promise.resolve(true);
   return qrP ??= new Promise(res => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; s.onload = () => res(!!window.QRCode); s.onerror = () => { qrP = null; res(false); }; document.head.appendChild(s); }); }
 $("#cMobile")?.addEventListener("change", e => mobRefresh(`?on=${e.target.checked ? 1 : 0}`));
 document.addEventListener("click", e => { if (e.target.id === "mobNew") mobRefresh("?new=1"); });
-// what the phone shows: the enemy rows with their two spells and the objectives, every second
+// what the phone and the overlay show: the enemy rows with their two spells and the objectives, every second
 const LANE_NAMES = ["Top", "Jungla", "Mig", "ADC", "Suport"];
 function mirrorPush(){
-  if (!mobOn) return;
+  if (!mobOn && !ovOn) return;
   const now = Date.now(), rows = [];
   for (let i = 0; i < 5; i++) { const name = $(`#name${i}`)?.value.trim(); if (!name) continue;
     const sps = [$(`#s1-${i}`)?.value, $(`#s2-${i}`)?.value].filter(Boolean);
@@ -1978,6 +1988,20 @@ function mirrorPush(){
   fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
 }
 if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush, 1000); setInterval(() => { if (!$("#viewA").hidden && mobOn) mobRefresh(); }, 5000); }
+// ---------- the overlay above the game ----------
+let ovOn = false;
+async function ovRefresh(q){
+  let st = null; try { st = await (await fetch("/api/overlay" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
+  ovOn = !!st.on; const cb = $("#cOverlay"); if (!cb) return;
+  cb.checked = ovOn; $("#ovOpts").hidden = !ovOn; $("#ovPos").value = st.pos || "tr"; $("#ovAlpha").value = st.alpha || 225;
+  $("#ovThrough").checked = !!st.through; $("#ovAlways").checked = !!st.always;
+}
+$("#cOverlay")?.addEventListener("change", e => ovRefresh(`?on=${e.target.checked ? 1 : 0}`));
+$("#ovPos")?.addEventListener("change", e => ovRefresh(`?pos=${e.target.value}`));
+$("#ovAlpha")?.addEventListener("change", e => ovRefresh(`?alpha=${e.target.value}`));
+$("#ovThrough")?.addEventListener("change", e => ovRefresh(`?through=${e.target.checked ? 1 : 0}`));
+$("#ovAlways")?.addEventListener("change", e => ovRefresh(`?always=${e.target.checked ? 1 : 0}`));
+if (location.protocol.startsWith("http")) ovRefresh();
 // ---------- backup: restore a copy ----------
 $("#bkFile")?.addEventListener("change", async e => { const f = e.target.files?.[0]; if (!f) return; const note = $("#bkNote"); note.textContent = "Restaurant…";
   try { const r = await (await fetch("/api/restore", {method: "POST", body: f})).json(); note.textContent = r.error ? "No s'ha pogut restaurar: " + r.error : `Restaurats ${r.files} fitxers. Tanca i torna a obrir RiftMate perquè es carreguin.`; } catch (err) { note.textContent = "No s'ha pogut restaurar."; }

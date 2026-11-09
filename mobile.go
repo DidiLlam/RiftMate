@@ -162,6 +162,15 @@ func mobileHandler(send func(http.ResponseWriter, int, string, []byte)) http.Han
 }
 
 func mirrorHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodGet { // the overlay reads the same state
+		mobMu.Lock()
+		b := mobState
+		mobMu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-store")
+		w.Write(b)
+		return
+	}
 	if req.Method != http.MethodPost {
 		http.Error(w, "post", 405)
 		return
