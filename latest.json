@@ -1,7 +1,7 @@
 {
- "version": "2.0.52",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.52.exe",
- "size": 9309696,
- "sha256": "286cfde6e1a03c6c7ea9e241b8c2629ff2272395d5a1843dfea06f37914af6fe",
- "notes": "- Ja no s'obre res a la pantalla: la IA t'explica les morts amb les dades de Riot (lloc, qui i amb quin dany, qui hi havia a prop, on era el jungla rival, els teus wards)\n- T'ho diu en veu quan Riot publica la partida, 2-3 minuts després d'acabar\n- A l'informe: targeta Per què has mort"
+ "version": "2.0.53",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.53.exe",
+ "size": 9321984,
+ "sha256": "26b63be742c1b0c20e5fc520041ca25c9f305cde1d099a37ad7b80b486215db1",
+ "notes": "- Partida sense morts: la IA t'explica què has fet bé (on i com has matat) i què pots millorar (farm, visió, objectius), en veu i a l'informe"
 }
