@@ -1,7 +1,7 @@
 {
- "version": "2.0.70",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.70.exe",
- "size": 9362944,
- "sha256": "fc0cc23d32cffd684f4f0816c6d000537d8b40fd450aea30fd3af84a01d3260d",
- "notes": "- Historial de LP: tria el període (últimes 15, setmana, mes, 6 mesos, any)\n- Amb moltes partides les agrupa per dies, amb el campió que més has jugat\n- Les partides d'abans que l'app apuntés els LP surten aproximades"
+ "version": "2.0.71",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.71.exe",
+ "size": 9372672,
+ "sha256": "6d59fbe6e9ae0c17519cccec22725e73da87c015c055baac7c3bd59c554bee72",
+ "notes": "- Nova targeta Els teus objectius (Coach): 80 de farm al minut 10, 2 wards cada 3 minuts i cap mort a la jungla rival sense wards, comprovats a cada partida\n- Avís de wards tota la partida si fa 3 minuts que no en poses\n- Fre de tilt amb les teves dades, també a la selecció de campions\n- Exercici de farm a l'eina de pràctica (no es guarda com a partida)\n- Abans de la partida, la lliçó de l'última vegada contra el mateix rival"
 }
