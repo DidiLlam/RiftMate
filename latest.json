@@ -1,7 +1,7 @@
 {
- "version": "2.0.63",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.63.exe",
+ "version": "2.0.64",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.64.exe",
  "size": 9348608,
- "sha256": "e780443fbd2ed7f5e5c803b915b874af54c02c39f56a07a7dbb7d44bbd21dc45",
- "notes": "- Historial de LP 3D fix: no es pot girar ni moure, sempre ajustat al requadre\n- El zoom només apropa; el botó − torna a la vista ajustada"
+ "sha256": "02c020afb996b08ddc178b281276da9c4472cf92e68f7eaca7551fb7fd383841",
+ "notes": "- Historial de LP 3D vist de cara, recte, sense diagonal"
 }
