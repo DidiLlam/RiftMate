@@ -274,7 +274,11 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .maplegend input{accent-color:var(--accent)}
 .maplegend svg{width:18px;height:18px;flex:none}
 .mapsel{font-size:.88rem;min-height:1.4em}
-.wtab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}.wtab th,.wtab td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}.wtab th{font-weight:600;color:var(--muted,inherit);font-size:.9em}
+button.watch{font-size:.8em;padding:1px 7px;margin-left:6px;border-radius:10px;cursor:pointer;vertical-align:1px}
+#watchToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel);color:var(--fg);border:1px solid var(--line,#444);padding:10px 16px;border-radius:10px;box-shadow:0 4px 18px #0006;z-index:50;max-width:min(90vw,560px)}
+#watchToast.bad{border-color:#c55}
+.frtab td,.frtab th{white-space:nowrap}.frtab img.emb.fr{width:22px;height:22px;vertical-align:middle}.frdel{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 2px}
+.wtab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}.wtab th,.wtab td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}.wtab th{font-weight:600;color:var(--muted);font-size:.9em}
 .keyrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .keyrow input{flex:1;min-width:14em;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 .chart svg{width:100%;height:auto;display:block}
@@ -516,6 +520,10 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div class="bar"><button class="b primary" type="button" id="coachAnaBtn">Analitza les meves partides</button><button class="b" type="button" id="coachAnaVoice" hidden>▶ Escolta-ho</button></div>
     </section>
     <section class="card" id="weekCard"><h2>La teva setmana</h2><div id="weekBody"><p class="note">Carregant…</p></div></section>
+    <section class="card" id="friendsCard"><h2>Tu i els teus amics</h2>
+      <p class="note">Els últims 7 dies de Solo/Duo, llegits de Riot: no cal que tinguin l'app.</p>
+      <div class="keyrow"><input id="frId" placeholder="Riot ID de l'amic (Nom#EUW)" autocomplete="off" style="flex:1;min-width:0"><button class="b" id="frAdd" type="button">Afegir</button><button class="b" id="frRef" type="button" title="Torna a llegir-ho de Riot">Actualitzar</button></div>
+      <div id="frBody"></div></section>
     <section class="card" id="poolCard"><h2>El teu grup de campions</h2><div id="poolBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="whenCard"><h2>Quan jugues millor</h2><div id="whenBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="patchCard" hidden><h2>Canvis del pedaç</h2><div id="patchBody"></div></section>
@@ -4247,6 +4255,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 let stopSaid = "";
 // the counter can be put back to zero: games before that moment are not counted
 const nowStamp = () => { const d = new Date(); return `${today()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+let shareDay = null;
 function renderSession(h, fresh){
   const from = store.get("sessionFrom", "");
   const all = h.filter(r => !r.error && (r.date || "").startsWith(today()));
@@ -4276,7 +4285,8 @@ function renderSession(h, fresh){
   box.className = "session" + (stop || pause ? " stop" : "");
   box.innerHTML = `<span>Avui: <b>${w}V – ${l}D</b>${withLp ? ` · <b class="${lp >= 0 ? "good" : "bad"}">${lp >= 0 ? "+" : ""}${lp} LP</b>${lpPartial ? ` <span class="note" title="Riot no ha donat el rang d'alguna partida (Flex, o massa seguides): el compte és des de la primera que sí">(aprox.)</span>` : ""}` : ""}${resetToday && from ? ` <span class="note">(des de les ${from.slice(11)})</span>` : ""}${rep && day.length >= 2 && rep[1] >= 2 ? ` <span class="note">· el que més es repeteix: ${esc(rep[0].toLowerCase())} (${rep[1]} de ${day.length})</span>` : ""}</span>`
     + (msg ? `<span class="msg">${esc(msg)}</span>` : "")
-    + `<button class="b" id="sessReset" type="button" style="margin-left:auto">Posar a zero</button>`;
+    + `<button class="b share" type="button" data-share="day" style="margin-left:auto">Compartir</button><button class="b" id="sessReset" type="button">Posar a zero</button>`;
+  shareDay = {w, l, lp: withLp ? lp : null, games: day.filter(r => r.result).slice().reverse()};
   box.hidden = false;
   $("#sessReset").addEventListener("click", () => { store.set("sessionFrom", nowStamp()); plog("Comptador del dia posat a zero"); renderSession(histCache, false); });
   if (msg && fresh && stopSaid !== today() + streak) { stopSaid = today() + streak; if (on("vTilt")) setTimeout(() => speak(msg), 3000); }
@@ -5204,8 +5214,56 @@ const PROG = [
   {k: "vismin", t: "Visió per minut", up: true, f: r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); }, d: 1}
 ];
 function weekOf(date){ const d = new Date(String(date).slice(0, 10) + "T12:00:00"); if (isNaN(d)) return null; d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toISOString().slice(0, 10); }
+// ---------- friends: the same Riot numbers for you and them, last 7 days of Solo/Duo ----------
+let frTimer = 0;
+async function loadFriends(method = "GET", q = ""){
+  try {
+    const j = await (await fetch("/api/friends" + q, {method, cache: "no-store"})).json();
+    renderFriends(j);
+    clearTimeout(frTimer);
+    const missing = (j.friends || []).some(f => !(j.rows || []).some(r => r.riot_id === f));
+    if (j.busy || missing || method === "POST") frTimer = setTimeout(() => loadFriends(), 3000);
+  } catch (e) {}
+}
+function renderFriends(j){
+  const el = $("#frBody"); if (!el) return;
+  const rows = j.rows || [];
+  if (!(j.friends || []).length) { el.innerHTML = `<p class="note">Afegeix el Riot ID d'un amic (per exemple el del teu germà) per comparar-vos.</p>`; return; }
+  const st = r => { const g = r.games || [], n = g.length, s = f => g.reduce((a, x) => a + f(x), 0);
+    const champs = {}; g.forEach(x => champs[x.champ] = (champs[x.champ] || 0) + 1);
+    const top = Object.entries(champs).sort((a, b) => b[1] - a[1])[0];
+    return {n, w: g.filter(x => x.win).length, kda: n ? (s(x => x.k) + s(x => x.a)) / Math.max(1, s(x => x.d)) : null, d: n ? s(x => x.d) / n : null,
+      cs10: n ? s(x => x.cs10) / n : null, csm: n ? s(x => x.cs) / s(x => x.min) : null, vis: n ? s(x => x.vision) / s(x => x.min) : null,
+      kp: n ? 100 * s(x => x.kp) / n : null, dmg: n ? 100 * s(x => x.dmg) / n : null, top: top ? displayChamp(top[0]) + ` (${top[1]})` : "–"}; };
+  const S = rows.map(st);
+  const f1 = (v, d = 1) => v == null || isNaN(v) ? "–" : v.toFixed(d).replace(".", ",");
+  // the best value of each row in bold (only when at least two players have games)
+  const line = (label, get, show, higher = true) => {
+    const vals = S.map(get), ok = vals.filter(v => v != null && !isNaN(v)), best = ok.length > 1 ? (higher ? Math.max(...ok) : Math.min(...ok)) : null;
+    return `<tr><td>${esc(label)}</td>${vals.map((v, i) => `<td>${v === best && best != null ? `<b class="good">${show(v, i)}</b>` : show(v, i)}</td>`).join("")}</tr>`; };
+  const rankTxt = r => r.rank ? `${emblemImg(r.rank.tier, "emb fr")} ${tierTxt({tier: r.rank.tier, rank: r.rank.rank})} · ${r.rank.leaguePoints} LP` : "Sense rang";
+  el.innerHTML = `<div class="tbl"><table class="wtab frtab"><thead><tr><th></th>${rows.map(r => `<th>${r.me ? "Tu" : `${esc(r.riot_id.split("#")[0])} <button type="button" class="frdel" data-del="${esc(r.riot_id)}" title="Treure">✕</button>`}</th>`).join("")}</tr></thead><tbody>
+    <tr><td>Rang</td>${rows.map(r => `<td data-noi18n>${r.error ? `<span class="bad">${esc(r.error)}</span>` : rankTxt(r)}</td>`).join("")}</tr>
+    ${line("Partides", x => x.n, v => String(v ?? 0))}
+    ${line("Victòries", x => x.n ? 100 * x.w / x.n : null, (v, i) => v == null ? "–" : `${S[i].w}V – ${S[i].n - S[i].w}D (${Math.round(v)}%)`)}
+    ${line("KDA", x => x.kda, v => f1(v, 2))}
+    ${line("Morts per partida", x => x.d, v => f1(v), false)}
+    ${line("Farm al minut 10", x => x.cs10, v => f1(v, 0))}
+    ${line("Farm per minut", x => x.csm, v => f1(v))}
+    ${line("Visió per minut", x => x.vis, v => f1(v, 2))}
+    ${line("Participació en kills", x => x.kp, v => v == null ? "–" : Math.round(v) + "%")}
+    ${line("Dany de l'equip", x => x.dmg, v => v == null ? "–" : Math.round(v) + "%")}
+    <tr><td>Més jugat</td>${S.map(x => `<td>${esc(x.top)}</td>`).join("")}</tr>
+  </tbody></table></div>${j.busy ? `<p class="note">Llegint de Riot…</p>` : `<p class="note">Farm al minut 10 i participació: dades de Riot de cada partida. En negreta, el millor de cada fila.</p>`}`;
+}
+document.addEventListener("click", e => { const d = e.target.closest?.(".frdel"); if (d) loadFriends("POST", "?del=" + encodeURIComponent(d.dataset.del)); });
+$("#frAdd")?.addEventListener("click", () => { const v = $("#frId").value.trim(); if (!v) return; if (!v.includes("#")) { $("#frId").value = v + "#EUW"; } loadFriends("POST", "?add=" + encodeURIComponent($("#frId").value.trim())); $("#frId").value = ""; });
+$("#frId")?.addEventListener("keydown", e => { if (e.key === "Enter") $("#frAdd").click(); });
+$("#frRef")?.addEventListener("click", () => loadFriends("POST", "?refresh=1"));
 // the last 7 days against the 7 before: games, record, LP and the same numbers as the charts
+let frLoaded = false;
 function renderWeek(){
+  if (!frLoaded) { frLoaded = true; loadFriends(); }
   const el = $("#weekBody"); if (!el) return;
   const day = r => { const d = new Date(String(r.date).slice(0, 10) + "T12:00:00"); return isNaN(d) ? null : Math.floor((Date.now() - d) / 864e5); };
   const list = histCache.filter(r => !r.error && r.date && (r.result === "Victòria" || r.result === "Derrota")), A = list.filter(r => day(r) != null && day(r) < 7), B = list.filter(r => day(r) >= 7 && day(r) < 14);
@@ -5424,7 +5482,7 @@ function reportTop(r){
     <div class="grades">${grades.map(g => `<div class="gr ${g.level}" title="${esc(g.rule)}"><span class="gl"></span><div><b>${esc(g.area)}</b><span>${esc(g.value)}</span><span class="gw">${({good: "Bé", mid: "Millorable", bad: "A treballar"})[g.level]}</span></div></div>`).join("")}</div>
     <p class="note">Referències de l'app per pujar de Platí a Diamant (passa el ratolí per sobre per veure el criteri).</p>
   </section>
-  <section class="card"><h2>Resum</h2><p class="rpsum">${narr.filter(t => t !== "El que has fet bé." && t !== "Per millorar." && t !== reportVerdict(r)?.t).slice(0, 9).map(esc).map(t => `<span>${t}</span>`).join(" ")}</p></section>
+  <section class="card"><h2>Resum <button class="b share" type="button" data-share="game" style="float:right">Compartir</button></h2><p class="rpsum">${narr.filter(t => t !== "El que has fet bé." && t !== "Per millorar." && t !== reportVerdict(r)?.t).slice(0, 9).map(esc).map(t => `<span>${t}</span>`).join(" ")}</p></section>
   <div class="two">
     <section class="card"><h2>El que has fet bé</h2>${pos.length ? `<ul class="tips good">${pos.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : `<p class="note">Aquesta partida no destaca en res en positiu segons les dades.</p>`}</section>
     <section class="card"><h2>Què millorar</h2><ul class="tips">${tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul></section>
@@ -5434,15 +5492,91 @@ function reportTop(r){
   ${reportCompare(r)}`;
 }
 
+// "watch it": the moment in the game's own replay (the client downloads it and the game jumps to 10 s before)
+function watchBtn(r, t, label){
+  const m = r?.map?.match_id; if (!m || t == null) return "";
+  return ` <button type="button" class="watch" data-match="${esc(m)}" data-t="${Math.round(t)}" title="Obre la repetició del LoL 10 segons abans">▶${label ? " " + esc(label) : ""}</button>`;
+}
+let watchPoll = 0;
+function watchShow(st){
+  let el = $("#watchToast"); if (!el) { el = document.createElement("div"); el.id = "watchToast"; document.body.appendChild(el); }
+  el.textContent = tr(st.pre || "Repetició") + ": " + tr(st.text || ""); el.className = st.ok === false ? "bad" : ""; el.hidden = false;
+  clearTimeout(el._h); if (!st.busy) el._h = setTimeout(() => el.hidden = true, st.ok === false ? 12000 : 6000);
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest?.("button.watch"); if (!b) return;
+  try {
+    const st = await (await fetch(`/api/replaywatch?match=${encodeURIComponent(b.dataset.match)}&t=${b.dataset.t}`, {method: "POST"})).json(); watchShow(st);
+    clearInterval(watchPoll);
+    watchPoll = setInterval(async () => { try { const s2 = await (await fetch("/api/replaywatch", {cache: "no-store"})).json(); watchShow(s2); if (!s2.busy) clearInterval(watchPoll); } catch (e) { clearInterval(watchPoll); } }, 1500);
+  } catch (err) { watchShow({ok: false, text: "l'app no respon"}); }
+});
+// ---------- share: a picture of the game or the day, copied to paste in WhatsApp or Discord ----------
+function loadImg(src){ return new Promise(res => { if (!src) return res(null); const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; setTimeout(() => res(null), 6000); }); }
+async function shareCard(kind){
+  const W = 1200, H = 630, mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
+  let cv = mk(), x = cv.getContext("2d");
+  const font = getComputedStyle(document.body).fontFamily, F = (w, px) => `${w} ${px}px ${font}`;
+  let st = {}; try { st = await (await fetch("/api/status", {cache: "no-store"})).json(); } catch (e) {}
+  const r = kind === "game" ? curReport : null, day = kind === "day" ? shareDay : null;
+  if (!r && !day) return;
+  const champs = r ? [r.champion] : day.games.map(g => g.champion);
+  const fav = Object.entries(champs.reduce((a, c) => (a[c] = (a[c] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const splash = await loadImg(fav ? `/api/ddimg?p=${encodeURIComponent(`cdn/img/champion/splash/${champId(fav)}_0.jpg`)}` : "");
+  const draw = async withImages => {
+    x.fillStyle = "#0b1110"; x.fillRect(0, 0, W, H);
+    if (withImages && splash) { const sc = Math.max((W + 320) / splash.width, H / splash.height); x.globalAlpha = .55; x.drawImage(splash, (W - splash.width * sc) / 2 + 160, (H - splash.height * sc) / 2, splash.width * sc, splash.height * sc); x.globalAlpha = 1; }
+    const gr = x.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, "rgba(8,12,11,.97)"); gr.addColorStop(.55, "rgba(8,12,11,.8)"); gr.addColorStop(1, "rgba(8,12,11,.25)"); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+    x.fillStyle = "#e9efed"; x.textBaseline = "alphabetic";
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2fc49c";
+    x.fillStyle = accent; x.fillRect(60, 60, 8, 64);
+    x.fillStyle = "#9fb1ab"; x.font = F(500, 26); x.fillText((st.riot_id || "").split("#")[0] || "RiftMate", 88, 86);
+    x.fillStyle = "#e9efed"; x.font = F(700, 44);
+    if (r) {
+      const win = r.result === "Victòria";
+      x.fillText(`${displayChamp(r.champion)}${r.opponent ? " " + tr("contra") + " " + displayChamp(r.opponent) : ""}`, 88, 124);
+      x.fillStyle = win ? "#3ddc97" : "#ff6b6b"; x.font = F(800, 96); x.fillText(tr(win ? "VICTÒRIA" : "DERROTA"), 60, 270);
+      const k = r.kda || [0, 0, 0], min = (r.duration || 0) / 60;
+      const stats = [[`${k[0]} / ${k[1]} / ${k[2]}`, "KDA"], [`${r.final_cs ?? "–"}`, `${tr("farm")} (${min ? (r.final_cs / min).toFixed(1).replace(".", ",") : "–"}/min)`],
+        [`${r.kp ?? "–"}%`, tr("participació")], [`${Math.floor(min)}:${String(Math.round((min % 1) * 60)).padStart(2, "0")}`, tr("durada")]];
+      if (r.lp?.delta != null) stats.splice(1, 0, [`${r.lp.delta >= 0 ? "+" : ""}${r.lp.delta} LP`, "Solo/Duo"]);
+      stats.forEach(([v, l], i) => { const cx = 60 + i * 215; x.fillStyle = "#e9efed"; x.font = F(700, 44); x.fillText(v, cx, 390); x.fillStyle = "#9fb1ab"; x.font = F(500, 22); x.fillText(l, cx, 424); });
+    } else {
+      x.fillText(tr("El meu dia de ranked"), 88, 124);
+      x.font = F(800, 96); x.fillStyle = "#e9efed"; x.fillText(`${day.w}V – ${day.l}D`, 60, 270);
+      if (day.lp != null) { x.font = F(800, 64); x.fillStyle = day.lp >= 0 ? "#3ddc97" : "#ff6b6b"; x.fillText(`${day.lp >= 0 ? "+" : ""}${day.lp} LP`, 60, 350); }
+      const icons = day.games.slice(-10);
+      for (let i = 0; i < icons.length; i++) { const g = icons[i], cx = 60 + i * 104, cy = 400;
+        const im = withImages ? await loadImg(`/api/ddimg?p=${encodeURIComponent(`cdn/${iconVer}/img/champion/${champId(g.champion)}.png`)}`) : null;
+        x.save(); x.beginPath(); x.roundRect(cx, cy, 88, 88, 14); x.clip(); if (im) x.drawImage(im, cx, cy, 88, 88); else { x.fillStyle = "#24332f"; x.fillRect(cx, cy, 88, 88); } x.restore();
+        x.lineWidth = 5; x.strokeStyle = g.result === "Victòria" ? "#3ddc97" : "#ff6b6b"; x.beginPath(); x.roundRect(cx, cy, 88, 88, 14); x.stroke(); }
+    }
+    if (mySolo) {
+      const em = withImages ? await loadImg(emblemUrl(mySolo.tier)) : null;
+      if (em) x.drawImage(em, 60, 500, 84, 84);
+      x.fillStyle = "#e9efed"; x.font = F(700, 34); x.fillText(`${tierTxt({tier: mySolo.tier, rank: mySolo.rank})} · ${mySolo.lp} LP`, em ? 160 : 60, 552);
+    }
+    x.fillStyle = "#9fb1ab"; x.font = F(500, 22); x.textAlign = "right"; x.fillText(`RiftMate · ${r ? r.date : today()}`, W - 50, H - 46); x.textAlign = "left";
+  };
+  await draw(true);
+  let blob = null;
+  try { blob = await new Promise((res, rej) => { try { cv.toBlob(res, "image/png"); } catch (e) { rej(e); } }); } catch (e) { cv = mk(); x = cv.getContext("2d"); await draw(false); blob = await new Promise(res => cv.toBlob(res, "image/png")); }
+  if (!blob) return watchShow({ok: false, text: "no s'ha pogut fer la imatge", pre: "Compartir"});
+  try { await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]); watchShow({ok: true, pre: "Compartir", text: "imatge copiada: enganxa-la a WhatsApp o Discord amb Ctrl+V"}); }
+  catch (e) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `riftmate-${kind}-${today()}.png`; a.click(); watchShow({ok: true, pre: "Compartir", text: "imatge desada a Baixades"}); }
+}
+document.addEventListener("click", e => { const b = e.target.closest?.("button.share"); if (b) shareCard(b.dataset.share); });
+let curReport = null;
 function renderReport(r){
+  curReport = r;
   if (!r) { $("#report").innerHTML = `<section class="card"><h2>Última partida</h2><p class="note">Encara no hi ha cap informe. Juga una partida amb el programa obert.</p></section>`; return; }
   if (r.error) { $("#report").innerHTML = `<section class="card"><h2>Última partida</h2><p class="note warn">No s'ha pogut analitzar (${esc(r.error)}).</p></section>`; return; }
   const win = r.result === "Victòria", jg = r.role === "JUNGLE", sup = r.role === "UTILITY";
   const roleName = ({TOP:"top", JUNGLE:"jungla", MIDDLE:"mid", BOTTOM:"ADC", UTILITY:"suport"})[r.role] || "mid";
   const dr = r.deaths.map(d => deathReview(r, d)), hasMap = dr.some(Boolean);
-  const deaths = r.deaths.length ? `<div class="tbl"><table><tr><th>Minut</th><th>Fase</th><th>Tipus</th><th>Qui</th>${hasMap ? "<th>On</th><th>Què ha fallat</th>" : ""}</tr>${r.deaths.map((d, i) => `<tr><td>${mm(d.t)}</td><td>${d.phase}</td><td><span class="pill ${d.kind.includes("gank")||d.kind.includes("contra 1")?"gank":d.kind.includes("1v1")?"duel":""}">${esc(d.kind)}</span></td><td>${esc(d.by.join(", "))}</td>${hasMap ? `<td>${dr[i] ? esc(dr[i].zone) + (dr[i].mates.length ? `<br><span class="note">aliats a prop: ${esc(dr[i].mates.join(", "))}</span>` : `<br><span class="note">cap aliat a prop</span>`) : ""}</td><td class="why">${esc(dr[i]?.why || "")}</td>` : ""}</tr>`).join("")}</table></div>${hasMap ? `<p class="note">Posicions del mapa de Riot (un cop per minut): "a prop" vol dir a menys d'un terç de línia.</p>` : ""}` : `<p class="note">Cap mort. Molt bé.</p>`;
+  const deaths = r.deaths.length ? `<div class="tbl"><table><tr><th>Minut</th><th>Fase</th><th>Tipus</th><th>Qui</th>${hasMap ? "<th>On</th><th>Què ha fallat</th>" : ""}</tr>${r.deaths.map((d, i) => `<tr><td>${mm(d.t)}${watchBtn(r, d.t)}</td><td>${d.phase}</td><td><span class="pill ${d.kind.includes("gank")||d.kind.includes("contra 1")?"gank":d.kind.includes("1v1")?"duel":""}">${esc(d.kind)}</span></td><td>${esc(d.by.join(", "))}</td>${hasMap ? `<td>${dr[i] ? esc(dr[i].zone) + (dr[i].mates.length ? `<br><span class="note">aliats a prop: ${esc(dr[i].mates.join(", "))}</span>` : `<br><span class="note">cap aliat a prop</span>`) : ""}</td><td class="why">${esc(dr[i]?.why || "")}</td>` : ""}</tr>`).join("")}</table></div>${hasMap ? `<p class="note">Posicions del mapa de Riot (un cop per minut): "a prop" vol dir a menys d'un terç de línia.</p>` : ""}` : `<p class="note">Cap mort. Molt bé.</p>`;
   const ka = [...r.kills.map(x => ({...x, k: "Kill"})), ...r.assists.map(x => ({...x, k: "Assistència"}))].sort((a,b) => a.t - b.t);
-  const kaT = ka.length ? `<div class="tbl"><table><tr><th>Minut</th><th>Tipus</th><th>Víctima</th><th></th></tr>${ka.map(x => `<tr><td>${mm(x.t)}</td><td>${x.k}</td><td>${esc(x.victim)}</td><td>${x.solo ? '<span class="pill duel">sol</span>' : ""}${x.roam ? ' <span class="pill">roam</span>' : ""}</td></tr>`).join("")}</table></div>` : `<p class="note">Cap kill ni assistència.</p>`;
+  const kaT = ka.length ? `<div class="tbl"><table><tr><th>Minut</th><th>Tipus</th><th>Víctima</th><th></th></tr>${ka.map(x => `<tr><td>${mm(x.t)}${watchBtn(r, x.t)}</td><td>${x.k}</td><td>${esc(x.victim)}</td><td>${x.solo ? '<span class="pill duel">sol</span>' : ""}${x.roam ? ' <span class="pill">roam</span>' : ""}</td></tr>`).join("")}</table></div>` : `<p class="note">Cap kill ni assistència.</p>`;
   const obj = r.objectives.length ? r.objectives.map(o => `<span>${mm(o.t)} </span><span>${esc(o.obj)}</span><span> ${o.ours ? (o.me ? "✓ hi eres" : "· sense tu") : "· rival"}</span>`).join("<span> · </span>") : "Cap objectiu registrat.";
   $("#report").innerHTML = `
   ${reportTop(r)}
@@ -5457,7 +5591,7 @@ function renderReport(r){
     <p class="note">Abans del minut 14: kills o assistències a altres línies. ${r.rival_roams.length ? "El rival ha ajudat a matar: " + r.rival_roams.map(x => `${esc(x.victim)} (${mm(x.t)})`).join(", ") + "." : ""}</p>
   </section>
   ${(() => { if (r.map?.match_id && !r.map.gold && !goldTried.has(r.date)) { goldTried.add(r.date); setTimeout(() => requestMap(r.date), 500); }   // older reports: the teams' gold is read once
-    const km = keyMoments(r); return km.length ? `<section class="card"><h2>Moments clau</h2>${km.map(k => `<p class="kmom ${k.bad ? "bad" : "good"}"><b>${k.bad ? "On es va perdre" : "On es va guanyar"}</b> ${esc(k.text)}</p>`).join("")}<p class="note">Amb l'or de cada equip minut a minut (Riot): els dos minuts que més van canviar la partida.</p></section>` : ""; })()}
+    const km = keyMoments(r); return km.length ? `<section class="card"><h2>Moments clau</h2>${km.map(k => `<p class="kmom ${k.bad ? "bad" : "good"}"><b>${k.bad ? "On es va perdre" : "On es va guanyar"}</b> ${esc(k.text)}${watchBtn(r, k.t0 + 10, "Veure-ho")}</p>`).join("")}<p class="note">Amb l'or de cada equip minut a minut (Riot): els dos minuts que més van canviar la partida.</p></section>` : ""; })()}
   <section class="card"><h2>Morts</h2>${deaths}</section>
   <section class="card"><h2>Kills i assistències</h2>${kaT}</section>
   <section class="card"><h2>Objectius</h2><p class="note">${obj}</p></section>`;

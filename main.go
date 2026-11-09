@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.47"
+	version = "2.0.48"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -94,6 +94,9 @@ func (r *Recorder) loop() {
 	live := false
 	for {
 		raw, err := fetchLiveRaw()
+		if err == nil && watchingReplay() {
+			err = fmt.Errorf("replay")
+		}
 		liveNow.Store(err == nil)
 		if (err == nil) != live {
 			live = err == nil
@@ -339,6 +342,9 @@ func serve(ln net.Listener) {
 			return
 		}
 		b, err := fetchLiveRaw()
+		if err == nil && watchingReplay() { // a replay (or spectating): not your game, the coach stays quiet
+			err = fmt.Errorf("replay")
+		}
 		if err != nil {
 			send(w, 503, "application/json", []byte(`{"ingame":false}`))
 			return
@@ -494,6 +500,9 @@ func serve(ln net.Listener) {
 		}
 		send(w, 200, "application/json", []byte(fmt.Sprintf(`{"ok":%v}`, ok)))
 	})
+	mux.HandleFunc("/api/replaywatch", replayWatchHandler(send))
+	mux.HandleFunc("/api/friends", friendsHandler(send))
+	mux.HandleFunc("/api/ddimg", ddImgHandler)
 	mux.HandleFunc("/api/openreplays", func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodPost {
 			os.MkdirAll(replayDir(), 0o755)
