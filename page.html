@@ -4089,13 +4089,17 @@ let pendingReport = "";
 document.addEventListener("click", e => {
   const d = e.target.closest?.(".lpdot[data-date]"); if (d) openLpGame(d.dataset.date);
 });
-function openLpGame(date){
+// a figure (or dot) of the LP history: that game opened in the match history below. When it's older than the
+// games already listed, the list loads more (up to 5 pages) until it appears; only a game Riot doesn't give
+// opens its report instead (a game without a Riot id, or one Riot no longer lists)
+async function openLpGame(date){
   const r = histCache.find(x => x.date === date); if (!r) return;
-  const card = r.map?.match_id && document.querySelector(`#mhList .mh[data-id="${CSS.escape(r.map.match_id)}"]`);
+  const id = r.map?.match_id, sel = () => id && document.querySelector(`#mhList .mh[data-id="${CSS.escape(id)}"]`);
+  if (id) for (let k = 0; k < 5 && !sel() && (!mhLoaded || !$("#mhMore").hidden); k++) { const before = mhData.length; await loadMatches(!mhLoaded); if (mhLoaded && mhData.length === before) break; }
+  const card = sel();
   if (card) {
-    if (!mhOpen.has(r.map.match_id)) card.click();
-    const c2 = document.querySelector(`#mhList .mh[data-id="${CSS.escape(r.map.match_id)}"]`);
-    c2?.scrollIntoView({behavior: "smooth", block: "start"}); c2?.classList.add("flash"); setTimeout(() => c2?.classList.remove("flash"), 1600);
+    if (!mhOpen.has(id)) card.click();
+    const c2 = sel(); c2?.scrollIntoView({behavior: "smooth", block: "start"}); c2?.classList.add("flash"); setTimeout(() => c2?.classList.remove("flash"), 1600);
   } else { pendingReport = r.date; showTab("R"); }
 }
 function renderLpChart(){ const el = $("#lpChart"); if (!el) return; const h = lpChart(); el.innerHTML = h; el.hidden = !h; if (h) lp3d(); }
