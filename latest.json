@@ -1,7 +1,7 @@
 {
- "version": "2.1.11",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.11.exe",
- "size": 9906688,
- "sha256": "2897c050c6f3838bc78de96c1f6dfe939e480b3b02c2770cf452b1ae3c511c16",
- "notes": "- Arreglat un error a la pàgina en acabar la selecció de campions\n- El registre diu on passa cada error de la pàgina"
+ "version": "2.1.12",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.12.exe",
+ "size": 9930240,
+ "sha256": "ca383e9f0d21b032c78c412defc41b85f86e56c1f3ca3b1897cf3665f5f15fee",
+ "notes": "- Clips amb so: ara graven el so del LoL, i només el del LoL (sense el Discord ni la veu del coach). Si el teu Windows no ho permet, es graven sense so com abans"
 }
