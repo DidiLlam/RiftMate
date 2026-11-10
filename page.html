@@ -2285,7 +2285,14 @@ function handle(text, final = true){
   const known = game?.spells?.[i];
   if (known && !["Zhonya", "R"].includes(s.sp) && !known.includes(s.sp)) { if (final) plog(`Veu: "${text}" -> ignorat: ${who} no porta ${s.sp}`); return true; }
   const slot = slotFor(i, s.sp), key = `${i}-${slot}`;
-  if (!isCancel && timers[key] && Date.now() - (timers[key].started || 0) < 20000) { if (final) plog(`Veu: "${text}" -> ignorat: ja comptava fa menys de 20 s`); return true; }
+  // already counting: saying it again is talk ("still 2 minutes on Xerath's flash"), not a new use; the spell can't be
+  // used again before its cooldown ends. Only in its last 15 s it counts again (our time may be a little long).
+  // To fix a wrong one: cancel it ("anul·la flash Xerath") and say it again.
+  if (!isCancel && timers[key] && timers[key].end - Date.now() > 15000) {
+    if (final) { const l = Math.ceil((timers[key].end - Date.now()) / 1000);
+      $("#status").textContent = `Ja comptava: ${NAMES[s.sp]} ${de(who)}, queden ${Math.floor(l / 60)}:${String(l % 60).padStart(2, "0")}.`; $("#status").className = "note";
+      plog(`Veu: "${text}" -> ignorat: ${s.sp} ${who} ja comptava (queden ${l} s)`); }
+    return true; }
   if (isCancel) { pendingCancel = 0; cancel(key); confirmTone(false); $("#status").textContent = `Anul·lat: ${NAMES[s.sp]} ${de(who)}.`; plog(`Veu: "${text}" -> anul·lat ${s.sp} ${who}`); }
   else {
     if (learnPending && learnPending.sp === s.sp && Date.now() - learnPending.at < 10000) {   // you said it again and this time it was understood
