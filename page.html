@@ -3801,6 +3801,7 @@ async function loadRank(force){
   badge.innerHTML = `${emblemImg(solo.tier, "")}<div class="rbt"><b data-noi18n>${tierTxt(solo)}</b><span>${solo.lp} LP · ${queueTxt(solo.queue)}</span></div>
     <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${g.steps.map(x => `<span class="rbstep">${emblemImg(x.tier, "rbemb")}<span><b data-noi18n>${esc(x.name)}</b> ${esc(x.text.slice(x.name.length + 2))}</span></span>`).join("")}</div>` : ""; })()}`;
   { const h = $("#rankBadgeH"); if (h) { h.innerHTML = badge.innerHTML; h.hidden = false; } }
+  lpSeason = null;   // the rank changed (a game ended): read the list of games again
   renderLpChart();
 }
 loadRank(false);
@@ -4483,11 +4484,12 @@ let lpChartData = null;
 // the range of the LP history: the last 15 games (the app's own, with their real LP), or a week, a month, six months
 // or a year from the season's games (Riot). Riot doesn't give past LP: the games the app recorded keep their real
 // LP and the rest count your usual LP per win and loss (marked as approximate).
-let lpRange = store.get("lpRange", "15"), lpSeason = null;
+let lpRange = store.get("lpRange", "15"), lpSeason = null, lpSeasonAsked = "";
 const LP_RANGES = [["15", "Últimes 15"], ["7", "Setmana"], ["30", "Mes"], ["182", "6 mesos"], ["365", "Any"]];
 function lpSeries(){
   const real = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number");
-  if (lpRange === "15" || !lpSeason || lpSeason.days !== lpRange) return {items: real.slice(0, 15).reverse(), est: false};
+  const want = lpRange === "15" ? "60" : lpRange;
+  if (!lpSeason || lpSeason.days !== want) return {items: real.slice(0, 15).reverse(), est: false};
   const avg = (a, d) => a.length >= 3 ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : d;
   const gain = avg(real.filter(r => r.lp.delta > 0).map(r => r.lp.delta), 20), lose = avg(real.filter(r => r.lp.delta < 0).map(r => -r.lp.delta), 20);
   const endOf = r => new Date(String(r.date).replace(" ", "T")).getTime() + (r.duration || 0) * 1000, used = new Set();
@@ -4496,6 +4498,12 @@ function lpSeries(){
     const r = real.find(x => !used.has(x) && Math.abs(endOf(x) - t) < 25 * 60e3); if (r) used.add(r);
     return {date: r ? r.date : D2(t), champion: g.c, opponent: g.o, kda: [g.k, g.d, g.a], result: g.w ? "Victòria" : "Derrota",
       lp: {queue: "RANKED_SOLO_5x5", delta: r ? r.lp.delta : g.w ? gain : -lose}, est: !r, n: 1, w: g.w ? 1 : 0, t, map: r?.map}; });
+  // games with their LP already noted but not yet in Riot's list (it takes a few minutes after the end)
+  const lastT = items.length ? items[items.length - 1].t : 0;
+  for (const r of real.slice().reverse()) if (!used.has(r) && endOf(r) > lastT + 60e3)
+    items.push({date: r.date, champion: r.champion, opponent: r.opponent, kda: r.kda, result: r.result, lp: r.lp, est: false, n: 1, w: r.lp.delta > 0 ? 1 : 0, t: endOf(r), map: r.map});
+  // "the last 15": every ranked game, including any whose LP the app missed (counted at your usual LP, "~")
+  if (lpRange === "15") { items = items.slice(-15); return {items, est: items.some(x => x.est)}; }
   // more than 20 games: grouped (by day, or by several days), one figure per group with the champion you played most
   if (items.length > 20) {
     const t0 = items[0].t, span = Date.now() - t0, step = Math.max(864e5, Math.ceil(span / 20 / 864e5) * 864e5), groups = [];
@@ -4556,8 +4564,9 @@ async function openLpGame(date){
   } else { pendingReport = r.date; showTab("R"); }
 }
 function renderLpChart(){ const el = $("#lpChart"); if (!el) return;
-  if (lpRange !== "15" && lpSeason?.days !== lpRange) { const want = lpRange;
-    fetch(`/api/season/games?days=${want}`, {cache: "no-store"}).then(x => x.json()).then(j => { if (lpRange === want) { lpSeason = {days: want, games: j.games || []}; renderLpChart(); } }).catch(() => {}); }
+  const want = lpRange === "15" ? "60" : lpRange;
+  if (lpSeason?.days !== want && lpSeasonAsked !== want) { lpSeasonAsked = want;
+    fetch(`/api/season/games?days=${want}`, {cache: "no-store"}).then(x => x.json()).then(j => { lpSeasonAsked = ""; if ((lpRange === "15" ? "60" : lpRange) === want) { lpSeason = {days: want, games: j.games || []}; renderLpChart(); } }).catch(() => { lpSeasonAsked = ""; }); }
   const h = lpChart(); el.innerHTML = h; el.hidden = !h; if (h) lp3d(); }
 document.addEventListener("click", e => { const b = e.target.closest?.(".lprange button"); if (!b) return; lpRange = b.dataset.r; store.set("lpRange", lpRange); renderLpChart(); });
 
