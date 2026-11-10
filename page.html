@@ -3242,6 +3242,9 @@ async function askAI(q){
       // the AI didn't answer: at least what the game itself says
       const fb = [localAnswer("com anem"), help?.obj ? (() => { const tt = lastData?.gameData?.gameTime ?? 0; const nx = [["drag", "El drac"], ["baron", "El baró"], ["herald", "El herald"]].map(([k, n]) => [n, help.obj[k]]).filter(([, a]) => isFinite(a) && a > tt).sort((a, b) => a[1] - b[1])[0]; return nx ? `${nx[0]} surt d'aquí a ${durTxt(Math.round(nx[1] - tt))}, al minut ${fmtClock(nx[1])}.` : ""; })() : ""].filter(Boolean).join(" ");
       aiShow(q, fb || null, true); speak(fb && game ? `${msg} ${fb}` : msg); plog(`IA: error ${r.error}`);
+    } else if (/^\s*IGNORA\b/i.test(r.answer || "")) {
+      // it was talk with your duo or noise, not a question for the coach: say nothing
+      plog(`IA: "${q}" no era per al coach, no dic res`); $("#status").textContent = "";
     } else {
       aiHistory.push({role: "user", text: q}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
       aiShow(q, r.answer);
