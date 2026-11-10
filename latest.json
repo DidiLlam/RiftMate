@@ -1,7 +1,7 @@
 {
- "version": "2.0.82",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.82.exe",
- "size": 9723392,
- "sha256": "43f1cabc494975caf4836fea70287d6a2aa831de71497ae14afefeb58ecaa5e9",
- "notes": "- Coach: si el micro capta una conversació amb el teu amic després de sentir 'coach', la IA se n'adona i no diu res"
+ "version": "2.0.83",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.83.exe",
+ "size": 9760768,
+ "sha256": "64e0d3df08657b3a569677101a45cbf27ba7d428fe20c6502443d38f52906205",
+ "notes": "- Veu: reconeixement millorat amb Whisper (model modern d'OpenAI, gratuït, funciona en aquest ordinador). Cada frase que capta el micro la transcriu Whisper i només compta el que has dit de veritat\n- La primera vegada descarrega uns 65 MB en segon pla; mentrestant funciona com abans\n- Es pot desactivar a Ajustos → Micròfon i so"
 }
