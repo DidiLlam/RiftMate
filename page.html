@@ -519,6 +519,10 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <table class="wtab hk"><tbody><tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>Flash del top, jungla, mig, ADC i suport rivals</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>L'altre encanteri (Ignite, Teleport, Heal…)</td></tr></tbody></table>
     <p class="note">Si tornes a prémer la mateixa drecera mentre el temporitzador corre, el cancel·la. Sona un to per confirmar-ho.</p></section>
+  <section class="card" data-g="partida" id="duoCard"><h2>Temporitzadors amb el teu duo</h2>
+    <p class="note">Si el teu company també té RiftMate, poseu el mateix codi i el que marqui un (amb la veu, un clic o l'overlay) li sortirà a l'altre. Només s'envia el campió, l'encanteri i quan torna.</p>
+    <div class="bar"><input type="text" id="duoCode" maxlength="12" placeholder="Codi" style="width:9em;text-transform:uppercase" data-noi18n><button class="b" type="button" id="duoJoin">Unir-me</button><button class="b" type="button" id="duoNew">Crear un codi</button><button class="b" type="button" id="duoOff" hidden>Deixar-ho</button></div>
+    <p class="note" id="duoState"></p></section>
   <section class="card" data-g="partida" id="ovCard"><h2>Overlay dins del joc <span class="pill">prova</span></h2>
     <label class="ph-item" for="cOverlay"><input type="checkbox" id="cOverlay"><span>Mostrar els temporitzadors a sobre del joc</span></label>
     <div id="ovOpts" hidden>
@@ -1371,6 +1375,10 @@ const I18N = {
   "Runes i objectes dels Challenger: en acabar la selecció, crear al client la pàgina de runes i el conjunt d'objectes que fan servir amb el teu campió (només es substitueixen els que ha fet RiftMate)": ["Runas y objetos de los Challenger: al acabar la selección, crear en el cliente la página de runas y el set de objetos que usan con tu campeón (solo se sustituyen los que ha hecho RiftMate)", "Challenger runes and items: when champion select ends, create in the client the rune page and item set they use with your champion (only the ones RiftMate made are replaced)"],
   "Runes i objectes dels Challenger amb {x}, posats.": ["Runas y objetos de los Challenger con {x}, puestos.", "Challenger runes and items for {x}, set."], "Objectes dels Challenger amb {x}, posats.": ["Objetos de los Challenger con {x}, puestos.", "Challenger items for {x}, set."],
   "Quant parla el coach": ["Cuánto habla el coach", "How much the coach talks"], "Poc: només el més important": ["Poco: solo lo más importante", "Little: only what matters most"], "Molt: tot": ["Mucho: todo", "A lot: everything"],
+  "Contra {x}, et va millor {y}: aquesta temporada hi vas {n} a {m}.": ["Contra {x}, te va mejor {y}: esta temporada vas {n} a {m}.", "Against {x}, {y} is your best pick: you're {n}-{m} this season."],
+  "Contra {x}, et va millor {y}: hi vas {n} a {m}.": ["Contra {x}, te va mejor {y}: vas {n} a {m}.", "Against {x}, {y} is your best pick: you're {n}-{m}."],
+  "Contra {x}, et va millor {y}: és un matchup favorable.": ["Contra {x}, te va mejor {y}: es un matchup favorable.", "Against {x}, {y} is your best pick: it's a favourable matchup."],
+  "Contra {x}, et va millor {y}: és el que et va millor ara.": ["Contra {x}, te va mejor {y}: es el que mejor te va ahora.", "Against {x}, {y} is your best pick: it's working best for you right now."],
   "Aquesta temporada, contra {x} vas {n} a {m}.": ["Esta temporada, contra {x} vas {n} a {m}.", "This season you're {n}-{m} against {x}."],
   "Els Challenger amb {x} contra {y} ({z}): {w}, van {a} de farm i {b} d'or al minut 10 i el primer objecte que fan és {c}.": ["Los Challenger con {x} contra {y} ({z}): {w}, van {a} de farm y {b} de oro al minuto 10 y el primer objeto que hacen es {c}.", "Challenger players with {x} against {y} ({z}): {w}, they're {a} CS and {b} gold at 10 and their first item is {c}."],
   "Els Challenger amb {x} contra {y} ({z}): {w}, van {a} de farm i {b} d'or al minut 10.": ["Los Challenger con {x} contra {y} ({z}): {w}, van {a} de farm y {b} de oro al minuto 10.", "Challenger players with {x} against {y} ({z}): {w}, they're {a} CS and {b} gold at 10."],
@@ -1947,7 +1955,7 @@ function clipSoon(){
 // fromVoice: always (re)start; from a tap: a second tap cancels
 function startTimer(i, slot, spell, fromVoice){
   const key = `${i}-${slot}`;
-  if (timers[key] && !fromVoice) return cancel(key);
+  if (timers[key] && !fromVoice) { duoTell(i, spell, 0, true); return cancel(key); }
   const haste = spell === "Zhonya" ? 0 : ($(`#boots${i}`).checked?10:0) + ($(`#cosmic${i}`).checked?18:0);
   const total = spell === "R" ? ultCooldown(i) : CD[spell] / (1 + haste/100);
   if (!total) return;
@@ -1955,7 +1963,7 @@ function startTimer(i, slot, spell, fromVoice){
   const lag = fromVoice ? Math.min(Math.max(0, +store.get("voiceLag", 10) || 0), 30, total - 1) : 0;
   const left = total - lag;
   timers[key] = {end: Date.now() + left*1000, total, warned: left <= 35, spell, started: Date.now(), who: () => $(`#name${i}`).value.trim() || rowLabel(i)};
-  render(); clipSoon();
+  render(); clipSoon(); duoTell(i, spell, left);
 }
 $("#resetAll").addEventListener("click", () => { for (const k in timers) delete timers[k]; render(); });
 // ---------- the phone as a second screen ----------
@@ -1993,6 +2001,49 @@ function mirrorPush(){
   fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
 }
 if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush, 1000); setInterval(() => { if (!$("#viewA").hidden && mobOn) mobRefresh(); }, 5000); }
+// ---------- Duo: shared timers ----------
+let duoCode = "", duoSince = -1, duoApplying = false;
+function gtNow(){ const g = lastData?.gameData?.gameTime; return typeof g === "number" ? g + (Date.now() - (lastDataAt || Date.now())) / 1000 : null; }
+// what you mark goes to your duo: champion (English id, the same on both clients), spell, game time it's back
+function duoTell(i, spell, left, cancelIt){
+  if (!duoCode || duoApplying || i > 4 || !game) return;
+  const gt = gtNow(); if (gt == null) return;
+  const champ = rowEnglish(i) || $(`#name${i}`).value.trim(); if (!champ) return;
+  fetch("/api/duo/send", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({champ, spell, back: cancelIt ? 0 : Math.round(gt + left), cancel: !!cancelIt})}).catch(() => {});
+}
+function duoApply(m){
+  if (!game || !m?.champ || !m.spell) return;
+  const gt = gtNow(); if (gt == null) return;
+  const i = [0, 1, 2, 3, 4].find(k => { const n = $(`#name${k}`).value.trim(); return n && (norm(rowEnglish(k) || "") === norm(m.champ) || norm(n) === norm(m.champ)); });
+  if (i == null) { plog(`Duo: ${m.champ} no és a la teva partida`); return; }
+  const who = $(`#name${i}`).value.trim(), sp = m.spell;
+  if (!["R", "Zhonya"].includes(sp) && game?.spells?.[i] && !game.spells[i].includes(sp)) return;
+  duoApplying = true;
+  try {
+    const slot = slotFor(i, sp), key = `${i}-${slot}`;
+    if (m.cancel) { if (timers[key]) { cancel(key); plog(`Duo: el teu company ha anul·lat ${sp} ${who}`); } return; }
+    const left = m.back - gt; if (left <= 1) return;
+    const total = sp === "R" ? (ultCooldown(i) || left) : (CD[sp] || left);
+    timers[key] = {end: Date.now() + left * 1000, total: Math.max(total, left), warned: left <= 35, spell: sp, started: Date.now(), who: () => $(`#name${i}`).value.trim() || rowLabel(i)};
+    render(); clipSoon(); tone([700, 940], .15);
+    $("#status").textContent = `El teu duo ha marcat: ${NAMES[sp] || sp} ${de(who)}.`; $("#status").className = "note";
+    plog(`Duo: ${sp} ${who} (queden ${Math.round(left)} s)`);
+  } finally { duoApplying = false; }
+}
+async function duoRefresh(q){
+  let st = null; try { st = await (await fetch("/api/duo" + (q || `?since=${Math.max(0, duoSince)}`), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
+  duoCode = st.code || "";
+  if (duoSince < 0 || q) duoSince = st.seq || 0;      // on opening: not what was marked before
+  else for (const l of st.lines || []) { duoSince = Math.max(duoSince, l.seq); duoApply(l.msg); }
+  const el = $("#duoState"); if (!el) return;
+  if (document.activeElement !== $("#duoCode")) $("#duoCode").value = duoCode;
+  $("#duoOff").hidden = !duoCode;
+  el.textContent = !duoCode ? "" : st.connected ? `Connectat amb el codi ${duoCode}. Digues-li al teu company que posi el mateix.` : `Connectant amb el codi ${duoCode}…`;
+}
+$("#duoJoin")?.addEventListener("click", () => { const v = $("#duoCode").value.trim(); if (v.length >= 4) duoRefresh(`?code=${encodeURIComponent(v)}`); else $("#duoState").textContent = "El codi ha de tenir com a mínim 4 lletres o números."; });
+$("#duoNew")?.addEventListener("click", () => duoRefresh("?new=1"));
+$("#duoOff")?.addEventListener("click", () => duoRefresh("?off=1"));
+if (location.protocol.startsWith("http")) { duoRefresh(); setInterval(() => { if (duoCode && (game || $("#duoState")?.offsetParent)) duoRefresh(); }, 1000); }
 // ---------- Whisper (better recognition) ----------
 async function whisperRefresh(q){
   let st = null; try { st = await (await fetch("/api/whisper" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
@@ -2305,7 +2356,7 @@ function handle(text, final = true){
       $("#status").textContent = `Ja comptava: ${NAMES[s.sp]} ${de(who)}, queden ${Math.floor(l / 60)}:${String(l % 60).padStart(2, "0")}.`; $("#status").className = "note";
       plog(`Veu: "${text}" -> ignorat: ${s.sp} ${who} ja comptava (queden ${l} s)`); }
     return true; }
-  if (isCancel) { pendingCancel = 0; cancel(key); confirmTone(false); $("#status").textContent = `Anul·lat: ${NAMES[s.sp]} ${de(who)}.`; plog(`Veu: "${text}" -> anul·lat ${s.sp} ${who}`); }
+  if (isCancel) { pendingCancel = 0; if (timers[key]) duoTell(i, s.sp, 0, true); cancel(key); confirmTone(false); $("#status").textContent = `Anul·lat: ${NAMES[s.sp]} ${de(who)}.`; plog(`Veu: "${text}" -> anul·lat ${s.sp} ${who}`); }
   else {
     if (learnPending && learnPending.sp === s.sp && Date.now() - learnPending.at < 10000) {   // you said it again and this time it was understood
       const champ = rowEnglish(i) || $(`#name${i}`).value.trim(), ph = learnPending.phrase;
@@ -2434,6 +2485,7 @@ async function pollNative(){
   for (const l of st.lines) {
     voiceSince = Math.max(voiceSince, l.seq);
     if (l.kind === "heard") { $("#heard").textContent = l.text; handle(l.text); }
+    else if (l.kind === "question") questionHeard(l.text);
     else if (l.kind === "heardw") {
       // Whisper wrote out what was really said: that's what counts. Only when Whisper's text isn't a command and
       // Windows was very sure of its own (a fast "flash Ahri" Whisper got wrong), Windows' version is tried.
@@ -2590,7 +2642,7 @@ async function poll(){
   const ok = data && data.gameData && Array.isArray(data.allPlayers) && data.allPlayers.length;
   const ended = ok && (data.events?.Events || []).some(ev => ev.EventName === "GameEnd");
   if (ok && !ended) {
-    lastData = data;
+    lastData = data; lastDataAt = Date.now();
     if (!game) onGameStart(data); else if (game.practice) coachTick(data); else { updateItems(data, false); coachTick(data); }
     setGame(true, `Partida en curs · ${fmtClock(data.gameData.gameTime)}`);
   } else {
@@ -3088,7 +3140,7 @@ function guideTick(data, t){
 }
 
 // ---------- AI coach: say "coach", then the question; Claude answers out loud with the state of the game ----------
-let lastData = null, aiHistory = [], aiBusy = false, awaitQuestion = 0, aiHasKey = false;
+let lastDataAt = 0, lastData = null, aiHistory = [], aiBusy = false, awaitQuestion = 0, aiHasKey = false;
 const WAKE = ["coach", "oye coach", "escolta coach", "pregunta", "pregunta coach", "hey coach", "koch", "coach coach", "couch", "cauch", "kouch", "cosh",
   "entrenador", "oye entrenador", "escolta entrenador", "oye couch", "escolta couch"];
 function aiState(){
@@ -3485,6 +3537,27 @@ function startQuestion(){
   tone([880, 1175], .3);
   $("#status").textContent = "Et escolto: fes la pregunta."; $("#status").className = "note";
   if (engineNow === "web") { awaitQuestion = Date.now() + 9000; return; }   // the browser engine is already transcribing freely
+  if (engineNow === "win") { startQuestionWhisper(); return; }
+  startQuestionBrowser();
+}
+// with Whisper ready, the question is written out by Whisper from the same microphone; otherwise by the browser
+let qWhisperUntil = 0, qWhisperTimer = 0;
+async function startQuestionWhisper(){
+  let ok = false;
+  questionUntil = Date.now() + 12000; sayHold = Date.now() + 12000; if (sayCur && synth) synth.cancel();
+  try { ok = (await (await fetch("/api/voice/question", {method: "POST"})).json()).ok; } catch (e) {}
+  if (!ok) { questionUntil = 0; sayHold = 0; return startQuestionBrowser(); }
+  qWhisperUntil = Date.now() + 12000; clearTimeout(qWhisperTimer);
+  qWhisperTimer = setTimeout(() => { if (!qWhisperUntil) return; qWhisperUntil = 0; questionUntil = 0; sayHold = 0; sayPump();
+    fetch("/api/voice/question?stop=1", {method: "POST"}).catch(() => {});
+    $("#status").textContent = "No he sentit cap pregunta."; plog("IA: no he sentit cap pregunta"); }, 12000);
+}
+function questionHeard(q){
+  if (!qWhisperUntil) return;
+  qWhisperUntil = 0; clearTimeout(qWhisperTimer); questionUntil = 0; sayHold = 0;
+  $("#heard").textContent = q; plog(`IA: pregunta (Whisper) "${q}"`); askAI(q);
+}
+function startQuestionBrowser(){
   if (!SR) { speak("Aquest navegador no pot escoltar preguntes."); return; }
   const q = new SR(); q.lang = $("#lang").value; q.continuous = false; q.interimResults = false; q.maxAlternatives = 1;
   let got = false;
@@ -5150,10 +5223,41 @@ function recordVs(mine, opp){
   const w = g.filter(r => r.result === "Victòria").length;
   return {w, l: g.length - w, n: g.length};
 }
+// champions usually played in each lane (to guess who your lane opponent is in champion select)
+const LANE_POOL = {
+  MIDDLE: "Ahri, Akali, Akshan, Anivia, Annie, Aurelion Sol, Aurora, Azir, Cassiopeia, Corki, Diana, Ekko, Fizz, Galio, Hwei, Irelia, Kassadin, Katarina, LeBlanc, Lissandra, Lux, Malzahar, Mel, Naafiri, Neeko, Orianna, Qiyana, Ryze, Sylas, Syndra, Taliyah, Talon, Twisted Fate, Veigar, Vel'Koz, Vex, Viktor, Vladimir, Xerath, Yasuo, Yone, Zed, Ziggs, Zoe, Smolder, Swain, Kayle, Lucian, Pantheon, Brand, Cho'Gath, Malphite".split(", "),
+};
+function guessLaner(role, enemies){
+  if (!enemies.length || !role) return "";
+  const score = e => {
+    let n = histCache.filter(r => !r.error && r.role === role && r.opponent === e).length * 2;
+    n += (seasonOpps()[e]?.w || 0) + (seasonOpps()[e]?.l || 0);
+    if ((LANE_POOL[role] || []).some(c => norm(c) === norm(e))) n += 6;
+    return n;
+  };
+  const best = enemies.map(e => [e, score(e)]).sort((a, b) => b[1] - a[1]);
+  return best[0][1] >= 4 && (best.length < 2 || best[0][1] > best[1][1]) ? best[0][0] : "";
+}
+let csSelAuto = false, csSaid = "";
 function pickAdvice(role, enemyLaner){
+  const rows = pickRows(role, enemyLaner);
+  if (!rows) return `<p class="note">Escriu els teus campions habituals als ajustos ("Els meus campions") per rebre consells de pick.</p>`;
+  return (enemyLaner ? `<p class="note">${csSelAuto ? `Rival de línia deduït: <b data-noi18n>${esc(enemyLaner)}</b> (toca'n un altre si no és ell).` : `Contra <b data-noi18n>${esc(enemyLaner)}</b>:`}</p>` : "") + `<ul class="cslist">${rows.map(r => r.html).join("")}</ul>`;
+}
+// once per champion select: the best of your champions against your lane opponent, said out loud
+function pickSay(role, laner, locked){
+  if (!laner || locked || csSaid === laner) return;
+  const rows = pickRows(role, laner); if (!rows || rows.length < 2) return;
+  csSaid = laner;
+  const b = rows[0], sv = seasonVs(b.c, laner), vs = recordVs(b.c, laner);
+  const why = sv.n ? `aquesta temporada hi vas ${sv.w} a ${sv.l}` : vs.n ? `hi vas ${vs.w} a ${vs.l}` : b.c === "LeBlanc" && LB_EASY.includes(laner) ? "és un matchup favorable" : "és el que et va millor ara";
+  const line = `Contra ${laner}, et va millor ${b.c}: ${why}.`;
+  plog(`Selecció: ${line}`); speak(line);
+}
+function pickRows(role, enemyLaner){
   const fromHist = Object.entries(histCache.filter(r => !r.error && r.role === role).reduce((a, r) => (a[r.champion] = (a[r.champion] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1]).map(x => x[0]);
   const cands = [...new Set([...csPool(), ...fromHist])].slice(0, 5);
-  if (!cands.length) return `<p class="note">Escriu els teus campions habituals als ajustos ("Els meus campions") per rebre consells de pick.</p>`;
+  if (!cands.length) return null;
   const rows = cands.map(c => {
     const all = recordVs(c, null), vs = enemyLaner ? recordVs(c, enemyLaner) : {n: 0}, sv = enemyLaner ? seasonVs(c, enemyLaner) : {n: 0};
     const tags = [];
@@ -5166,7 +5270,7 @@ function pickAdvice(role, enemyLaner){
     const stats = [all.n ? `${all.w}V – ${all.l}D en total` : "sense partides guardades", sv.n ? `temporada: ${sv.w}V – ${sv.l}D contra ${enemyLaner}` : enemyLaner && vs.n ? `${vs.w}V – ${vs.l}D contra ${enemyLaner}` : ""].filter(Boolean).join(" · ");
     return {c, score, html: `<li><b data-noi18n>${esc(c)}</b> <span class="note">${stats}</span>${tags.join("")}</li>`};
   }).sort((a, b) => b.score - a.score);
-  return `<ul class="cslist">${rows.map(r => r.html).join("")}</ul>`;
+  return rows;
 }
 // the lane opponents you lose most against this season (to ban), and how you do against the ones already picked
 function seasonOpps(){
@@ -5205,12 +5309,14 @@ function csExtra(cs){
 function renderCS(cs){
   const me = cs.my_team.find(p => p.me) || {}, role = cs.my_position || (me.position || "");
   const enemies = cs.their_team.map(p => p.name);
-  if (csSel && !enemies.includes(csSel)) csSel = "";
+  if (csSel && !enemies.includes(csSel)) { csSel = ""; csSelAuto = false; }
+  if (!csSel || csSelAuto) { const g = guessLaner(role, enemies); csSel = g; csSelAuto = !!g; }
   $("#csTitle").textContent = `Selecció de campions · ${POS_NAME[role] || "rol sense assignar"}`;
   $("#csMine").innerHTML = cs.my_team.map(p => face(p, (p.me ? "me " : "") + (p.locked ? "" : "hover"), false)).join("");
   $("#csTheirs").innerHTML = cs.their_team.length ? cs.their_team.map(p => face(p, csSel === p.name ? "sel" : "", true)).join("") : `<span class="note">Encara no han triat.</span>`;
-  document.querySelectorAll("#csTheirs button.face").forEach(b => b.addEventListener("click", () => { csSel = csSel === b.dataset.name ? "" : b.dataset.name; renderCS(cs); }));
+  document.querySelectorAll("#csTheirs button.face").forEach(b => b.addEventListener("click", () => { csSel = csSel === b.dataset.name ? "" : b.dataset.name; csSelAuto = false; renderCS(cs); }));
   $("#csPick").innerHTML = csExtra(cs) + pickAdvice(role, csSel);
+  pickSay(role, csSel, !!me.locked);
   const rs = recSpells(role, csSel, enemies);
   const now = [me.spell1, me.spell2].filter(Boolean);
   const same = rs.s.every(x => now.includes(x));
@@ -5244,7 +5350,7 @@ async function applyRunes(champ, name){
 async function pollCS(){
   if (game || !location.protocol.startsWith("http")) { $("#csCard").hidden = true; return; }
   let cs; try { cs = await (await fetch("/api/champselect", {cache: "no-store"})).json(); } catch (e) { return; }
-  if (!cs.active) { if (!$("#csCard").hidden) plog("Selecció de campions acabada"); $("#csCard").hidden = true; csLast = ""; runesDone.clear(); $("#csRunes").hidden = true; return; }
+  if (!cs.active) { if (!$("#csCard").hidden) plog("Selecció de campions acabada"); $("#csCard").hidden = true; csLast = ""; csSaid = ""; csSel = ""; csSelAuto = false; runesDone.clear(); $("#csRunes").hidden = true; return; }
   if ($("#csCard").hidden) { plog(`Selecció de campions detectada (rol ${cs.my_position || "-"})`); if (histCount < 0) await loadHistory();
     showTab("T"); toFront("selecció"); setTimeout(() => $("#csCard")?.scrollIntoView({behavior: "smooth", block: "start"}), 200); }
   const key = JSON.stringify(cs);

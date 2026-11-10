@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -120,6 +121,20 @@ func voiceHandlers(mux *http.ServeMux, send func(http.ResponseWriter, int, strin
 			saveConfig(c)
 		}
 		b, _ := json.Marshal(loadConfig().VoiceAlias)
+		send(w, 200, "application/json", b)
+	})
+	// after "coach": the next sentence goes to Whisper as the question ({"ok":false}: use the browser instead)
+	mux.HandleFunc("/api/voice/question", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != http.MethodPost {
+			send(w, 405, "text/plain", []byte("POST only"))
+			return
+		}
+		if req.URL.Query().Get("stop") == "1" {
+			os.Remove(questionFlag())
+			send(w, 200, "application/json", []byte(`{"ok":true}`))
+			return
+		}
+		b, _ := json.Marshal(map[string]bool{"ok": questionStart()})
 		send(w, 200, "application/json", b)
 	})
 	mux.HandleFunc("/api/voice/stop", func(w http.ResponseWriter, req *http.Request) {

@@ -226,11 +226,20 @@ func whisperWorker() {
 		if time.Since(c.At) > 8*time.Second { // too late to be useful
 			continue
 		}
+		if err != nil && c.Kind == "Q" {
+			logf("Whisper: error %v amb la pregunta", err)
+			continue
+		}
 		if err != nil {
 			logf("Whisper: error %v; faig servir el que ha entès Windows", err)
 			if c.Kind == "HEARD" {
 				voicePush("heard", c.Grammar)
 			}
+			continue
+		}
+		if c.Kind == "Q" {
+			logf("Veu (Whisper, pregunta, %.1f s): \"%s\"", dur.Seconds(), text)
+			questionAppend(text)
 			continue
 		}
 		logf("Veu (Whisper, %.1f s): \"%s\"  [Windows: \"%s\" %.2f]", dur.Seconds(), text, c.Grammar, c.Conf)
@@ -330,4 +339,47 @@ func whisperHandler(send func(http.ResponseWriter, int, string, []byte)) http.Ha
 		b, _ := json.Marshal(map[string]any{"on": whisperOn(), "supported": whisperSupported, "state": st, "error": e})
 		send(w, 200, "application/json", b)
 	}
+}
+
+// The question after "coach": Windows cuts a long sentence into pieces; Whisper writes each one and they are
+// put back together. 1.5 s with nothing new: the question is complete.
+var (
+	qMu    sync.Mutex
+	qParts []string
+	qTimer *time.Timer
+)
+
+func questionFlag() string { return filepath.Join(os.TempDir(), "riftmate-pregunta.flag") }
+
+// questionStart: from now on, what the microphone hears is the question
+func questionStart() bool {
+	if st, _ := whisperStatus(); st != "ready" || !voiceRunning() {
+		return false
+	}
+	qMu.Lock()
+	qParts = nil
+	qMu.Unlock()
+	return os.WriteFile(questionFlag(), []byte("1"), 0o644) == nil
+}
+
+func questionAppend(t string) {
+	if t == "" { // the beep, a breath: not the question yet
+		return
+	}
+	qMu.Lock()
+	defer qMu.Unlock()
+	qParts = append(qParts, t)
+	if qTimer != nil {
+		qTimer.Stop()
+	}
+	qTimer = time.AfterFunc(1500*time.Millisecond, func() {
+		qMu.Lock()
+		q := strings.TrimSpace(strings.Join(qParts, " "))
+		qParts = nil
+		qMu.Unlock()
+		os.Remove(questionFlag())
+		if q != "" {
+			voicePush("question", q)
+		}
+	})
 }

@@ -90,9 +90,13 @@ try {
   try { $eng.BabbleTimeout = [TimeSpan]::Zero } catch {}
   try { $eng.InitialSilenceTimeout = [TimeSpan]::Zero } catch {}
   # the phrase's audio to a temporary .wav, for Whisper to write out what was really said
+  # right after "coach": everything heard is the question (Whisper writes it out), whatever Windows made of it
+  $qflag = Join-Path $env:TEMP 'riftmate-pregunta.flag'
+  function QMode { try { if (Test-Path -LiteralPath $qflag) { return (((Get-Date) - (Get-Item -LiteralPath $qflag).LastWriteTime).TotalSeconds -lt 12) } } catch {}; return $false }
   function Clip($r, $text, $conf, $lv, $kind) {
     try {
-      if (-not $r.Audio -or $r.Audio.Duration.TotalSeconds -gt 6 -or $r.Audio.Duration.TotalSeconds -lt 0.3) { return $false }
+      $max = 6; if ($kind -eq 'Q') { $max = 15 }
+      if (-not $r.Audio -or $r.Audio.Duration.TotalSeconds -gt $max -or $r.Audio.Duration.TotalSeconds -lt 0.3) { return $false }
       $p = Join-Path $env:TEMP ('riftmate-' + [guid]::NewGuid().ToString('N') + '.wav')
       $fs = [System.IO.File]::Create($p); $r.Audio.WriteToWaveStream($fs); $fs.Close()
       $t = [string][char]9
@@ -112,6 +116,7 @@ try {
     $lv = Lvl $r
     if ($d.clips) {
       $k = 'LOW'; if ($r.Confidence -ge $thr) { $k = 'HEARD' }
+      if (QMode) { $k = 'Q' }
       if (Clip $r $r.Text $r.Confidence $lv $k) { return }
     }
     if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text + ' |' + [math]::Round($r.Confidence, 2) + ' |' + $lv) }
@@ -137,6 +142,7 @@ try {
       if ($e.SourceIdentifier -eq 'vrej') {
         # nothing matched well enough: the best guess goes to the log, to see what was almost understood
         $a = $null; if ($r.Alternates -and $r.Alternates.Count -gt 0) { $a = $r.Alternates[0] }
+        if ($d.clips -and (QMode)) { $at = ''; if ($a) { $at = $a.Text }; if (Clip $r $at 0 (Lvl $r) 'Q') { continue } }
         if ($a -and $a.Text -and $a.Confidence -ge 0.4) {
           if ($d.clips -and (Clip $r $a.Text $a.Confidence (Lvl $r) 'REJ')) { continue }
           [Console]::Out.WriteLine('LOW ' + [math]::Round($a.Confidence, 2) + ' ' + $a.Text + ' (rebutjat)')
