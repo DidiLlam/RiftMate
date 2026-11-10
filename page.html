@@ -300,6 +300,8 @@ kbd{font:600 .8em var(--mono,monospace);border:1px solid var(--line);border-bott
 .whero{position:relative;min-height:280px;display:flex;align-items:flex-end;background:#0d0a0e;isolation:isolate}
 .whero::before{content:"";position:absolute;top:0;bottom:0;right:0;width:min(62%,560px);z-index:-1;background:url(/benvinguda.jpg) center 18% / cover no-repeat;
   -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 45%);mask-image:linear-gradient(90deg,transparent 0%,#000 45%)}
+.topbanner{min-height:170px;border-radius:14px;overflow:hidden;margin:4px 0 14px;border:1px solid var(--line)}.topbanner .wtitle{font-size:clamp(2rem,5vw,3.2rem)}
+@media (max-width:640px){.topbanner{min-height:150px}}
 .whero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(13,10,14,.8),rgba(13,10,14,0) 40%)}
 .whero > div{position:relative;padding:22px 24px}
 .wtitle{margin:0;font:900 clamp(2.4rem,6vw,4rem)/1 Cinzel,"Trajan Pro",Georgia,serif;letter-spacing:.06em;text-transform:uppercase;
@@ -392,6 +394,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <div class="mechip" id="meChip" hidden><div class="meicon"><img id="meImg" alt="" onerror="this.style.opacity=0"><span class="melvl" id="meLvl"></span></div>
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span></div></div>
   </header>
+  <div class="whero topbanner" aria-hidden="true"><div><p class="wtitle" data-noi18n>RiftMate</p><p class="wsub">El teu coach de veu</p></div></div>
   <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
   <div class="updbar" id="updBar" hidden></div>
   <div class="session" id="session" hidden></div>
@@ -3859,7 +3862,7 @@ function renderWelcome(force){
   if (!force && (store.get("welcomeDone", false) || (hasKey && hasPool))) { el.hidden = true; return; }
   const go = id => `<button class="b" type="button" data-go="${id}">Anar-hi</button>`;
   el.hidden = false;
-  el.innerHTML = `<div class="whero"><div><h1 class="wtitle" data-noi18n>RiftMate</h1><p class="wsub">El teu coach de veu</p></div></div><div class="wbody">
+  el.innerHTML = `<div class="wbody">
     <h2>Benvingut a RiftMate</h2>
     <p class="note">Tres coses i ja està. Quan comenci una partida, l'app ho fa tot sola: omple els rivals, et parla i guarda l'informe.</p>
     <ol>
