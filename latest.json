@@ -1,7 +1,7 @@
 {
- "version": "2.1.3",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.3.exe",
- "size": 9901568,
- "sha256": "2497e7b9a4aa2f6c8cc83ce2e184a22b96d504c277978f00f7e291003c6e5706",
- "notes": "- Actualitzar: si la connexió es talla perquè l'app ja s'estava reiniciant amb la versió nova, ho comprova i recarrega en lloc de donar error"
+ "version": "2.1.4",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.4.exe",
+ "size": 9901056,
+ "sha256": "01f5847418540f4f220cab40a13783d70e0508475fd335640cab997b553dceae",
+ "notes": "- Arreglat: 'flash Kayle' (i tots) es posaven a 0 a l'instant. Whisper no sentia res des de la 2.0.85 i l'app desfeia el temporitzador\n- Ara, si Whisper no escriu res, es queda el que ha entès Windows; només es desfà si Whisper sent clarament una altra cosa\n- Whisper torna a funcionar com abans (ja no cal que sigui ràpid: el temporitzador es marca a l'instant)"
 }
