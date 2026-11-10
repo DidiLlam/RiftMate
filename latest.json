@@ -1,7 +1,7 @@
 {
- "version": "2.1.18",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.18.exe",
- "size": 9939456,
- "sha256": "4bed05c5fd945503d2a72b019392f832fe696ccb20bed6132b939597f6419b4b",
- "notes": "- Clips: si la IA no els pot puntuar (ja ha gastat les peticions del dia), surten amb una frase que explica la jugada i la IA els puntua més tard sola\n- El registre diu quan la IA no ha pogut puntuar i per què"
+ "version": "2.1.19",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.19.exe",
+ "size": 9939968,
+ "sha256": "0ae2d88afe2ceec4f18ad325386b83c253a2c5988ef33e4017d686ec716be295",
+ "notes": "- Veu: Whisper ja no desfà una ordre bona perquè escrigui malament el campió ('Flash the ginger' per flash de Jinx): si ha sentit el mateix encanteri en una frase curta, ho confirma"
 }
