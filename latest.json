@@ -1,7 +1,7 @@
 {
- "version": "2.1.19",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.19.exe",
- "size": 9939968,
- "sha256": "0ae2d88afe2ceec4f18ad325386b83c253a2c5988ef33e4017d686ec716be295",
- "notes": "- Veu: Whisper ja no desfà una ordre bona perquè escrigui malament el campió ('Flash the ginger' per flash de Jinx): si ha sentit el mateix encanteri en una frase curta, ho confirma"
+ "version": "2.1.20",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.20.exe",
+ "size": 9946624,
+ "sha256": "19af988d4edc00d59830534ab2e39d6e9db15111d241996a01f2eba0e8f394da",
+ "notes": "- Clips: botó 'Esborrar' a cada jugada i 'Esborrar-les totes' (s'esborren de l'app i de l'ordinador)\n- Nova opció, activada: les jugades de menys de 60 punts s'esborren soles al cap de 3 hores"
 }
