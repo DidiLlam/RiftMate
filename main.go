@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.1.19"
+	version = "2.1.20"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -619,6 +619,7 @@ func main() {
 	duoStart()
 	go captureCleanup()
 	go func() { time.Sleep(2 * time.Minute); playsRescore() }()
+	go playsPruneLoop()
 	whisperEnsure() // download and start it in the background, so it is ready for the first game
 	if !updated {   // after an update the open window reloads itself
 		go func() {

@@ -25,6 +25,7 @@ import (
 type playCfg struct {
 	On      bool   `json:"on"`
 	Encoder string `json:"encoder,omitempty"` // the one that worked on this PC
+	KeepLow bool   `json:"keep_low,omitempty"` // don't delete the ones under 60 after 3 hours
 }
 
 type Play struct {
@@ -481,10 +482,16 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			http.ServeFile(w, req, filepath.Join(playsRoot(), g, f))
 			return
 		}
-		if req.Method == http.MethodPost {
+		if req.Method == http.MethodPost && (q.Get("del") != "" || q.Get("delall") == "1") {
+			n := playsDelete(q.Get("del"), q.Get("delall") == "1")
+			logf("Jugades: esborrades %d a mà", n)
+		} else if req.Method == http.MethodPost {
 			c := playsLoadCfg()
 			if v := q.Get("on"); v != "" {
 				c.On = v == "1"
+			}
+			if v := q.Get("keeplow"); v != "" {
+				c.KeepLow = v == "1"
 			}
 			playsSaveCfg(c)
 			logf("Jugades: %s", map[bool]string{true: "activat", false: "desactivat"}[c.On])
@@ -520,7 +527,7 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			return nil
 		})
 		c := playsLoadCfg()
-		b, _ := json.Marshal(map[string]any{"on": c.On, "supported": playsSupported, "encoder": c.Encoder, "state": st, "error": e, "plays": all, "mb": size >> 20})
+		b, _ := json.Marshal(map[string]any{"keep_low": c.KeepLow, "on": c.On, "supported": playsSupported, "encoder": c.Encoder, "state": st, "error": e, "plays": all, "mb": size >> 20})
 		send(w, 200, "application/json", b)
 	}
 }
@@ -596,3 +603,61 @@ func geminiJSON(key, system, user string, maxTok int) (string, string, error) {
 var _ = math.Abs
 
 func aiBudgetLeft() bool { return aiUsedToday(0) < 55 } // the page shares out 60 a day
+
+// playsDelete: one play ("stamp:n") or all of them, from the list and from the disk
+func playsDelete(id string, all bool) int {
+	plMu.Lock()
+	defer plMu.Unlock()
+	cur := playsReadLocked()
+	out := []Play{}
+	n := 0
+	for _, p := range cur {
+		if all || fmt.Sprintf("%s:%d", p.Stamp, p.N) == id {
+			os.Remove(filepath.Join(playsRoot(), p.Stamp, p.File))
+			os.Remove(filepath.Join(playsRoot(), p.Stamp)) // the game's folder, if it's empty now
+			n++
+			continue
+		}
+		out = append(out, p)
+	}
+	if b, err := json.MarshalIndent(out, "", " "); err == nil {
+		os.WriteFile(playsIndex(), b, 0o644)
+	}
+	return n
+}
+
+// playsPrune: plays under 60 points go 3 hours after they were recorded (unless you said to keep them)
+func playsPrune() {
+	if playsLoadCfg().KeepLow {
+		return
+	}
+	plMu.Lock()
+	defer plMu.Unlock()
+	cur := playsReadLocked()
+	out := []Play{}
+	n := 0
+	for _, p := range cur {
+		f := filepath.Join(playsRoot(), p.Stamp, p.File)
+		if st, err := os.Stat(f); p.Score < 60 && (err != nil || time.Since(st.ModTime()) > 3*time.Hour) {
+			os.Remove(f)
+			os.Remove(filepath.Join(playsRoot(), p.Stamp))
+			n++
+			continue
+		}
+		out = append(out, p)
+	}
+	if n == 0 {
+		return
+	}
+	if b, err := json.MarshalIndent(out, "", " "); err == nil {
+		os.WriteFile(playsIndex(), b, 0o644)
+	}
+	logf("Jugades: esborrades %d de menys de 60 punts (de fa més de 3 hores)", n)
+}
+
+func playsPruneLoop() {
+	for {
+		playsPrune()
+		time.Sleep(15 * time.Minute)
+	}
+}

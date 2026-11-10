@@ -326,6 +326,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 .plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px}.play video{width:100%;border-radius:8px;background:#000;aspect-ratio:16/9}.playtxt{margin-top:6px;display:flex;flex-direction:column;gap:2px}.pscore{display:inline-block;min-width:2.2em;text-align:center;font-weight:800;background:var(--accent,#2fc49c);color:#06231b;border-radius:6px;padding:0 6px;margin-right:6px}
 .advwrap>summary{cursor:pointer;font-weight:650}.advwrap[open]>summary{margin-bottom:10px}.advwrap>section.card{box-shadow:none;border:1px solid var(--line);margin:10px 0 0}
 #status:empty{display:none}
+.b.small{padding:3px 10px;font-size:.78rem;margin-top:4px}
 .newslist{margin:6px 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:7px}
 .spi2{width:18px;height:18px;border-radius:4px;vertical-align:-4px}
 .t select{font-size:.75rem;font-weight:500;color:var(--muted)}
@@ -474,6 +475,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <section class="card" data-g="partida" id="playsCard"><h2>Clips de les teves millors jugades <span class="pill">prova</span></h2>
     <label class="ph-item" for="cPlays"><input type="checkbox" id="cPlays"><span>Gravar les jugades: quan mates algú, fas una doble o robes un objectiu, l'app en guarda un clip de pocs segons. Després de la partida la IA els puntua i a l'informe hi surt el teu top 3.</span></label>
     <p class="note">Grava amb la targeta gràfica (NVIDIA, AMD o Intel), com Outplayed o Medal; el primer cop descarrega ffmpeg (uns 80 MB). Pot costar una mica d'FPS: compara-ho amb el comptador del joc. Necessita el LoL en "Sense vores". Porten només el so del joc (ni el Discord ni la veu del coach); també hi surt l'overlay.</p>
+    <label class="ph-item" for="cPlaysLow"><input type="checkbox" id="cPlaysLow" checked><span>Esborrar sols, al cap de 3 hores, les de menys de 60 punts</span></label>
     <p class="note" id="playsState"></p></section>
   <section class="card" data-g="partida" id="csHelpCard"><h2>Selecció de campions i xat</h2>
     <label class="ph-item" for="cClip"><input type="checkbox" id="cClip" checked><span>Xat: en partida, tenir sempre copiats els temporitzadors dels rivals, per enviar-los al xat amb Enter, Ctrl+V i Enter sense sortir del joc</span></label>
@@ -2054,19 +2056,30 @@ async function playsRefresh(q){
   let st = null; try { st = await (await fetch("/api/plays" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return null; }
   const cb = $("#cPlays"), el = $("#playsState"); if (!cb) return st;
   if (!st.supported) { $("#playsCard").hidden = true; return st; }
-  cb.checked = !!st.on;
+  cb.checked = !!st.on; if ($("#cPlaysLow")) $("#cPlaysLow").checked = !st.keep_low;
   const stTxt = {downloading: "Descarregant ffmpeg…", probing: "Provant la targeta gràfica…", recording: "Gravant.", ready: "Llest: gravarà a la propera partida.", error: "No pot gravar: " + (st.error || "")}[st.state] || (st.on ? "S'activarà a la propera partida." : "");
   el.textContent = st.on ? `${stTxt}${st.encoder ? ` (${({h264_nvenc: "NVIDIA", h264_amf: "AMD", h264_qsv: "Intel"})[st.encoder] || st.encoder})` : ""} · ${(st.plays || []).length} clips guardats, ${st.mb || 0} MB.` : "";
   return st;
 }
 $("#cPlays")?.addEventListener("change", e => playsRefresh(`?on=${e.target.checked ? 1 : 0}`));
+$("#cPlaysLow")?.addEventListener("change", e => playsRefresh(`?keeplow=${e.target.checked ? 0 : 1}`));
+// delete a clip (two clicks: no browser dialogs, which would block the app window)
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-pdel]"); if (!b) return;
+  if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Segur?"; setTimeout(() => { if (b.isConnected) { delete b.dataset.sure; b.textContent = b.dataset.pdel === "*" ? "Esborrar-les totes" : "Esborrar"; } }, 3000); return; }
+  const q = b.dataset.pdel === "*" ? "?delall=1" : `?del=${encodeURIComponent(b.dataset.pdel)}`;
+  try { await fetch("/api/plays" + q, {method: "POST"}); } catch (err) {}
+  if (b.dataset.pdel === "*") document.querySelectorAll("#playsTop .play").forEach(x => x.remove()); else b.closest(".play")?.remove();
+  if (!$("#repPlays").hidden) renderPlaysTab();
+});
 if (location.protocol.startsWith("http")) { playsRefresh(); setInterval(() => { if ($("#playsState")?.offsetParent) playsRefresh(); }, 3000); }
 const playStamp = d => String(d || "").replace(":", "").replace(" ", "_");
 const playVideo = p => `/api/playfile?g=${encodeURIComponent(p.stamp)}&f=${encodeURIComponent(p.file)}`;
 function playItem(p, rank){
   return `<div class="play"><video controls preload="metadata" src="${playVideo(p)}"></video>
     <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b></div>
-    <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}</div></div>`;
+    <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}
+    <div><button class="b small" type="button" data-pdel="${esc(p.stamp)}:${p.n}">Esborrar</button></div></div></div>`;
 }
 // the report's top 3, and the ranking of all your plays
 async function renderPlays(r){
@@ -2091,7 +2104,7 @@ async function renderPlaysTab(){
   const champs = [...new Set((st.plays || []).map(p => p.champ).filter(Boolean))];
   const off = !st.on ? `<p class="note">Els clips estan desactivats. Activa'ls a Ajustos → En partida → "Clips de les teves millors jugades" <button class="b" type="button" data-goset>Anar-hi</button></p>` : "";
   el.innerHTML = `<section class="card"><h2>Rànquing de les teves jugades</h2>${off}
-    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · les de 80 o més es guarden per sempre</span></div>
+    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · les de 80 o més es guarden per sempre${st.keep_low ? "" : "; les de menys de 60 s'esborren al cap de 3 hores"}</span><button class="b small" type="button" data-pdel="*">Esborrar-les totes</button></div>
     <div class="plays">${list.map((p, k) => playItem(p, k + 1)).join("") || `<p class="note">Cap jugada amb aquest filtre.</p>`}</div>`
     : (st.on ? `<p class="note">Encara no hi ha cap jugada. Quan facis una kill, una doble o robis un objectiu, sortirà aquí després de la partida.</p>` : "")}</section>`;
   const f = $("#playsF"); if (f) { f.value = playsFilter; f.addEventListener("change", () => { playsFilter = f.value; renderPlaysTab(); }); }
