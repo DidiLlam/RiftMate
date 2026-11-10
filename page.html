@@ -2005,7 +2005,7 @@ if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush
 const fastMarks = new Map();
 function cmdOf(text){
   const words = norm(text).split(" "), s = findSpell(words); if (!s) return "";
-  const i = findEnemy(words, s.w); return i < 0 ? "" : `${s.sp}|${i}|${CANCEL.some(c => words.includes(c)) ? "x" : ""}`;
+  const i = findEnemy(words, s.w); return i < 0 || !pureCommand(words, s, i) ? "" : `${s.sp}|${i}|${CANCEL.some(c => words.includes(c)) ? "x" : ""}`;
 }
 // ---------- Duo: shared timers ----------
 let duoCode = "", duoSince = -1, duoApplying = false;
@@ -2283,6 +2283,24 @@ function renderLearned(){
   $("#learnedClear")?.addEventListener("click", () => { voiceLearned = {}; store.set("voiceLearned", {}); renderLearned(); fetch("/api/voice/learn", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({clear: true})}).catch(() => {}); });
 }
 setTimeout(renderLearned, 0);
+// A command on its own: spell, champion (or lane), "de"/"el" and "cancel·la", nothing else. "Flash Darius" is one;
+// "es possible que el flash Darius quan ha matat a top" isn't (it's talk, and it doesn't count).
+const CMD_GLUE = new Set([...FILLER, "al", "lo", "los", "las", "le", "li", "en", "anul", "cancel", "ce", "y"]);
+function pureCommand(words, s, i){
+  if (!s) return false;
+  const lane = LANE_WORDS.flat().flatMap(x => x.split(" "));
+  let ws = words.filter(Boolean);
+  if (!ws.includes(s.w)) { const k = ws.findIndex((w, j) => w + (ws[j + 1] || "") === s.w); if (k >= 0) ws.splice(k, 2); }
+  const rest = ws.filter(w => w !== s.w && !CMD_GLUE.has(w) && !CANCEL.includes(w) && !lane.includes(w) && !(SPELL_WORDS[s.sp] || []).some(t => close(w, t)));
+  if (!rest.length) return true;
+  if (i < 0 || rest.length > 4) return false;
+  const said = rest.join(" ");
+  if (voiceLearned[said]) return true;
+  const sp = phon(said);
+  for (const name of [$(`#name${i}`).value.trim(), rowEnglish(i)].filter(Boolean))
+    for (const key of champForms(name)) if (lev(sp, key) <= (key.length >= 6 ? 2 : key.length >= 4 ? 1 : 0)) return true;
+  return false;
+}
 function learnedRow(words, used){
   const said = words.filter(w => w !== used && !FILLER.has(w)).join(" ");
   for (const [ph, champ] of Object.entries(voiceLearned)) if ((" " + said + " ").includes(" " + ph + " "))
@@ -2319,7 +2337,7 @@ function slotFor(i, sp){
 }
 // "cancela" said on its own (the recognizer often splits the phrase): the next command within 5 s cancels
 let pendingCancel = 0;
-function handle(text, final = true){
+function handle(text, final = true, opt = {}){
   const ai = typeof aiHandle === "function" ? aiHandle(text, final) : false;
   if (ai === true) return true;
   if (ai === "skip") return false;
@@ -2351,13 +2369,17 @@ function handle(text, final = true){
     return false;
   }
   const who = $(`#name${i}`).value.trim() || rowLabel(i);
+  // free text (Whisper, the browser): only a command said on its own counts
+  if (opt.strict && !pureCommand(words, s, i)) { if (!final) return false; plog(`Veu: "${text}" -> ignorat: no és una ordre sola`); return true; }
   // false alarms: a spell the game says this player doesn't carry, or the same timer said again within 20 s
   const known = game?.spells?.[i];
   if (known && !["Zhonya", "R"].includes(s.sp) && !known.includes(s.sp)) { if (final) plog(`Veu: "${text}" -> ignorat: ${who} no porta ${s.sp}`); return true; }
   const slot = slotFor(i, s.sp), key = `${i}-${slot}`;
-  // already counting: saying it again is talk ("still 2 minutes on Xerath's flash"), not a new use, so it never
-  // restarts it. Only "cancel·la flash Xerath" changes a running timer.
-  if (!isCancel && timers[key]) {
+  // already counting, and not checked by Whisper: saying it again may be talk ("still 2 minutes on Xerath's flash"),
+  // so it doesn't restart it. "Cancel·la flash Xerath" stops it.
+  // said again on its own ("flash Darius", checked by Whisper): it was used again, start over
+  if (!isCancel && timers[key] && opt.reset) { plog(`Veu: "${text}" -> ${s.sp} ${who} de nou (reiniciat)`); }
+  else if (!isCancel && timers[key]) {
     if (final) { const l = Math.ceil((timers[key].end - Date.now()) / 1000);
       $("#status").textContent = `Ja comptava: ${NAMES[s.sp]} ${de(who)}, queden ${Math.floor(l / 60)}:${String(l % 60).padStart(2, "0")}.`; $("#status").className = "note";
       plog(`Veu: "${text}" -> ignorat: ${s.sp} ${who} ja comptava (queden ${l} s)`); }
@@ -2424,8 +2446,8 @@ function startRec(){
       // act on interim results as soon as a full command is recognised, once per result
       if (done.has(r)) continue;
       let acted = false;
-      for (let a = 0; a < res.length && !acted; a++) acted = handle(res[a].transcript, false);
-      if (!acted && res.isFinal) { acted = handle(txt, true); if (!acted && heardLogs++ < 30) plog(`Veu del navegador (sense ordre): "${txt}"`); }
+      for (let a = 0; a < res.length && !acted; a++) acted = handle(res[a].transcript, false, {strict: true});
+      if (!acted && res.isFinal) { acted = handle(txt, true, {strict: true, reset: true}); if (!acted && heardLogs++ < 30) plog(`Veu del navegador (sense ordre): "${txt}"`); }
       if (acted || res.isFinal) done.add(r);
     }
   };
@@ -2502,7 +2524,7 @@ function voiceLine(l){
     let f = {}; try { f = JSON.parse(l.text); } catch (e) {}
     if (!f.t) return;
     const before = Object.fromEntries(Object.entries(timers).map(([k, v]) => [k, v]));
-    $("#heard").textContent = f.t; handle(f.t, true);
+    $("#heard").textContent = f.t; handle(f.t, true, {reset: true});
     const changed = Object.keys({...before, ...timers}).filter(k => before[k] !== timers[k]);
     fastMarks.set(f.id, {t: f.t, cmd: cmdOf(f.t), prev: Object.fromEntries(changed.map(k => [k, before[k]])), now: Object.fromEntries(changed.map(k => [k, timers[k]]))});
     if (fastMarks.size > 20) fastMarks.delete(fastMarks.keys().next().value);
@@ -2527,7 +2549,7 @@ function voiceLine(l){
     // commands are short; a long sentence is talk (unless it starts by calling the coach)
     const nw = w.w ? norm(w.w).split(" ").length : 0, toCoach = /^(oye |escolta |hey )?(coach|koch|couch|cauch|kouch|entrenador)\b/.test(norm(w.w || ""));
     if (nw > 7 && !toCoach) { plog(`Veu: "${w.w}" és una conversa, no una ordre`); return; }
-    const acted = w.w ? handle(w.w, true) : false;
+    const acted = w.w ? handle(w.w, true, {strict: true, reset: true}) : false;
     if (!acted && w.g && w.c >= 0.8) { plog(`Veu: Whisper "${w.w || ""}" no és cap ordre; Windows n'estava segur: "${w.g}"`); handle(w.g, true); }
   }
   else if (l.kind === "ready") { $("#status").textContent = `Micro de Windows escoltant (${l.text}). Digues per exemple "flash Ahri".`; $("#status").className = "note"; }
