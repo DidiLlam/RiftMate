@@ -1,7 +1,7 @@
 {
- "version": "2.1.8",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.8.exe",
- "size": 9905664,
- "sha256": "9aa90af713f6ebf75cd810bad80940f3dd833ed9df8b44ce2834fe66e0c805d2",
- "notes": "- Informes té dues subpestanyes: Partides i Jugades (el rànquing dels teus clips, amb filtre per setmana i per campió)\n- Ajustos endreçats: cada grup amb les targetes en ordre, menys text, i el que gairebé no es toca a 'Opcions avançades'\n- Nova targeta 'Selecció de campions i xat'; 'Què t'avisa durant la partida' passa a Coach"
+ "version": "2.1.9",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.9.exe",
+ "size": 9905152,
+ "sha256": "1ccbea1e3d0ce15024011e0be2e75f09d0b2cc4b24eebed10babbb9d34af70c1",
+ "notes": "- Clips: els de 80 punts o més es guarden per sempre; els altres només mentre són del top 3 de les últimes 10 partides"
 }
