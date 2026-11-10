@@ -1,7 +1,7 @@
 {
- "version": "2.1.10",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.10.exe",
+ "version": "2.1.11",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.11.exe",
  "size": 9906688,
- "sha256": "fab4825f081b9473f50ce7af14b0802f44dcace066ac4c75d8449cd0c7b1d8f7",
- "notes": "- Gràfic de LP: 'Últimes 15' ara agafa totes les teves partides de Solo/Duo de Riot, també les que l'app no va poder apuntar (com les dues d'avui en què es va tancar sola); els LP d'aquestes surten aproximats (~)"
+ "sha256": "2897c050c6f3838bc78de96c1f6dfe939e480b3b02c2770cf452b1ae3c511c16",
+ "notes": "- Arreglat un error a la pàgina en acabar la selecció de campions\n- El registre diu on passa cada error de la pàgina"
 }
