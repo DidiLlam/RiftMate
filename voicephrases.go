@@ -165,6 +165,7 @@ type voiceGrammarData struct {
 	Flat     []string `json:"flat"`
 	Wake     []string `json:"wake"`
 	LanesToo bool     `json:"lanesToo"`
+	Clips    bool     `json:"clips"` // write each phrase's audio for Whisper
 }
 
 func uniq(xs []string) []string {

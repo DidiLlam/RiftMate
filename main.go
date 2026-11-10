@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.82"
+	version = "2.0.83"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -526,6 +526,7 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/mobile", mobileHandler(send))
 	mux.HandleFunc("/api/mirror", mirrorHandler)
 	mux.HandleFunc("/api/overlay", overlayHandler(send))
+	mux.HandleFunc("/api/whisper", whisperHandler(send))
 	mux.HandleFunc("/overlay", overlayPageHandler)
 	mux.HandleFunc("/api/backup", backupHandler)
 	mux.HandleFunc("/api/restore", restoreHandler(send))
@@ -591,7 +592,8 @@ func main() {
 	startHotkeys()
 	go mobileAuto()
 	go overlayAuto()
-	if !updated { // after an update the open window reloads itself
+	whisperEnsure() // download and start it in the background, so it is ready for the first game
+	if !updated {   // after an update the open window reloads itself
 		go func() {
 			time.Sleep(500 * time.Millisecond)
 			openApp(url)

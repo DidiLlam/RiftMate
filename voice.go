@@ -64,8 +64,10 @@ func voiceHandlers(mux *http.ServeMux, send func(http.ResponseWriter, int, strin
 		var in struct {
 			Champs []string `json:"champs"`
 			Lanes  bool     `json:"lanes"` // also listen for "top Darius" (no game detected yet)
+			Lang   string   `json:"lang"`
 		}
 		json.NewDecoder(io.LimitReader(req.Body, 8192)).Decode(&in)
+		whisperSetLang(in.Lang)
 		err := voiceStart(in.Champs, in.Lanes)
 		msg := `{"ok":true}`
 		if err != nil {

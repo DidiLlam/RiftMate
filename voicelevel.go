@@ -21,7 +21,7 @@ const vlMargin = 12.0
 
 func vlFile() string { return profileFile("veu-volum.json") }
 
-func voiceLoudEnough(db float64) (bool, float64) {
+func voiceLoudEnough(db float64, learn bool) (bool, float64) {
 	vlMu.Lock()
 	defer vlMu.Unlock()
 	if !vlRead {
@@ -41,7 +41,7 @@ func voiceLoudEnough(db float64) (bool, float64) {
 		ref = s[len(s)*7/10] // your usual level: a bit above the middle, so a few quiet ones don't pull it down
 		ok = db >= ref-vlMargin
 	}
-	if ok {
+	if ok && learn {
 		vlL = append(vlL, db)
 		if len(vlL) > 60 {
 			vlL = vlL[len(vlL)-60:]

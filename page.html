@@ -421,6 +421,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <div class="settings">
   <section class="card" id="micCard"><h2>Micròfon i so</h2>
     <div class="row2"><label for="engine">Reconeixement de veu</label><select id="engine"><option value="win">Veu de Windows (recomanat)</option><option value="web">Veu del navegador</option></select></div>
+    <label class="ph-item" for="cWhisper"><input type="checkbox" id="cWhisper" checked><span>Reconeixement millorat (Whisper): cada frase la transcriu un model modern en aquest ordinador, i només compta el que has dit de veritat. La primera vegada descarrega uns 65 MB.</span></label>
+    <p class="note" id="whisperState"></p>
     <div class="row2"><label for="lang">Idioma en què parles</label><select id="lang"><option value="es-ES">Castellà</option><option value="ca-ES">Català</option><option value="en-US">Anglès</option></select></div>
     <div class="bar"><button class="b" id="micTest" type="button" title="Per provar les ordres de veu sense entrar en partida">Provar el micro</button><button class="b" id="test" type="button">Provar so</button></div>
     <p class="note">El micròfon s'activa sol quan comença la partida. "Provar el micro" serveix per provar les ordres sense entrar en partida.</p>
@@ -1991,6 +1993,16 @@ function mirrorPush(){
   fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
 }
 if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush, 1000); setInterval(() => { if (!$("#viewA").hidden && mobOn) mobRefresh(); }, 5000); }
+// ---------- Whisper (better recognition) ----------
+async function whisperRefresh(q){
+  let st = null; try { st = await (await fetch("/api/whisper" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
+  const cb = $("#cWhisper"), el = $("#whisperState"); if (!cb || !el) return;
+  if (!st.supported) { cb.closest("label").hidden = true; el.hidden = true; return; }
+  cb.checked = !!st.on;
+  el.textContent = !st.on ? "Desactivat: només el reconeixedor de Windows." : ({ready: "Whisper llest.", downloading: "Descarregant Whisper…", starting: "Engegant Whisper…", off: "S'engegarà amb el micro.", error: "Whisper no ha pogut engegar: " + (st.error || "") + ". Mentrestant, funciona com abans."})[st.state] || "";
+}
+$("#cWhisper")?.addEventListener("change", e => whisperRefresh(`?on=${e.target.checked ? 1 : 0}`));
+if (location.protocol.startsWith("http")) { whisperRefresh(); setInterval(() => { if ($("#whisperState")?.offsetParent) whisperRefresh(); }, 3000); }
 // ---------- the overlay above the game ----------
 let ovOn = false;
 async function ovRefresh(q){
@@ -2399,7 +2411,7 @@ async function startNative(){
     voiceSince = st.lines.length ? st.lines[st.lines.length - 1].seq : voiceSince;
     if (!st.supported) return fallbackWeb("aquest sistema no té veu de Windows");
     const champs = [...new Set([...Array(NROWS).keys()].flatMap(i => { const n = $(`#name${i}`).value.trim(); return n ? [CHAMPS.find(c => norm(c) === norm(n)) || n, rowEnglish(i)] : []; }).filter(Boolean))];
-    const r = await (await fetch("/api/voice/start", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({champs, lanes: !game})})).json();
+    const r = await (await fetch("/api/voice/start", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({champs, lanes: !game, lang: $("#lang").value})})).json();
     if (r.error) return fallbackWeb(r.error);
   } catch (e) { return fallbackWeb("no hi ha connexió amb el programa"); }
   $("#status").textContent = "Engegant el micro de Windows…"; $("#status").className = "note";
@@ -2422,6 +2434,17 @@ async function pollNative(){
   for (const l of st.lines) {
     voiceSince = Math.max(voiceSince, l.seq);
     if (l.kind === "heard") { $("#heard").textContent = l.text; handle(l.text); }
+    else if (l.kind === "heardw") {
+      // Whisper wrote out what was really said: that's what counts. Only when Whisper's text isn't a command and
+      // Windows was very sure of its own (a fast "flash Ahri" Whisper got wrong), Windows' version is tried.
+      let w = {}; try { w = JSON.parse(l.text); } catch (e) {}
+      if (w.w) $("#heard").textContent = w.w;
+      // commands are short; a long sentence is talk (unless it starts by calling the coach)
+      const nw = w.w ? norm(w.w).split(" ").length : 0, toCoach = /^(oye |escolta |hey )?(coach|koch|couch|cauch|kouch|entrenador)\b/.test(norm(w.w || ""));
+      if (nw > 7 && !toCoach) { plog(`Veu: "${w.w}" és una conversa, no una ordre`); continue; }
+      const acted = w.w ? handle(w.w, true) : false;
+      if (!acted && w.g && w.c >= 0.8) { plog(`Veu: Whisper "${w.w || ""}" no és cap ordre; Windows n'estava segur: "${w.g}"`); handle(w.g, true); }
+    }
     else if (l.kind === "ready") { $("#status").textContent = `Micro de Windows escoltant (${l.text}). Digues per exemple "flash Ahri".`; $("#status").className = "note"; }
     else if (l.kind === "error") return fallbackWeb(l.text === "no_recognizer" ? "Windows no té cap reconeixedor de veu instal·lat" : l.text);
     else if (l.kind === "stopped" && listening && engineNow === "win") return fallbackWeb("el reconeixedor s'ha aturat");

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 	"unicode/utf16"
 )
 
@@ -88,6 +89,17 @@ try {
   try { $eng.EndSilenceTimeoutAmbiguous = [TimeSpan]::FromMilliseconds(700) } catch {}
   try { $eng.BabbleTimeout = [TimeSpan]::Zero } catch {}
   try { $eng.InitialSilenceTimeout = [TimeSpan]::Zero } catch {}
+  # the phrase's audio to a temporary .wav, for Whisper to write out what was really said
+  function Clip($r, $text, $conf, $lv, $kind) {
+    try {
+      if (-not $r.Audio -or $r.Audio.Duration.TotalSeconds -gt 6 -or $r.Audio.Duration.TotalSeconds -lt 0.3) { return $false }
+      $p = Join-Path $env:TEMP ('riftmate-' + [guid]::NewGuid().ToString('N') + '.wav')
+      $fs = [System.IO.File]::Create($p); $r.Audio.WriteToWaveStream($fs); $fs.Close()
+      $t = [string][char]9
+      [Console]::Out.WriteLine('CLIP ' + $p + $t + $text + $t + [math]::Round($conf, 2) + $t + $lv + $t + $kind)
+      return $true
+    } catch { return $false }
+  }
   function Judge($r) {
     # the wake word is a single short word the Spanish recognizer scores low: accept it from 0.3
     $thr = 0.6; $gn = ''; if ($r.Grammar) { $gn = $r.Grammar.Name }
@@ -98,6 +110,10 @@ try {
     # a champion of this game: the page still ignores a spell that champion doesn't carry
     elseif ($gn -like 'partida*') { $thr = 0.5 }
     $lv = Lvl $r
+    if ($d.clips) {
+      $k = 'LOW'; if ($r.Confidence -ge $thr) { $k = 'HEARD' }
+      if (Clip $r $r.Text $r.Confidence $lv $k) { return }
+    }
     if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text + ' |' + [math]::Round($r.Confidence, 2) + ' |' + $lv) }
     else { [Console]::Out.WriteLine('LOW ' + [math]::Round($r.Confidence, 2) + ' ' + $r.Text + ' (' + $lv + ' dB)') }
   }
@@ -121,7 +137,10 @@ try {
       if ($e.SourceIdentifier -eq 'vrej') {
         # nothing matched well enough: the best guess goes to the log, to see what was almost understood
         $a = $null; if ($r.Alternates -and $r.Alternates.Count -gt 0) { $a = $r.Alternates[0] }
-        if ($a -and $a.Text -and $a.Confidence -ge 0.4) { [Console]::Out.WriteLine('LOW ' + [math]::Round($a.Confidence, 2) + ' ' + $a.Text + ' (rebutjat)') }
+        if ($a -and $a.Text -and $a.Confidence -ge 0.4) {
+          if ($d.clips -and (Clip $r $a.Text $a.Confidence (Lvl $r) 'REJ')) { continue }
+          [Console]::Out.WriteLine('LOW ' + [math]::Round($a.Confidence, 2) + ' ' + $a.Text + ' (rebutjat)')
+        }
         continue
       }
       Judge $r
@@ -149,6 +168,9 @@ func voiceStart(champs []string, lanes bool) error {
 	}
 	gd := voiceGrammar(champs)
 	gd.LanesToo = lanes
+	gd.Clips = whisperOn()
+	whisperSetGame(champs)
+	whisperEnsure()
 	file := filepath.Join(filepath.Dir(dataDir()), "veu-gramatica.json")
 	js, _ := json.Marshal(gd)
 	if err := os.WriteFile(file, js, 0o644); err != nil {
@@ -190,7 +212,7 @@ func voiceStart(champs []string, lanes bool) error {
 					lv = parts[2]
 				}
 				if db, err := strconv.ParseFloat(lv, 64); err == nil {
-					ok, ref := voiceLoudEnough(db)
+					ok, ref := voiceLoudEnough(db, true)
 					if !ok {
 						logf("Veu de Windows: \"%s\" (%s, %.0f dB) ignorat: massa fluix, no sembla la teva veu (tu: uns %.0f dB)", text, conf, db, ref)
 						continue
@@ -199,6 +221,8 @@ func voiceStart(champs []string, lanes bool) error {
 				}
 				voicePush("heard", text)
 				logf("Veu de Windows: \"%s\" (%s%s)", text, conf, lv)
+			case strings.HasPrefix(line, "CLIP "):
+				voiceClip(line[5:])
 			case strings.HasPrefix(line, "READY "):
 				voicePush("ready", line[6:])
 				logf("Veu de Windows: llest (idioma %s)", line[6:])
@@ -234,3 +258,34 @@ func voiceStop() {
 }
 
 var _ = errors.New
+
+// voiceClip: a phrase with its audio. Too quiet to be you: dropped. Whisper ready: it decides what was said.
+// Otherwise, as before: what Windows understood, if it was sure enough.
+func voiceClip(line string) {
+	f := strings.Split(line, "\t")
+	if len(f) < 5 {
+		return
+	}
+	path, text, kind := f[0], f[1], f[4]
+	conf, _ := strconv.ParseFloat(f[2], 64)
+	lvs := ""
+	if db, err := strconv.ParseFloat(f[3], 64); err == nil {
+		ok, ref := voiceLoudEnough(db, kind == "HEARD" && conf >= 0.65)
+		if !ok {
+			os.Remove(path)
+			logf("Veu de Windows: \"%s\" (%.2f, %.0f dB) ignorat: massa fluix, no sembla la teva veu (tu: uns %.0f dB)", text, conf, db, ref)
+			return
+		}
+		lvs = fmt.Sprintf(", %.0f dB", db)
+	}
+	if whisperQueue(wClip{Path: path, Grammar: text, Kind: kind, Conf: conf, At: time.Now()}) {
+		return
+	}
+	os.Remove(path)
+	if kind == "HEARD" {
+		voicePush("heard", text)
+		logf("Veu de Windows: \"%s\" (%.2f%s)", text, conf, lvs)
+	} else {
+		logf("Veu de Windows: LOW %.2f %s (%s%s)", conf, text, kind, lvs)
+	}
+}

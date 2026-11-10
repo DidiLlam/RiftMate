@@ -1,0 +1,333 @@
+package main
+
+import (
+	"archive/zip"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+)
+
+// Whisper: a modern speech recogniser (OpenAI's open model, run by whisper.cpp) on this PC, free and offline.
+// Windows' recogniser only knows the command phrases, so whatever it hears it squeezes into the nearest one
+// ("kouch", "Shen barrier" out of a chat with your duo). Now each phrase the microphone picks up is also written
+// out by Whisper, and only what Whisper heard counts. The first time it downloads ~65 MB (program + model).
+
+const (
+	whisperVer   = "v1.8.2"
+	whisperZip   = "https://github.com/ggml-org/whisper.cpp/releases/download/" + whisperVer + "/whisper-bin-x64.zip"
+	whisperModel = "ggml-base-q5_1.bin"
+	whisperURL   = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/" + whisperModel
+	whisperPort  = 8767
+)
+
+var (
+	wMu      sync.Mutex
+	wState   = "off" // off, downloading, starting, ready, error
+	wErr     string
+	wBusy    bool
+	wQueue   = make(chan wClip, 4)
+	wStarted bool
+	wHTTP    = &http.Client{Timeout: 10 * time.Minute}
+)
+
+// one phrase the Windows recogniser caught, with its audio
+type wClip struct {
+	Path, Grammar, Kind string
+	Conf                float64
+	At                  time.Time
+}
+
+func whisperDir() string { return filepath.Join(filepath.Dir(dataDir()), "whisper") }
+
+func whisperStatus() (string, string) {
+	wMu.Lock()
+	defer wMu.Unlock()
+	return wState, wErr
+}
+
+func whisperSet(st, e string) {
+	wMu.Lock()
+	wState, wErr = st, e
+	wMu.Unlock()
+}
+
+// whisperOn: the setting (on unless you turned it off)
+func whisperOn() bool {
+	b, err := os.ReadFile(profileFile("whisper.json"))
+	if err != nil {
+		return true
+	}
+	var c struct{ Off bool }
+	json.Unmarshal(b, &c)
+	return !c.Off
+}
+
+// whisperEnsure downloads (once) and starts the local server, in the background
+func whisperEnsure() {
+	if !whisperOn() || !whisperSupported {
+		return
+	}
+	wMu.Lock()
+	if wBusy || wState == "ready" {
+		wMu.Unlock()
+		return
+	}
+	wBusy = true
+	wMu.Unlock()
+	go func() {
+		defer func() { wMu.Lock(); wBusy = false; wMu.Unlock() }()
+		if err := whisperDownload(); err != nil {
+			whisperSet("error", err.Error())
+			logf("Whisper: no l'he pogut descarregar: %v", err)
+			return
+		}
+		whisperSet("starting", "")
+		if err := whisperServe(); err != nil {
+			whisperSet("error", err.Error())
+			logf("Whisper: no s'ha pogut engegar: %v", err)
+			return
+		}
+		whisperSet("ready", "")
+		logf("Whisper: llest")
+		wMu.Lock()
+		if !wStarted {
+			wStarted = true
+			go whisperWorker()
+		}
+		wMu.Unlock()
+	}()
+}
+
+func fileSize(p string) int64 {
+	if st, err := os.Stat(p); err == nil {
+		return st.Size()
+	}
+	return -1
+}
+
+func whisperDownload() error {
+	dir := whisperDir()
+	os.MkdirAll(dir, 0o755)
+	need := []string{"whisper-server.exe", "whisper.dll", "ggml.dll", "ggml-base.dll", "ggml-cpu.dll"}
+	have := true
+	for _, n := range need {
+		if fileSize(filepath.Join(dir, n)) <= 0 {
+			have = false
+		}
+	}
+	if !have {
+		whisperSet("downloading", "programa")
+		logf("Whisper: descarregant el programa (%s)", whisperVer)
+		b, err := wGet(whisperZip, 50<<20)
+		if err != nil {
+			return err
+		}
+		zr, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+		if err != nil {
+			return err
+		}
+		for _, f := range zr.File {
+			base := filepath.Base(f.Name)
+			ok := false
+			for _, n := range need {
+				ok = ok || strings.EqualFold(base, n)
+			}
+			if !ok || f.FileInfo().IsDir() {
+				continue
+			}
+			rc, err := f.Open()
+			if err != nil {
+				return err
+			}
+			data, err := io.ReadAll(io.LimitReader(rc, 20<<20))
+			rc.Close()
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(filepath.Join(dir, base), data, 0o755); err != nil {
+				return err
+			}
+		}
+		for _, n := range need {
+			if fileSize(filepath.Join(dir, n)) <= 0 {
+				return fmt.Errorf("al paquet de whisper.cpp no hi ha %s", n)
+			}
+		}
+	}
+	mp := filepath.Join(dir, whisperModel)
+	if fileSize(mp) < 30<<20 {
+		whisperSet("downloading", "model")
+		logf("Whisper: descarregant el model (%s, uns 60 MB)", whisperModel)
+		r, err := wHTTP.Get(whisperURL)
+		if err != nil {
+			return err
+		}
+		defer r.Body.Close()
+		if r.StatusCode != 200 {
+			return fmt.Errorf("model: HTTP %d", r.StatusCode)
+		}
+		tmp := mp + ".part"
+		f, err := os.Create(tmp)
+		if err != nil {
+			return err
+		}
+		n, err := io.Copy(f, io.LimitReader(r.Body, 400<<20))
+		f.Close()
+		if err != nil || n < 30<<20 {
+			os.Remove(tmp)
+			return fmt.Errorf("model incomplet (%d bytes) %v", n, err)
+		}
+		if err := os.Rename(tmp, mp); err != nil {
+			return err
+		}
+		logf("Whisper: model descarregat (%d MB)", n>>20)
+	}
+	return nil
+}
+
+func wGet(u string, max int64) ([]byte, error) {
+	r, err := wHTTP.Get(u)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	if r.StatusCode != 200 {
+		return nil, fmt.Errorf("%s: HTTP %d", u, r.StatusCode)
+	}
+	return io.ReadAll(io.LimitReader(r.Body, max))
+}
+
+// whisperQueue: a phrase to write out. Full queue (a burst of noise): the oldest waits, this one is dropped.
+func whisperQueue(c wClip) bool {
+	if st, _ := whisperStatus(); st != "ready" {
+		return false
+	}
+	select {
+	case wQueue <- c:
+		return true
+	default:
+		os.Remove(c.Path)
+		return true
+	}
+}
+
+func whisperWorker() {
+	for c := range wQueue {
+		text, dur, err := whisperTranscribe(c.Path)
+		os.Remove(c.Path)
+		if time.Since(c.At) > 8*time.Second { // too late to be useful
+			continue
+		}
+		if err != nil {
+			logf("Whisper: error %v; faig servir el que ha entès Windows", err)
+			if c.Kind == "HEARD" {
+				voicePush("heard", c.Grammar)
+			}
+			continue
+		}
+		logf("Veu (Whisper, %.1f s): \"%s\"  [Windows: \"%s\" %.2f]", dur.Seconds(), text, c.Grammar, c.Conf)
+		b, _ := json.Marshal(map[string]any{"w": text, "g": c.Grammar, "c": c.Conf})
+		voicePush("heardw", string(b))
+	}
+}
+
+var (
+	wPromptMu sync.Mutex
+	wPrompt   string
+	wLang     = "es"
+)
+
+// whisperSetGame: the champions of this game, so Whisper writes their names right
+func whisperSetGame(champs []string) {
+	wPromptMu.Lock()
+	defer wPromptMu.Unlock()
+	names := strings.Join(champs, ", ")
+	wPrompt = "Flash de Ahri. Ignite de Garen. Ulti de Jhin. Zhonya de Kindred. Barrera, heal, exhaust, teleport, ghost, cleanse, smite. Coach. " + names + "."
+}
+
+func whisperSetLang(l string) {
+	wPromptMu.Lock()
+	defer wPromptMu.Unlock()
+	if l = strings.ToLower(strings.SplitN(l, "-", 2)[0]); l == "es" || l == "ca" || l == "en" {
+		wLang = l
+	}
+}
+
+func whisperTranscribe(path string) (string, time.Duration, error) {
+	t0 := time.Now()
+	wav, err := os.ReadFile(path)
+	if err != nil {
+		return "", 0, err
+	}
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	fw, _ := mw.CreateFormFile("file", "clip.wav")
+	fw.Write(wav)
+	wPromptMu.Lock()
+	mw.WriteField("prompt", wPrompt)
+	mw.WriteField("language", wLang)
+	wPromptMu.Unlock()
+	mw.WriteField("temperature", "0.0")
+	mw.WriteField("response_format", "json")
+	mw.Close()
+	req, _ := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d/inference", whisperPort), &body)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	cl := &http.Client{Timeout: 8 * time.Second}
+	r, err := cl.Do(req)
+	if err != nil {
+		return "", 0, err
+	}
+	defer r.Body.Close()
+	var out struct {
+		Text  string `json:"text"`
+		Error string `json:"error"`
+	}
+	b, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err := json.Unmarshal(b, &out); err != nil {
+		return "", 0, fmt.Errorf("resposta estranya: %.80s", b)
+	}
+	if out.Error != "" {
+		return "", 0, fmt.Errorf("%s", out.Error)
+	}
+	return whisperClean(out.Text), time.Since(t0), nil
+}
+
+// whisperClean: one line, without what Whisper writes for silence or noise
+func whisperClean(s string) string {
+	s = strings.Join(strings.Fields(s), " ")
+	low := strings.ToLower(s)
+	for _, junk := range []string{"[blank_audio]", "[música]", "[music]", "(música)", "[ruido]", "[silencio]", "subtítulos", "gracias por ver", "suscríbete"} {
+		if strings.Contains(low, junk) {
+			return ""
+		}
+	}
+	return strings.Trim(s, " .")
+}
+
+func whisperHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodPost {
+			on := req.URL.Query().Get("on") == "1"
+			b, _ := json.Marshal(map[string]bool{"Off": !on})
+			os.WriteFile(profileFile("whisper.json"), b, 0o644)
+			logf("Whisper: %s", map[bool]string{true: "activat", false: "desactivat"}[on])
+			if on {
+				whisperEnsure()
+			} else {
+				whisperStop()
+				whisperSet("off", "")
+			}
+		}
+		st, e := whisperStatus()
+		b, _ := json.Marshal(map[string]any{"on": whisperOn(), "supported": whisperSupported, "state": st, "error": e})
+		send(w, 200, "application/json", b)
+	}
+}
