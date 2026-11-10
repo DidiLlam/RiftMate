@@ -24,8 +24,16 @@ import (
 
 type playCfg struct {
 	On      bool   `json:"on"`
-	Encoder string `json:"encoder,omitempty"` // the one that worked on this PC
+	Encoder string `json:"encoder,omitempty"`  // the one that worked on this PC
 	KeepLow bool   `json:"keep_low,omitempty"` // don't delete the ones under 60 after 3 hours
+}
+
+// deathClip: the seconds before one of your deaths
+type deathClip struct {
+	T          float64
+	Start, End time.Time
+	Stamp      string
+	cut        bool
 }
 
 type Play struct {
@@ -57,6 +65,7 @@ var (
 	plCfg     playCfg
 	plSeen    = map[int]bool{}
 	plCur     []*Play // plays of the game being played (not saved yet, or saved)
+	plDeaths  []*deathClip
 	plStamp   string
 	plMe      Player
 	plNames   map[string]Player
@@ -103,7 +112,7 @@ func playsGameStart(stamp string, me Player, all []Player) {
 		}
 	}
 	plMu.Lock()
-	plStamp, plMe, plNames, plCur, plSeen = stamp, me, names, nil, map[int]bool{}
+	plStamp, plMe, plNames, plCur, plSeen, plDeaths = stamp, me, names, nil, map[int]bool{}, nil
 	plMu.Unlock()
 	go captureStart()
 }
@@ -128,6 +137,11 @@ func playsSee(events []Event, gameTime float64, hp float64) {
 		var p *Play
 		switch ev.EventName {
 		case "ChampionKill":
+			if isMe(ev.VictimName) { // your death: a short clip for the report's "why you died" (kept 30 minutes)
+				d := &deathClip{T: ev.EventTime, Start: wall(ev.EventTime - 12), End: wall(ev.EventTime + 3), Stamp: plStamp}
+				plDeaths = append(plDeaths, d)
+				continue
+			}
 			if !isMe(ev.KillerName) {
 				continue
 			}
@@ -166,6 +180,21 @@ func playsSee(events []Event, gameTime float64, hp float64) {
 		p.N, p.Stamp = len(plCur)+1, plStamp
 		plCur = append(plCur, p)
 		logf("Jugades: %s al minut %d:%02d", playDesc(p), int(p.T)/60, int(p.T)%60)
+	}
+	for _, d := range plDeaths {
+		if !d.cut && now.After(d.End.Add(2*time.Second)) {
+			d.cut = true
+			go func(d *deathClip) {
+				dir := filepath.Join(playsRoot(), d.Stamp)
+				os.MkdirAll(dir, 0o755)
+				name := fmt.Sprintf("mort_%d.mp4", int(d.T))
+				if err := captureCut(d.Start, d.End, filepath.Join(dir, name)); err != nil {
+					logf("Jugades: no s'ha pogut tallar el clip de la mort del minut %d:%02d: %v", int(d.T)/60, int(d.T)%60, err)
+				} else {
+					logf("Jugades: clip de la mort del minut %d:%02d guardat", int(d.T)/60, int(d.T)%60)
+				}
+			}(d)
+		}
 	}
 	// plays whose end has passed: cut their clip
 	for _, p := range plCur {
@@ -234,6 +263,16 @@ func playsGameEnd(date string, keep bool) {
 	plStamp, plCur = "", nil
 	plMu.Unlock()
 	captureStop()
+	// the death clips count their 30 minutes from the end of the game (once the last one is cut)
+	if stamp != "" {
+		go func() {
+			time.Sleep(8 * time.Second)
+			fs, _ := filepath.Glob(filepath.Join(playsRoot(), stamp, "mort_*.mp4"))
+			for _, f := range fs {
+				os.Chtimes(f, time.Now(), time.Now())
+			}
+		}()
+	}
 	if stamp == "" || len(plays) == 0 {
 		return
 	}
@@ -465,13 +504,29 @@ func playsReadLocked() []Play {
 	return all
 }
 
-var playFileRe = regexp.MustCompile(`^jugada_\d+\.mp4$`)
+var playFileRe = regexp.MustCompile(`^(jugada|mort)_\d+\.mp4$`)
 var playStampRe = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}$`)
 
 // /api/plays: GET ?stamp= (that game's) or all, best first; POST ?on=0/1. /api/playfile?g=&f= the video.
 func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		q := req.URL.Query()
+		if strings.HasSuffix(req.URL.Path, "/deathclips") { // the death clips of a game still on disk: [{t, file}]
+			g := q.Get("g")
+			out := []map[string]any{}
+			if playStampRe.MatchString(g) {
+				fs, _ := filepath.Glob(filepath.Join(playsRoot(), g, "mort_*.mp4"))
+				for _, f := range fs {
+					var t int
+					if _, err := fmt.Sscanf(filepath.Base(f), "mort_%d.mp4", &t); err == nil {
+						out = append(out, map[string]any{"t": t, "file": filepath.Base(f)})
+					}
+				}
+			}
+			b, _ := json.Marshal(out)
+			send(w, 200, "application/json", b)
+			return
+		}
 		if strings.HasSuffix(req.URL.Path, "/playfile") {
 			g, f := q.Get("g"), q.Get("f")
 			if !playStampRe.MatchString(g) || !playFileRe.MatchString(f) {
@@ -626,8 +681,32 @@ func playsDelete(id string, all bool) int {
 	return n
 }
 
+// deathsPrune: the death clips are for looking at right after the game: they go after 30 minutes
+func deathsPrune() {
+	fs, _ := filepath.Glob(filepath.Join(playsRoot(), "*", "mort_*.mp4"))
+	n := 0
+	plMu.Lock()
+	playing := plStamp
+	plMu.Unlock()
+	for _, f := range fs {
+		if playing != "" && filepath.Base(filepath.Dir(f)) == playing {
+			continue // the game being played
+		}
+		if st, err := os.Stat(f); err == nil && time.Since(st.ModTime()) > 30*time.Minute {
+			if os.Remove(f) == nil {
+				n++
+			}
+			os.Remove(filepath.Dir(f)) // the game's folder, if it's empty now
+		}
+	}
+	if n > 0 {
+		logf("Jugades: esborrats %d clips de morts (de fa més de 30 minuts)", n)
+	}
+}
+
 // playsPrune: plays under 60 points go 3 hours after they were recorded (unless you said to keep them)
 func playsPrune() {
+	deathsPrune()
 	if playsLoadCfg().KeepLow {
 		return
 	}
@@ -658,6 +737,6 @@ func playsPrune() {
 func playsPruneLoop() {
 	for {
 		playsPrune()
-		time.Sleep(15 * time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }

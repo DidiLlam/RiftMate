@@ -327,6 +327,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 .advwrap>summary{cursor:pointer;font-weight:650}.advwrap[open]>summary{margin-bottom:10px}.advwrap>section.card{box-shadow:none;border:1px solid var(--line);margin:10px 0 0}
 #status:empty{display:none}
 .b.small{padding:3px 10px;font-size:.78rem;margin-top:4px}
+.dclip video,.vcd video{width:100%;max-width:560px;border-radius:8px;background:#000;margin-top:6px}
 .newslist{margin:6px 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:7px}
 .spi2{width:18px;height:18px;border-radius:4px;vertical-align:-4px}
 .t select{font-size:.75rem;font-weight:500;color:var(--muted)}
@@ -473,7 +474,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note">Els clics passen al joc. Per moure'l o clicar un encanteri, mantén <b>Ctrl</b>. Cal el LoL en "Sense vores".</p>
     <details><summary class="note">Més informació</summary><p class="note">Es queda on el deixes. Clicant un encanteri, la ulti o la Zhonya el marques o el cancel·les; amb la veu funciona igual. A la majoria d'ordinadors amb Windows 10/11 també surt en pantalla completa. No toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></details></section>
   <section class="card" data-g="partida" id="playsCard"><h2>Clips de les teves millors jugades <span class="pill">prova</span></h2>
-    <label class="ph-item" for="cPlays"><input type="checkbox" id="cPlays"><span>Gravar les jugades: quan mates algú, fas una doble o robes un objectiu, l'app en guarda un clip de pocs segons. Després de la partida la IA els puntua i a l'informe hi surt el teu top 3.</span></label>
+    <label class="ph-item" for="cPlays"><input type="checkbox" id="cPlays"><span>Gravar les jugades: quan mates algú, fas una doble o robes un objectiu, l'app en guarda un clip de pocs segons. Després de la partida la IA els puntua i a l'informe hi surt el teu top 3. També grava les teves morts, per veure-les a "Per què has mort" (s'esborren 30 minuts després de la partida).</span></label>
     <p class="note">Grava amb la targeta gràfica (NVIDIA, AMD o Intel), com Outplayed o Medal; el primer cop descarrega ffmpeg (uns 80 MB). Pot costar una mica d'FPS: compara-ho amb el comptador del joc. Necessita el LoL en "Sense vores". Porten només el so del joc (ni el Discord ni la veu del coach); també hi surt l'overlay.</p>
     <label class="ph-item" for="cPlaysLow"><input type="checkbox" id="cPlaysLow" checked><span>Esborrar sols, al cap de 3 hores, les de menys de 60 punts</span></label>
     <p class="note" id="playsState"></p></section>
@@ -2080,6 +2081,17 @@ function playItem(p, rank){
     <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b></div>
     <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}
     <div><button class="b small" type="button" data-pdel="${esc(p.stamp)}:${p.n}">Esborrar</button></div></div></div>`;
+}
+// the videos of your deaths (recorded while you played; kept 30 minutes after the game) under each death
+async function fillDeathClips(r){
+  const slots = document.querySelectorAll("#report .dclip"); if (!slots.length) return;
+  const g = playStamp(r.date);
+  let list = []; try { list = await (await fetch(`/api/deathclips?g=${encodeURIComponent(g)}`, {cache: "no-store"})).json(); } catch (e) { return; }
+  if (!list?.length) return;
+  let n = 0;
+  slots.forEach(el => { const t = +el.dataset.t, c = list.find(x => Math.abs(x.t - t) <= 6); if (!c) return; n++;
+    el.innerHTML = `<details open><summary>Veure-ho</summary><video controls preload="metadata" src="/api/playfile?g=${encodeURIComponent(g)}&f=${encodeURIComponent(c.file)}"></video></details>`; });
+  if (n && $("#dclipNote")) $("#dclipNote").textContent = " Els vídeos de les morts s'esborren 30 minuts després de la partida.";
 }
 // the report's top 3, and the ranking of all your plays
 async function renderPlays(r){
@@ -6459,8 +6471,8 @@ function videoCard(r){
   if (v.clean) return `<section class="card"><h2>Partida sense morts</h2><p class="ailes"><b>${esc(v.summary || "")}</b></p>${v.improve ? `<p><b>Per millorar:</b> ${esc(v.improve)}</p>` : ""}<p class="note">Llegit de la cronologia de Riot per ${esc(v.model || "la IA")}.</p></section>`;
   if (!v.deaths?.length) return "";
   return `<section class="card"><h2>Per què has mort</h2>${v.summary ? `<p class="ailes"><b>${esc(v.summary)}</b></p>` : ""}
-    ${v.deaths.map(d => `<div class="vcd"><p><b>${mm(d.t)}</b> · ${esc(d.kind || "")}${d.by?.length ? ` · ${esc(d.by.join(", "))}` : ""}${watchBtn(r, d.t)}</p>${d.error ? `<p>${esc(d.error)}</p>` : ""}${d.fix ? `<p class="good">${esc(d.fix)}</p>` : ""}${d.clip ? `<details><summary>Veure el clip</summary><video controls preload="none" src="/api/clip?g=${encodeURIComponent(g)}&f=${encodeURIComponent(d.clip)}"></video></details>` : ""}</div>`).join("")}
-    <p class="note">${v.deaths.some(d => d.clip) ? "Clips de la repetició" : "Cronologia de Riot"}, explicada per ${esc(v.model || "la IA")}. El botó ▶ obre aquell moment al replay, si el vols veure.</p></section>`;
+    ${v.deaths.map(d => `<div class="vcd"><p><b>${mm(d.t)}</b> · ${esc(d.kind || "")}${d.by?.length ? ` · ${esc(d.by.join(", "))}` : ""}${watchBtn(r, d.t)}</p>${d.error ? `<p>${esc(d.error)}</p>` : ""}${d.fix ? `<p class="good">${esc(d.fix)}</p>` : ""}${d.clip ? `<details><summary>Veure el clip</summary><video controls preload="none" src="/api/clip?g=${encodeURIComponent(g)}&f=${encodeURIComponent(d.clip)}"></video></details>` : `<div class="dclip" data-t="${Math.round(d.t)}"></div>`}</div>`).join("")}
+    <p class="note">${v.deaths.some(d => d.clip) ? "Clips de la repetició" : "Cronologia de Riot"}, explicada per ${esc(v.model || "la IA")}. El botó ▶ obre aquell moment al replay, si el vols veure.<span id="dclipNote"></span></p></section>`;
 }
 let vcBusyDate = "", vcText = "", vcWasBusy = false, vcSpoken = store.get("vcSpoken", "");
 async function vcPoll(post){
@@ -6548,7 +6560,7 @@ function renderReport(r){
   $("#boardBtn")?.addEventListener("click", () => requestMap(r.date));
   $("#aiRevBtn")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Pensant…"; aiReview(r, true); });
   if (r.map && !r.map.board && riotCfg?.has_key && !boardTried.has(r.date)) { boardTried.add(r.date); requestMap(r.date); }
-  renderPlays(r);
+  renderPlays(r); fillDeathClips(r);
   loadRunes(); fillRunes();
 }
 function avg(list, f){ const v = list.map(f).filter(x => x != null && !isNaN(x)); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(1) : "—"; }
