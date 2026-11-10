@@ -1,7 +1,7 @@
 {
- "version": "2.1.13",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.13.exe",
- "size": 9932288,
- "sha256": "55fadbe1e314a285d670ec004b1fb2326f53a4a6dc1ba3fe6b4c2dc8fe86a17a",
- "notes": "- Overlay: el compte enrere ja no salta endavant i enrere; ara compta sol a partir de l'hora exacta en què torna cada encanteri, i el rellotge de la partida també"
+ "version": "2.1.14",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.14.exe",
+ "size": 9932800,
+ "sha256": "f36731698daf6aa3c1386fd68e87c4c3a4649117a2d236fc77e31dc9f87f97db",
+ "notes": "- Overlay: el rellotge de la partida ja no tremola ni torna enrere (s'ignoren les petites diferències de cada actualització)"
 }
