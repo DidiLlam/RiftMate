@@ -1,7 +1,7 @@
 {
- "version": "2.1.16",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.16.exe",
+ "version": "2.1.17",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.17.exe",
  "size": 9932800,
- "sha256": "e31c6b8de8d1c2cf6bb61bf4edb13c1043a86ac2beb8b0624a2babf73a983eaf",
- "notes": "- Temporitzador: fora la barra de sota (estat del micro, Anul·lar tots, Copiar per al xat, He sentit i el text d'ajuda); els avisos curts de la veu continuen sortint quan n'hi ha"
+ "sha256": "afba30ab9a5aecefcb5cca4c91e4885a0bd5eb4806ff7f7daf57ce82a5315b4b",
+ "notes": "- La imatge de la pantalla de benvinguda ara surt sempre a dalt, sobre les pestanyes"
 }
