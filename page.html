@@ -3792,7 +3792,16 @@ function renderUpdate(msg){
 async function applyUpdate(){
   if (game) return;
   renderUpdate("Descarregant la versió nova…");
-  let r; try { r = await (await fetch("/api/update/apply", {method: "POST"})).json(); } catch (e) { r = {error: String(e)}; }
+  const want = updInfo?.latest;
+  let r; try { r = await (await fetch("/api/update/apply", {method: "POST"})).json(); } catch (e) { r = {error: String(e), lost: true}; }
+  if (r.lost) {
+    // the connection dropped: usually the app was already restarting with the new version (it updates itself)
+    renderUpdate("Comprovant si ja s'ha actualitzat…");
+    for (let k = 0; k < 15; k++) {
+      await new Promise(ok => setTimeout(ok, 2000));
+      try { const u = await (await fetch("/api/update", {cache: "no-store"})).json(); if (u.current && (!want || u.current === want)) { renderUpdate(`Ja tens la ${u.current}.`); setTimeout(() => location.reload(), 1500); return; } } catch (e) {}
+    }
+  }
   if (r.error) { renderUpdate(`No s'ha pogut actualitzar: ${r.error}`); setTimeout(() => renderUpdate(), 8000); return; }
   window.__updating = true;
   renderUpdate("Instal·lada. Reiniciant RiftMate…");
