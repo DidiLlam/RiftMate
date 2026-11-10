@@ -1,7 +1,7 @@
 {
- "version": "2.0.86",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.86.exe",
- "size": 9801728,
- "sha256": "786314187005d396c1ce8ccd6c557a30b4f9474158b69e33aa98417da094affe",
- "notes": "- Veu: si tornes a dir només 'flash Darius' quan ja compta, es reinicia (l'ha tornat a tirar)\n- Veu: 'cancela flash Darius' l'anul·la\n- Veu: dins d'una frase ('és possible que el flash de Darius quan ha matat a top...') no compta mai, ni per marcar ni per reiniciar"
+ "version": "2.1.0",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.0.exe",
+ "size": 9817088,
+ "sha256": "40b2cd1c667dcc769554c0f5857dd351df5686c8ce48218e8339ce2c9b41f83c",
+ "notes": "- Versió 2.1: la veu amb Whisper, l'overlay, el duo i la selecció de campions, tot endreçat\n- Ajustos en quatre grups clars (Veu, Coach, En partida, Compte i app), amb l'overlay i el duo al principi\n- A l'informe: quants encanteris dels rivals has marcat de tots els que han fet servir\n- El registre guarda la velocitat de Whisper, el volum de cada frase i el consum de RiftMate per partida, per afinar-ho\n- Pantalla de novetats en actualitzar\n- Neteja: fora l'overlay antic de navegador"
 }
