@@ -328,8 +328,8 @@ func playsScore(ps []*Play) {
 	logf("Jugades: %s ha puntuat %d jugades", model, len(ans.Plays))
 }
 
-// playsAdd: into the index; only the clips worth keeping stay on disk (the 3 best of each of the last 10 games
-// and the 30 best of all), the rest are deleted
+// playsAdd: into the index; only the clips worth keeping stay on disk: those scored 80 or more, for good, and the 3
+// best of each of the last 10 games (so the report shows them); the rest are deleted
 func playsAdd(ps []*Play) {
 	plMu.Lock()
 	defer plMu.Unlock()
@@ -356,13 +356,8 @@ func playsAdd(ps []*Play) {
 			}
 		}
 	}
-	order := make([]int, len(all))
-	for i := range order {
-		order[i] = i
-	}
-	sort.Slice(order, func(a, b int) bool { return all[order[a]].Score > all[order[b]].Score })
-	for k, i := range order {
-		if k < 30 {
+	for i, p := range all { // 80 or more: kept for good
+		if p.Score >= 80 {
 			keep[i] = true
 		}
 	}

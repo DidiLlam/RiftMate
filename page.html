@@ -2085,7 +2085,7 @@ async function renderPlaysTab(){
   const champs = [...new Set((st.plays || []).map(p => p.champ).filter(Boolean))];
   const off = !st.on ? `<p class="note">Els clips estan desactivats. Activa'ls a Ajustos → En partida → "Clips de les teves millors jugades" <button class="b" type="button" data-goset>Anar-hi</button></p>` : "";
   el.innerHTML = `<section class="card"><h2>Rànquing de les teves jugades</h2>${off}
-    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB</span></div>
+    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · les de 80 o més es guarden per sempre</span></div>
     <div class="plays">${list.map((p, k) => playItem(p, k + 1)).join("") || `<p class="note">Cap jugada amb aquest filtre.</p>`}</div>`
     : (st.on ? `<p class="note">Encara no hi ha cap jugada. Quan facis una kill, una doble o robis un objectiu, sortirà aquí després de la partida.</p>` : "")}</section>`;
   const f = $("#playsF"); if (f) { f.value = playsFilter; f.addEventListener("change", () => { playsFilter = f.value; renderPlaysTab(); }); }
