@@ -7,9 +7,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -33,6 +35,14 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 try {
   Add-Type -AssemblyName System.Speech
+  # how loud each phrase was (the loudest 20 ms, in dB): you speak right into the microphone, your duo, Discord and
+  # the game reach it much quieter. The app learns your level and ignores what is clearly quieter.
+  $lvlOK = $false
+  try { Add-Type -TypeDefinition 'public static class RMLvl { public static double Peak(byte[] b) { double best = -120, acc = 0; int n = 0; for (int i = 0; i + 1 < b.Length; i += 2) { double v = (short)(b[i] | (b[i + 1] << 8)); acc += v * v; n++; if (n == 320) { double r = System.Math.Sqrt(acc / n) / 32768.0; double db = r > 0 ? 20 * System.Math.Log10(r) : -120; if (db > best) best = db; acc = 0; n = 0; } } return best; } }'; $lvlOK = $true } catch {}
+  function Lvl($r) {
+    if (-not $lvlOK -or -not $r.Audio) { return '' }
+    try { if ($r.Audio.Format.BitsPerSample -ne 16) { return '' }; $ms = New-Object System.IO.MemoryStream; $r.Audio.WriteToAudioStream($ms); return [string][math]::Round([RMLvl]::Peak($ms.ToArray()), 1) } catch { return '' }
+  }
   $all = [System.Speech.Recognition.SpeechRecognitionEngine]::InstalledRecognizers()
   if (-not $all -or $all.Count -eq 0) { [Console]::Out.WriteLine('ERROR no_recognizer'); exit 2 }
   [Console]::Out.WriteLine('INFO recognizers: ' + (($all | ForEach-Object { $_.Culture.Name }) -join ', '))
@@ -87,8 +97,9 @@ try {
     elseif ($r.Text -match '\b(top|jungla|jungle|mid|adc|bot|suport|support|soporte)\b' -and $gn -ne 'linies') { $thr = 0.62 }
     # a champion of this game: the page still ignores a spell that champion doesn't carry
     elseif ($gn -like 'partida*') { $thr = 0.5 }
-    if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text + ' |' + [math]::Round($r.Confidence, 2)) }
-    else { [Console]::Out.WriteLine('LOW ' + [math]::Round($r.Confidence, 2) + ' ' + $r.Text) }
+    $lv = Lvl $r
+    if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text + ' |' + [math]::Round($r.Confidence, 2) + ' |' + $lv) }
+    else { [Console]::Out.WriteLine('LOW ' + [math]::Round($r.Confidence, 2) + ' ' + $r.Text + ' (' + $lv + ' dB)') }
   }
   [Console]::Out.WriteLine('READY ' + $cul.Name)
   # continuous listening: the microphone is never closed between phrases, so the start of "flash Darius"
@@ -170,16 +181,24 @@ func voiceStart(champs []string, lanes bool) error {
 			line := strings.TrimSpace(sc.Text())
 			switch {
 			case strings.HasPrefix(line, "HEARD "):
-				text, conf := line[6:], ""
-				if i := strings.LastIndex(text, " |"); i >= 0 {
-					text, conf = text[:i], text[i+2:]
+				parts := strings.Split(line[6:], " |")
+				text, conf, lv := parts[0], "", ""
+				if len(parts) > 1 {
+					conf = parts[1]
 				}
-				if !pttAllows() {
-					logf("Veu de Windows: \"%s\" (%s) ignorat: no premies la tecla per parlar", text, conf)
-					continue
+				if len(parts) > 2 {
+					lv = parts[2]
+				}
+				if db, err := strconv.ParseFloat(lv, 64); err == nil {
+					ok, ref := voiceLoudEnough(db)
+					if !ok {
+						logf("Veu de Windows: \"%s\" (%s, %.0f dB) ignorat: massa fluix, no sembla la teva veu (tu: uns %.0f dB)", text, conf, db, ref)
+						continue
+					}
+					lv = fmt.Sprintf(", %.0f dB", db)
 				}
 				voicePush("heard", text)
-				logf("Veu de Windows: \"%s\" (%s)", text, conf)
+				logf("Veu de Windows: \"%s\" (%s%s)", text, conf, lv)
 			case strings.HasPrefix(line, "READY "):
 				voicePush("ready", line[6:])
 				logf("Veu de Windows: llest (idioma %s)", line[6:])

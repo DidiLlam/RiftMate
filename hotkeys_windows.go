@@ -5,7 +5,6 @@ package main
 import (
 	"runtime"
 	"syscall"
-	"time"
 	"unsafe"
 )
 
@@ -13,7 +12,6 @@ import (
 // enemy top, jungle, mid, ADC and support; Ctrl+Alt+1..5 their other spell. Registered with Windows
 // (RegisterHotKey), outside the game: nothing touches the game's process.
 func startHotkeys() {
-	go pttWatch()
 	go func() {
 		runtime.LockOSThread()
 		user32 := syscall.NewLazyDLL("user32.dll")
@@ -53,21 +51,4 @@ func startHotkeys() {
 			}
 		}
 	}()
-}
-
-// pttWatch: is the push-to-talk key held? (checked 40 times a second, only while push to talk is on)
-var pGetAsyncKeyStatePTT = user32.NewProc("GetAsyncKeyState")
-
-func pttWatch() {
-	for {
-		c := pttGet()
-		if !c.On {
-			time.Sleep(500 * time.Millisecond)
-			continue
-		}
-		if k, _, _ := pGetAsyncKeyStatePTT.Call(uintptr(c.Key)); k&0x8000 != 0 {
-			pttSeen()
-		}
-		time.Sleep(25 * time.Millisecond)
-	}
 }
