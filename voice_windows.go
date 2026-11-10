@@ -87,7 +87,7 @@ try {
     elseif ($r.Text -match '\b(top|jungla|jungle|mid|adc|bot|suport|support|soporte)\b' -and $gn -ne 'linies') { $thr = 0.62 }
     # a champion of this game: the page still ignores a spell that champion doesn't carry
     elseif ($gn -like 'partida*') { $thr = 0.5 }
-    if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text) }
+    if ($r.Confidence -ge $thr) { [Console]::Out.WriteLine('HEARD ' + $r.Text + ' |' + [math]::Round($r.Confidence, 2)) }
     else { [Console]::Out.WriteLine('LOW ' + [math]::Round($r.Confidence, 2) + ' ' + $r.Text) }
   }
   [Console]::Out.WriteLine('READY ' + $cul.Name)
@@ -170,8 +170,16 @@ func voiceStart(champs []string, lanes bool) error {
 			line := strings.TrimSpace(sc.Text())
 			switch {
 			case strings.HasPrefix(line, "HEARD "):
-				voicePush("heard", line[6:])
-				logf("Veu de Windows: \"%s\"", line[6:])
+				text, conf := line[6:], ""
+				if i := strings.LastIndex(text, " |"); i >= 0 {
+					text, conf = text[:i], text[i+2:]
+				}
+				if !pttAllows() {
+					logf("Veu de Windows: \"%s\" (%s) ignorat: no premies la tecla per parlar", text, conf)
+					continue
+				}
+				voicePush("heard", text)
+				logf("Veu de Windows: \"%s\" (%s)", text, conf)
 			case strings.HasPrefix(line, "READY "):
 				voicePush("ready", line[6:])
 				logf("Veu de Windows: llest (idioma %s)", line[6:])

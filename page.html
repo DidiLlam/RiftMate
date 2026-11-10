@@ -474,6 +474,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note" id="ttsVoice"></p>
     <div class="row2"><label for="voiceLag">Temps que tardes a dir-ho</label><input type="number" id="voiceLag" min="0" max="30" value="10"><span>segons</span></div>
     <p class="note">Quan dius "flash Ahri", "ulti Darius" o "zhonya mid", el compte enrere comença amb aquests segons ja descomptats, perquè normalment el rival l'ha gastat una mica abans. Si el toques amb el ratolí, no es resta res.</p>
+    <label class="ph-item" for="pttOn"><input type="checkbox" id="pttOn"><span>Prem per parlar: només compta el que dius mentre mantens premuda una tecla (el que digui el teu company, el joc o el Discord, s'ignora)</span></label>
+    <div class="row2" id="pttRow" hidden><label for="pttKey">Tecla</label><select id="pttKey"><option value="5">Botó lateral del ratolí (enrere)</option><option value="6">Botó lateral del ratolí (endavant)</option><option value="4">Botó de la roda del ratolí</option><option value="20">Bloq Majús</option><option value="165">Alt Gr</option></select><span id="pttHeld" class="note"></span></div>
     <label class="ph-item" for="vTimer30"><input type="checkbox" id="vTimer30" checked><span>Encanteris: avís 30 segons abans</span></label>
     <label class="ph-item" for="vReady"><input type="checkbox" id="vReady" checked><span>Encanteris: dir quan està disponible (el so sona igualment)</span></label>
     <label class="ph-item" for="vMatchup"><input type="checkbox" id="vMatchup" checked><span>Llegir la fitxa del matchup en començar</span></label>
@@ -1991,6 +1993,16 @@ function mirrorPush(){
   fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
 }
 if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush, 1000); setInterval(() => { if (!$("#viewA").hidden && mobOn) mobRefresh(); }, 5000); }
+// ---------- push to talk ----------
+async function pttRefresh(q){
+  let st = null; try { st = await (await fetch("/api/ptt" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
+  const cb = $("#pttOn"); if (!cb) return;
+  cb.checked = !!st.on; $("#pttRow").hidden = !st.on; $("#pttKey").value = String(st.key || 5);
+  $("#pttHeld").textContent = st.on ? (st.held ? "● premuda" : "prem-la per provar-la") : "";
+}
+$("#pttOn")?.addEventListener("change", e => pttRefresh(`?on=${e.target.checked ? 1 : 0}`));
+$("#pttKey")?.addEventListener("change", e => pttRefresh(`?key=${e.target.value}`));
+if (location.protocol.startsWith("http")) { pttRefresh(); setInterval(() => { if ($("#pttOn")?.checked && $("#pttRow")?.offsetParent) pttRefresh(); }, 300); }
 // ---------- the overlay above the game ----------
 let ovOn = false;
 async function ovRefresh(q){
