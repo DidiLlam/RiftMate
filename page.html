@@ -2263,12 +2263,13 @@ function handle(text, final = true){
   }
   const isCancel = saidCancel || Date.now() < pendingCancel;
   let i = findEnemy(words, s.w);
-  // the recognizer often hears the wrong name ("Ash heal" for Ezreal). If the name it heard doesn't carry that spell,
-  // or no name was heard, and only one rival carries it, it's that one: the spell is the part it gets right
-  const known0 = i >= 0 && game?.spells?.[i];
-  if (final && !["Zhonya", "R"].includes(s.sp) && (i < 0 ? s.exact : known0 && !known0.includes(s.sp))) {
+  // Only the spell said on its own ("heal", "el heal") goes to the one rival who carries it. If any other word
+  // was heard ("heal Mel", "Shen barrier", "Ambessa barrera") it's someone else (often an ally, or your duo
+  // talking): guessing marked timers you never asked for, so it's left alone.
+  const rest0 = words.filter(w => w !== s.w && !FILLER.has(w) && !SPELL_WORDS[s.sp]?.includes(w) && !CANCEL.includes(w));
+  if (final && !["Zhonya", "R"].includes(s.sp) && i < 0 && s.exact && !rest0.length) {
     const c = onlyCarrier(s.sp);
-    if (c >= 0) { plog(`Veu: "${text}" -> ${s.sp}: ${i < 0 ? "sense nom" : `${$(`#name${i}`).value.trim()} no el porta`}, és ${$(`#name${c}`).value.trim()}, l'únic rival que el porta`); i = c; }
+    if (c >= 0) { plog(`Veu: "${text}" -> ${s.sp}: sense nom, és ${$(`#name${c}`).value.trim()}, l'únic rival que el porta`); i = c; }
   }
   if (i < 0) {
     if (final && s.exact) {
