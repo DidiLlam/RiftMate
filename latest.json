@@ -1,7 +1,7 @@
 {
- "version": "2.0.83",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.83.exe",
- "size": 9760768,
- "sha256": "64e0d3df08657b3a569677101a45cbf27ba7d428fe20c6502443d38f52906205",
- "notes": "- Veu: reconeixement millorat amb Whisper (model modern d'OpenAI, gratuït, funciona en aquest ordinador). Cada frase que capta el micro la transcriu Whisper i només compta el que has dit de veritat\n- La primera vegada descarrega uns 65 MB en segon pla; mentrestant funciona com abans\n- Es pot desactivar a Ajustos → Micròfon i so"
+ "version": "2.0.84",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.84.exe",
+ "size": 9796096,
+ "sha256": "4b5f65b45f6c472b8630670b2901d70988a11b81ede9c88c3d8e34247f0f0987",
+ "notes": "- Coach: després de dir 'coach', la pregunta també la transcriu Whisper (si està llest)\n- Nou: temporitzadors amb el duo (Ajustos → En partida). Poseu el mateix codi i el que marqui un li surt a l'altre, també a l'overlay\n- Selecció de campions: dedueix el teu rival de línia i et diu en veu alta quin dels teus campions et va millor contra ell, amb el teu historial"
 }
