@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.1.0"
+	version = "2.1.1"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -166,6 +166,7 @@ func (r *Recorder) step(g *AllGame) {
 			return // spectating or unknown
 		}
 		r.warnedNoMe = false
+		curTeam.Store(me.Team)
 		go captureGameID()
 		logf("Enregistrant partida: %s (%s, posicio %q, equip %s), %d jugadors, minut %.1f", me.ChampionName, myID, me.Position, me.Team, len(g.AllPlayers), t/60)
 		if t < 120 {
@@ -254,6 +255,7 @@ func (r *Recorder) finish(result string) {
 	stamp := strings.NewReplacer(":", "", " ", "_").Replace(rec.Date)
 	go replaySave(stamp)
 	gid := curGameID.Swap(0)
+	duoGameStart(0)
 	b, _ := json.Marshal(map[string]any{"report": report, "raw": rec, "end_unix": time.Now().Unix(), "game_id": gid})
 	if err := os.WriteFile(filepath.Join(dir, stamp+".json"), b, 0o644); err != nil {
 		logf("ERROR guardant l'informe: %v", err)

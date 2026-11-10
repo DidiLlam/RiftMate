@@ -477,6 +477,7 @@ func captureGameID() {
 		if code, err := lcuGet("/lol-gameflow/v1/session", &sess); err == nil && code == 200 && sess.GameData.GameID > 0 {
 			curGameID.Store(sess.GameData.GameID)
 			logf("Partida %d (per a la repetició)", sess.GameData.GameID)
+			duoGameStart(sess.GameData.GameID)
 			return
 		}
 		time.Sleep(15 * time.Second)

@@ -464,8 +464,11 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     </div>
     <p class="note">Els clics passen al joc, així pots moure't amb el botó dret encara que hi passis per sobre. Per moure'l o clicar-hi, mantén <b>Ctrl</b> premut: l'arrossegues on vulguis (es queda on el deixes) i, clicant un encanteri, la ulti o la Zhonya, el marques o el cancel·les. Els temporitzadors s'activen amb la veu, com sempre. Surt a sobre del joc en "Sense vores" i, a la majoria d'ordinadors amb Windows 10/11, també en pantalla completa. No toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></section>
   <section class="card" data-g="partida" id="duoCard"><h2>Temporitzadors amb el teu duo</h2>
-    <p class="note">Si el teu company també té RiftMate, poseu el mateix codi i el que marqui un (amb la veu, un clic o l'overlay) li sortirà a l'altre. Només s'envia el campió, l'encanteri i quan torna.</p>
-    <div class="bar"><input type="text" id="duoCode" maxlength="12" placeholder="Codi" style="width:9em;text-transform:uppercase" data-noi18n><button class="b" type="button" id="duoJoin">Unir-me</button><button class="b" type="button" id="duoNew">Crear un codi</button><button class="b" type="button" id="duoOff" hidden>Deixar-ho</button></div>
+    <label class="ph-item" for="duoAuto"><input type="checkbox" id="duoAuto" checked><span>Compartir-los sols amb els companys d'equip que també tinguin RiftMate (el teu duo no ha de configurar res: en cada partida ho detecta sol)</span></label>
+    <p class="note">El que marqui un (amb la veu, un clic o l'overlay) li surt a l'altre. Només s'envia el campió, l'encanteri i quan torna.</p>
+    <details><summary>Amb un codi (opcional)</summary>
+    <p class="note">Només cal si voleu compartir-los també fora d'una partida juntes, per exemple per provar-ho.</p>
+    <div class="bar"><input type="text" id="duoCode" maxlength="12" placeholder="Codi" style="width:9em;text-transform:uppercase" data-noi18n><button class="b" type="button" id="duoJoin">Unir-me</button><button class="b" type="button" id="duoNew">Crear un codi</button><button class="b" type="button" id="duoOff" hidden>Deixar-ho</button></div></details>
     <p class="note" id="duoState"></p></section>
   <section class="card" id="helpCard"><h2>Ajuda en partida</h2>
     <label class="ph-item" for="cWave"><input type="checkbox" id="cWave" checked><span>Onades: quan pots empènyer i quan no, segons on s'ha vist el jungla rival i quan mates el teu rival</span></label>
@@ -2027,11 +2030,11 @@ function cmdOf(text){
   const i = findEnemy(words, s.w); return i < 0 || !pureCommand(words, s, i) ? "" : `${s.sp}|${i}|${CANCEL.some(c => words.includes(c)) ? "x" : ""}`;
 }
 // ---------- Duo: shared timers ----------
-let duoCode = "", duoSince = -1, duoApplying = false;
+let duoCode = "", duoSince = -1, duoApplying = false, duoActive = false;
 function gtNow(){ const g = lastData?.gameData?.gameTime; return typeof g === "number" ? g + (Date.now() - (lastDataAt || Date.now())) / 1000 : null; }
 // what you mark goes to your duo: champion (English id, the same on both clients), spell, game time it's back
 function duoTell(i, spell, left, cancelIt){
-  if (!duoCode || duoApplying || i > 4 || !game) return;
+  if (!duoActive || duoApplying || i > 4 || !game) return;
   const gt = gtNow(); if (gt == null) return;
   const champ = rowEnglish(i) || $(`#name${i}`).value.trim(); if (!champ) return;
   fetch("/api/duo/send", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({champ, spell, back: cancelIt ? 0 : Math.round(gt + left), cancel: !!cancelIt})}).catch(() => {});
@@ -2057,18 +2060,21 @@ function duoApply(m){
 }
 async function duoRefresh(q){
   let st = null; try { st = await (await fetch("/api/duo" + (q || `?since=${Math.max(0, duoSince)}`), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
-  duoCode = st.code || "";
+  duoCode = st.code || ""; duoActive = !!(duoCode || (st.auto && st.in_game));
   if (duoSince < 0 || q) duoSince = st.seq || 0;      // on opening: not what was marked before
   else for (const l of st.lines || []) { duoSince = Math.max(duoSince, l.seq); duoApply(l.msg); }
   const el = $("#duoState"); if (!el) return;
   if (document.activeElement !== $("#duoCode")) $("#duoCode").value = duoCode;
   $("#duoOff").hidden = !duoCode;
-  el.textContent = !duoCode ? "" : st.connected ? `Connectat amb el codi ${duoCode}. Digues-li al teu company que posi el mateix.` : `Connectant amb el codi ${duoCode}…`;
+  if ($("#duoAuto")) $("#duoAuto").checked = !!st.auto;
+  el.textContent = st.in_game ? (st.connected ? "En aquesta partida: compartint amb els companys d'equip que tinguin RiftMate." : "Connectant amb el teu equip…")
+    : duoCode ? (st.connected ? `Connectat amb el codi ${duoCode}.` : `Connectant amb el codi ${duoCode}…`) : st.auto ? "S'activarà sol quan comenci la partida." : "";
 }
 $("#duoJoin")?.addEventListener("click", () => { const v = $("#duoCode").value.trim(); if (v.length >= 4) duoRefresh(`?code=${encodeURIComponent(v)}`); else $("#duoState").textContent = "El codi ha de tenir com a mínim 4 lletres o números."; });
 $("#duoNew")?.addEventListener("click", () => duoRefresh("?new=1"));
 $("#duoOff")?.addEventListener("click", () => duoRefresh("?off=1"));
-if (location.protocol.startsWith("http")) { duoRefresh(); setInterval(() => { if (duoCode && (game || $("#duoState")?.offsetParent)) duoRefresh(); }, 1000); }
+$("#duoAuto")?.addEventListener("change", e => duoRefresh(`?auto=${e.target.checked ? 1 : 0}`));
+if (location.protocol.startsWith("http")) { duoRefresh(); setInterval(() => { if (game || $("#duoState")?.offsetParent) duoRefresh(); }, 1000); }
 // ---------- Whisper (better recognition) ----------
 async function whisperRefresh(q){
   let st = null; try { st = await (await fetch("/api/whisper" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return; }
@@ -3788,7 +3794,7 @@ const NEWS = {"2.1": [
   ["La veu t'entén millor", "Whisper (un model modern de reconeixement de veu) comprova cada frase en aquest ordinador: el que diu el teu company, el joc o el Discord ja no marca res. Els temporitzadors es marquen a l'instant i, si no era el que has dit, es desfan sols."],
   ["Ordres clares", "Només compta l'ordre sola: \"flash Darius\" el marca, i si ja comptava el reinicia; \"cancela flash Darius\" l'anul·la. Dins d'una frase no compta mai."],
   ["Overlay dins del joc", "Les fotos dels rivals amb els seus encanteris, la ulti i la Zhonya a sobre del joc. Mantén Ctrl per moure'l o clicar-lo."],
-  ["Temporitzadors amb el teu duo", "Poseu el mateix codi i el que marqui un li surt a l'altre."],
+  ["Temporitzadors amb el teu duo", "Si el teu company també té RiftMate, el que marqui un li surt a l'altre. Ho detecta sol a cada partida, sense codis."],
   ["Selecció de campions", "Dedueix el teu rival de línia i et diu quin dels teus campions et va millor contra ell."],
   ["A l'informe", "Quants encanteris dels rivals has marcat de tots els que han fet servir."],
   ["Ajustos endreçats", "Quatre grups clars: Veu, Coach, En partida i Compte i app."]]};
