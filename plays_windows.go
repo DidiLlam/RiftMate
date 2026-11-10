@@ -29,6 +29,7 @@ var (
 	capCmd *exec.Cmd
 	capIn  io.WriteCloser
 	capT0  time.Time
+	capAud *gameAudio
 	capDL  sync.Mutex
 )
 
@@ -148,7 +149,12 @@ func captureStart() {
 	}
 	os.RemoveAll(capRing())
 	os.MkdirAll(capRing(), 0o755)
-	args := append(capInput(), eargs...)
+	aud, ain := audioPrepare() // the game's sound, if Windows lets us capture it
+	args := append(capInput(), ain...)
+	args = append(args, eargs...)
+	if aud != nil {
+		args = append(args, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k")
+	}
 	// -t: never more than 90 minutes, even if the app were closed without stopping it
 	args = append(args, "-t", "5400", "-g", "60", "-f", "segment", "-segment_time", "4", "-segment_wrap", "16", "-reset_timestamps", "1",
 		"-segment_format", "mpegts", filepath.Join(capRing(), "t%02d.ts"))
@@ -159,14 +165,17 @@ func captureStart() {
 	var errb bytes.Buffer
 	cmd.Stderr = &errb
 	if err := cmd.Start(); err != nil {
+		if aud != nil {
+			aud.Stop()
+		}
 		playsSet("error", err.Error())
 		logf("Jugades: no puc començar a gravar: %v", err)
 		return
 	}
-	capCmd, capIn, capT0 = cmd, in, time.Now()
+	capCmd, capIn, capT0, capAud = cmd, in, time.Now(), aud
 	os.WriteFile(capPidFile(), []byte(fmt.Sprint(cmd.Process.Pid)), 0o644)
 	playsSet("recording", "")
-	logf("Jugades: gravant (%s)", enc)
+	logf("Jugades: gravant (%s, %s)", enc, map[bool]string{true: "amb el so del joc", false: "sense so"}[aud != nil])
 	go func() {
 		err := cmd.Wait()
 		os.Remove(capPidFile())
@@ -176,6 +185,9 @@ func captureStart() {
 			capCmd, capIn = nil, nil
 		}
 		capMu.Unlock()
+		if aud != nil {
+			aud.Stop()
+		}
 		cpu := time.Duration(0)
 		if cmd.ProcessState != nil {
 			cpu = cmd.ProcessState.UserTime() + cmd.ProcessState.SystemTime()
