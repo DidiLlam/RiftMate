@@ -18,7 +18,7 @@ import (
 func backupSkip(rel string) bool {
 	top := strings.SplitN(filepath.ToSlash(rel), "/", 2)[0]
 	switch top {
-	case "repeticions", "models", "clips", "escuts", "WebView2", "chrome", "whisper":
+	case "repeticions", "models", "clips", "escuts", "WebView2", "chrome", "whisper", "jugades", "ffmpeg":
 		return true
 	}
 	low := strings.ToLower(rel)

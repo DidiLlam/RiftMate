@@ -321,6 +321,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 #allies{display:flex;flex-direction:column;gap:10px}
 .spi{width:40px;height:40px;border-radius:7px;display:block;box-shadow:0 0 0 1px var(--line)}
 .t.run .spi{filter:grayscale(1) brightness(.55)}
+.plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px}.play video{width:100%;border-radius:8px;background:#000;aspect-ratio:16/9}.playtxt{margin-top:6px;display:flex;flex-direction:column;gap:2px}.pscore{display:inline-block;min-width:2.2em;text-align:center;font-weight:800;background:var(--accent,#2fc49c);color:#06231b;border-radius:6px;padding:0 6px;margin-right:6px}
 .newslist{margin:6px 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:7px}
 .spi2{width:18px;height:18px;border-radius:4px;vertical-align:-4px}
 .t select{font-size:.75rem;font-weight:500;color:var(--muted)}
@@ -463,6 +464,10 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <label class="ph-item" for="ovAlways"><input type="checkbox" id="ovAlways"><span>Mostrar-lo també fora de partida (per col·locar-lo)</span></label>
     </div>
     <p class="note">Els clics passen al joc, així pots moure't amb el botó dret encara que hi passis per sobre. Per moure'l o clicar-hi, mantén <b>Ctrl</b> premut: l'arrossegues on vulguis (es queda on el deixes) i, clicant un encanteri, la ulti o la Zhonya, el marques o el cancel·les. Els temporitzadors s'activen amb la veu, com sempre. Surt a sobre del joc en "Sense vores" i, a la majoria d'ordinadors amb Windows 10/11, també en pantalla completa. No toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></section>
+  <section class="card" data-g="partida" id="playsCard"><h2>Clips de les teves millors jugades <span class="pill">prova</span></h2>
+    <label class="ph-item" for="cPlays"><input type="checkbox" id="cPlays"><span>Gravar les jugades: quan mates algú, fas una doble o robes un objectiu, l'app en guarda un clip de pocs segons. Després de la partida la IA els puntua i a l'informe hi surt el teu top 3.</span></label>
+    <p class="note">Grava amb la targeta gràfica (NVIDIA, AMD o Intel), com Outplayed o Medal; el primer cop descarrega ffmpeg (uns 80 MB). Pot costar una mica d'FPS: compara-ho amb el comptador del joc. Necessita el LoL en "Sense vores". Els clips no tenen so i també hi surt l'overlay.</p>
+    <p class="note" id="playsState"></p></section>
   <section class="card" data-g="partida" id="duoCard"><h2>Temporitzadors amb el teu duo</h2>
     <label class="ph-item" for="duoAuto"><input type="checkbox" id="duoAuto" checked><span>Compartir-los sols amb els companys d'equip que també tinguin RiftMate (el teu duo no ha de configurar res: en cada partida ho detecta sol)</span></label>
     <p class="note">El que marqui un (amb la veu, un clic o l'overlay) li surt a l'altre. Només s'envia el campió, l'encanteri i quan torna.</p>
@@ -2028,6 +2033,34 @@ const fastMarks = new Map();
 function cmdOf(text){
   const words = norm(text).split(" "), s = findSpell(words); if (!s) return "";
   const i = findEnemy(words, s.w); return i < 0 || !pureCommand(words, s, i) ? "" : `${s.sp}|${i}|${CANCEL.some(c => words.includes(c)) ? "x" : ""}`;
+}
+// ---------- Plays: clips of your best moments ----------
+async function playsRefresh(q){
+  let st = null; try { st = await (await fetch("/api/plays" + (q || ""), {method: q ? "POST" : "GET", cache: "no-store"})).json(); } catch (e) { return null; }
+  const cb = $("#cPlays"), el = $("#playsState"); if (!cb) return st;
+  if (!st.supported) { $("#playsCard").hidden = true; return st; }
+  cb.checked = !!st.on;
+  const stTxt = {downloading: "Descarregant ffmpeg…", probing: "Provant la targeta gràfica…", recording: "Gravant.", ready: "Llest: gravarà a la propera partida.", error: "No pot gravar: " + (st.error || "")}[st.state] || (st.on ? "S'activarà a la propera partida." : "");
+  el.textContent = st.on ? `${stTxt}${st.encoder ? ` (${({h264_nvenc: "NVIDIA", h264_amf: "AMD", h264_qsv: "Intel"})[st.encoder] || st.encoder})` : ""} · ${st.plays.length} clips guardats, ${st.mb} MB.` : "";
+  return st;
+}
+$("#cPlays")?.addEventListener("change", e => playsRefresh(`?on=${e.target.checked ? 1 : 0}`));
+if (location.protocol.startsWith("http")) { playsRefresh(); setInterval(() => { if ($("#playsState")?.offsetParent) playsRefresh(); }, 3000); }
+const playStamp = d => String(d || "").replace(":", "").replace(" ", "_");
+const playVideo = p => `/api/playfile?g=${encodeURIComponent(p.stamp)}&f=${encodeURIComponent(p.file)}`;
+function playItem(p, rank){
+  return `<div class="play"><video controls preload="metadata" src="${playVideo(p)}"></video>
+    <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b></div>
+    <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}</div></div>`;
+}
+// the report's top 3, and the ranking of all your plays
+async function renderPlays(r){
+  const el = $("#playsTop"); if (!el || !r?.date) return;
+  let st = null; try { st = await (await fetch("/api/plays", {cache: "no-store"})).json(); } catch (e) { return; }
+  if (!st?.plays?.length) { el.innerHTML = ""; return; }
+  const mine = st.plays.filter(p => p.stamp === playStamp(r.date)).slice(0, 3);
+  el.innerHTML = (mine.length ? `<section class="card"><h2>Les teves millors jugades d'aquesta partida</h2><div class="plays">${mine.map(p => playItem(p)).join("")}</div></section>` : "") +
+    `<section class="card"><details><summary><b>Rànquing de les teves jugades</b> <span class="note">(${st.plays.length})</span></summary><div class="plays">${st.plays.slice(0, 10).map((p, k) => playItem(p, k + 1)).join("")}</div></details></section>`;
 }
 // ---------- Duo: shared timers ----------
 let duoCode = "", duoSince = -1, duoApplying = false, duoActive = false;
@@ -6397,6 +6430,7 @@ function renderReport(r){
   $("#report").innerHTML = `
   ${reportTop(r)}
   <section class="card" id="mapCard"></section>
+  <div id="playsTop"></div>
   ${marksCard(r)}
   <section class="card" ${sup ? "hidden" : ""}><h2>${jg ? "Farm" : "Farm i línia"}</h2>
     ${csChart(r)}
@@ -6417,6 +6451,7 @@ function renderReport(r){
   $("#boardBtn")?.addEventListener("click", () => requestMap(r.date));
   $("#aiRevBtn")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Pensant…"; aiReview(r, true); });
   if (r.map && !r.map.board && riotCfg?.has_key && !boardTried.has(r.date)) { boardTried.add(r.date); requestMap(r.date); }
+  renderPlays(r);
   loadRunes(); fillRunes();
 }
 function avg(list, f){ const v = list.map(f).filter(x => x != null && !isNaN(x)); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(1) : "—"; }

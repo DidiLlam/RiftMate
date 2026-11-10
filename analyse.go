@@ -35,11 +35,16 @@ type Event struct {
 	VictimName string   `json:"VictimName"`
 	Assisters  []string `json:"Assisters"`
 	Result     string   `json:"Result"`
+	Stolen     string   `json:"Stolen"`
 }
 type AllGame struct {
 	ActivePlayer struct {
-		RiotID       string `json:"riotId"`
-		SummonerName string `json:"summonerName"`
+		RiotID        string `json:"riotId"`
+		SummonerName  string `json:"summonerName"`
+		ChampionStats struct {
+			CurrentHealth float64 `json:"currentHealth"`
+			MaxHealth     float64 `json:"maxHealth"`
+		} `json:"championStats"`
 	} `json:"activePlayer"`
 	AllPlayers []Player `json:"allPlayers"`
 	GameData   struct {

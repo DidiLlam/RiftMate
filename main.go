@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.1.1"
+	version = "2.1.2"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -173,6 +173,9 @@ func (r *Recorder) step(g *AllGame) {
 			marksTake() // a new game: nothing marked yet
 		}
 		r.rec = &Record{Date: time.Now().Format("2006-01-02 15:04"), Me: *me, Mode: g.GameData.GameMode}
+		if g.GameData.GameMode != "PRACTICETOOL" {
+			playsGameStart(strings.NewReplacer(":", "", " ", "_").Replace(r.rec.Date), *me, g.AllPlayers)
+		}
 		go lpAtStart(r.rec.Date, pidOf(me))
 	}
 	rec := r.rec
@@ -197,6 +200,11 @@ func (r *Recorder) step(g *AllGame) {
 	rec.Players = g.AllPlayers
 	rec.Events = g.Events.Events
 	rec.Duration = t
+	hp := -1.0
+	if st := g.ActivePlayer.ChampionStats; st.MaxHealth > 0 {
+		hp = st.CurrentHealth / st.MaxHealth
+	}
+	playsSee(g.Events.Events, t, hp)
 	var end *Event
 	for i := range g.Events.Events {
 		if g.Events.Events[i].EventName == "GameEnd" {
@@ -219,6 +227,7 @@ func (r *Recorder) finish(result string) {
 	}
 	logf("Final de partida (resultat %q, durada %.1f min, %d instantanies, %d esdeveniments)", result, rec.Duration/60, len(rec.Snaps), len(rec.Events))
 	usageLog(rec.Duration)
+	playsGameEnd(rec.Date, rec.Duration >= 180)
 	if rec.Mode == "PRACTICETOOL" {
 		logf("Eina de pràctica: no es guarda com a partida")
 		return
@@ -540,6 +549,8 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/whisper", whisperHandler(send))
 	mux.HandleFunc("/api/duo", duoHandler(send))
 	mux.HandleFunc("/api/marks", marksHandler(send))
+	mux.HandleFunc("/api/plays", playsHandler(send))
+	mux.HandleFunc("/api/playfile", playsHandler(send))
 	mux.HandleFunc("/api/duo/send", duoHandler(send))
 	mux.HandleFunc("/api/backup", backupHandler)
 	mux.HandleFunc("/api/restore", restoreHandler(send))
@@ -606,6 +617,7 @@ func main() {
 	go mobileAuto()
 	go overlayAuto()
 	duoStart()
+	go captureCleanup()
 	whisperEnsure() // download and start it in the background, so it is ready for the first game
 	if !updated {   // after an update the open window reloads itself
 		go func() {
