@@ -1,7 +1,7 @@
 {
- "version": "2.0.81",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.81.exe",
+ "version": "2.0.82",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.82.exe",
  "size": 9723392,
- "sha256": "30d2e61d718c1c0347f4bf8354befbb1d12ff6492a5dc43e01f44c6ac4501206",
- "notes": "- Veu: treta l'opció de prémer per parlar\n- Veu: ara aprèn el volum de la teva veu i ignora el que arriba clarament més fluix (el company, el Discord, el joc). Les primeres 10 frases serveixen per aprendre't\n- El registre guarda la seguretat i el volum de cada frase, per afinar-ho"
+ "sha256": "43f1cabc494975caf4836fea70287d6a2aa831de71497ae14afefeb58ecaa5e9",
+ "notes": "- Coach: si el micro capta una conversació amb el teu amic després de sentir 'coach', la IA se n'adona i no diu res"
 }
