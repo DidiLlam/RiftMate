@@ -1,7 +1,7 @@
 {
- "version": "2.0.80",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.80.exe",
- "size": 9716224,
- "sha256": "7aa39779335ae972045b520f1d9ab6c9bced8bf4d871aebbe0250e3a1f2aa4a9",
- "notes": "- Nou: prem per parlar (Ajustos → Altres avisos de veu). Només compta el que dius mentre mantens premut un botó lateral del ratolí, la roda, Bloq Majús o Alt Gr; el que digui el company, el joc o el Discord s'ignora\n- El registre ara guarda la seguretat de cada frase entesa, per afinar el filtre"
+ "version": "2.0.81",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.81.exe",
+ "size": 9723392,
+ "sha256": "30d2e61d718c1c0347f4bf8354befbb1d12ff6492a5dc43e01f44c6ac4501206",
+ "notes": "- Veu: treta l'opció de prémer per parlar\n- Veu: ara aprèn el volum de la teva veu i ignora el que arriba clarament més fluix (el company, el Discord, el joc). Les primeres 10 frases serveixen per aprendre't\n- El registre guarda la seguretat i el volum de cada frase, per afinar-ho"
 }
