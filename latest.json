@@ -1,7 +1,7 @@
 {
- "version": "2.1.21",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.21.exe",
- "size": 9946624,
- "sha256": "eb22d2e2a7ed45b8c80e305eb80d66b17c0327e6310f4789adb2df29eef30e70",
- "notes": "- Veu en castellà: diu 'definitiva' en lloc de 'ulti' (la veu ho lletrejava U-L-T-I)"
+ "version": "2.1.22",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.22.exe",
+ "size": 9974272,
+ "sha256": "046c9bcb02d30defda62131dcca490ff0296536e75b784c9a3c1792836a1e709",
+ "notes": "- Per què has mort: cada mort té el seu vídeo (els 12 segons d'abans), gravat mentre jugaves, igual que els clips de les jugades\n- Els vídeos de les morts s'esborren sols 30 minuts després de la partida"
 }
