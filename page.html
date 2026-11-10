@@ -2050,7 +2050,7 @@ async function playsRefresh(q){
   if (!st.supported) { $("#playsCard").hidden = true; return st; }
   cb.checked = !!st.on;
   const stTxt = {downloading: "Descarregant ffmpeg…", probing: "Provant la targeta gràfica…", recording: "Gravant.", ready: "Llest: gravarà a la propera partida.", error: "No pot gravar: " + (st.error || "")}[st.state] || (st.on ? "S'activarà a la propera partida." : "");
-  el.textContent = st.on ? `${stTxt}${st.encoder ? ` (${({h264_nvenc: "NVIDIA", h264_amf: "AMD", h264_qsv: "Intel"})[st.encoder] || st.encoder})` : ""} · ${st.plays.length} clips guardats, ${st.mb} MB.` : "";
+  el.textContent = st.on ? `${stTxt}${st.encoder ? ` (${({h264_nvenc: "NVIDIA", h264_amf: "AMD", h264_qsv: "Intel"})[st.encoder] || st.encoder})` : ""} · ${(st.plays || []).length} clips guardats, ${st.mb || 0} MB.` : "";
   return st;
 }
 $("#cPlays")?.addEventListener("change", e => playsRefresh(`?on=${e.target.checked ? 1 : 0}`));
@@ -5324,7 +5324,7 @@ function csChart(r){
 let logCount = 0;
 function plog(msg){ if (!location.protocol.startsWith("http") || ++logCount > 4000) return; fetch("/api/log", {method: "POST", body: String(msg).slice(0, 1500)}).catch(() => {}); }
 window.addEventListener("error", e => plog(`Error JS: ${e.message} (${(e.filename || "").split("/").pop()}:${e.lineno})`));
-window.addEventListener("unhandledrejection", e => plog(`Error JS (promesa): ${e.reason && (e.reason.message || e.reason)}`));
+window.addEventListener("unhandledrejection", e => plog(`Error JS (promesa): ${e.reason && (e.reason.message || e.reason)}${e.reason?.stack ? " @ " + String(e.reason.stack).split("\n").slice(1, 3).map(x => x.trim().replace(/^at /, "").replace(/https?:\/\/[^/]+\//, "")).join(" < ") : ""}`));
 $("#openLog").addEventListener("click", () => fetch("/api/openlog", {method: "POST"}).catch(() => {}));
 $("#openReplays").addEventListener("click", () => fetch("/api/openreplays", {method: "POST"}).catch(() => {}));
 plog(`Pagina oberta · ${navigator.userAgent.match(/(Edg|Chrome|Firefox)\/[\d.]+/)?.[0] || "navegador desconegut"} · veu sintetica: ${!!window.speechSynthesis} · reconeixement de veu: ${!!(window.SpeechRecognition || window.webkitSpeechRecognition)}`);

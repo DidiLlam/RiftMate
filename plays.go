@@ -427,6 +427,9 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			}
 			all = out
 		}
+		if all == nil {
+			all = []Play{} // [] for the page, not null
+		}
 		sort.SliceStable(all, func(a, b int) bool { return all[a].Score > all[b].Score })
 		var size int64
 		filepath.Walk(playsRoot(), func(_ string, fi os.FileInfo, err error) error {
