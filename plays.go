@@ -256,7 +256,81 @@ func playsGameEnd(date string, keep bool) {
 		}
 		playsScore(done)
 		playsAdd(done)
+		playsRescore()
 	}()
+}
+
+// playWhy: a sentence without the AI (until it can score them)
+func playWhy(p *Play) string {
+	var parts []string
+	switch {
+	case p.Steal != "":
+		parts = append(parts, "Has robat el "+p.Steal+" al rival")
+	case p.Kills >= 2:
+		parts = append(parts, fmt.Sprintf("%d kills seguides", p.Kills))
+	case p.Kills == 1:
+		parts = append(parts, "Una kill")
+	}
+	switch {
+	case p.Kills > 0 && p.Help == 0:
+		parts = append(parts, "sense ajuda")
+	case p.Help == 1:
+		parts = append(parts, "amb l'ajuda d'un company")
+	case p.Help > 1:
+		parts = append(parts, fmt.Sprintf("amb l'ajuda de %d companys", p.Help))
+	}
+	if p.HP >= 0 && p.HP < 0.2 {
+		parts = append(parts, fmt.Sprintf("i has sortit viu amb un %.0f%% de vida", p.HP*100))
+	}
+	if p.Ace {
+		parts = append(parts, "i ha acabat en ace")
+	}
+	return strings.Join(parts, " ") + "."
+}
+
+// playsRescore: plays the AI couldn't score (no requests left that day) get scored now, a game at a time
+func playsRescore() {
+	plMu.Lock()
+	all := playsReadLocked()
+	plMu.Unlock()
+	by := map[string][]*Play{}
+	for i := range all {
+		if !all[i].AI {
+			by[all[i].Stamp] = append(by[all[i].Stamp], &all[i])
+		}
+	}
+	if len(by) == 0 {
+		return
+	}
+	changed := 0
+	for _, ps := range by {
+		if !aiBudgetLeft() || loadConfig().AIKey == "" {
+			break
+		}
+		playsScore(ps)
+		for _, p := range ps {
+			if p.AI {
+				changed++
+			}
+		}
+	}
+	if changed == 0 {
+		return
+	}
+	plMu.Lock()
+	defer plMu.Unlock()
+	cur := playsReadLocked()
+	for i := range cur {
+		for _, p := range all {
+			if cur[i].Stamp == p.Stamp && cur[i].N == p.N && p.AI {
+				cur[i].Score, cur[i].Title, cur[i].Why, cur[i].AI = p.Score, p.Title, p.Why, true
+			}
+		}
+	}
+	if b, err := json.MarshalIndent(cur, "", " "); err == nil {
+		os.WriteFile(playsIndex(), b, 0o644)
+	}
+	logf("Jugades: la IA ha puntuat %d jugades que tenia pendents", changed)
 }
 
 // playsScore: the AI scores each play (one request per game); without it, a simple rule
@@ -276,9 +350,16 @@ func playsScore(ps []*Play) {
 			s += 8
 		}
 		p.Score, p.Title = min(s, 95), strings.ToUpper(playDesc(p)[:1])+playDesc(p)[1:]
+		if p.Why == "" {
+			p.Why = playWhy(p)
+		}
 	}
 	c := loadConfig()
-	if c.AIKey == "" || !aiBudgetLeft() {
+	if c.AIKey == "" {
+		return
+	}
+	if !aiBudgetLeft() {
+		logf("Jugades: la IA ja ha gastat les peticions d'avui; les puntuaré demà")
 		return
 	}
 	var sb strings.Builder
