@@ -1,7 +1,7 @@
 {
- "version": "2.1.12",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.12.exe",
- "size": 9930240,
- "sha256": "ca383e9f0d21b032c78c412defc41b85f86e56c1f3ca3b1897cf3665f5f15fee",
- "notes": "- Clips amb so: ara graven el so del LoL, i només el del LoL (sense el Discord ni la veu del coach). Si el teu Windows no ho permet, es graven sense so com abans"
+ "version": "2.1.13",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.13.exe",
+ "size": 9932288,
+ "sha256": "55fadbe1e314a285d670ec004b1fb2326f53a4a6dc1ba3fe6b4c2dc8fe86a17a",
+ "notes": "- Overlay: el compte enrere ja no salta endavant i enrere; ara compta sol a partir de l'hora exacta en què torna cada encanteri, i el rellotge de la partida també"
 }
