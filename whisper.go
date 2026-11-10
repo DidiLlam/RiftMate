@@ -291,6 +291,8 @@ func whisperTranscribe(path string) (string, time.Duration, error) {
 	mw.WriteField("language", wLang)
 	wPromptMu.Unlock()
 	mw.WriteField("temperature", "0.0")
+	mw.WriteField("no_context", "true")
+	mw.WriteField("suppress_nst", "true")
 	// (a shorter audio window, tried in 2.0.85 to make it faster, left Whisper deaf: it answered nothing)
 	mw.WriteField("response_format", "json")
 	mw.Close()
@@ -313,7 +315,11 @@ func whisperTranscribe(path string) (string, time.Duration, error) {
 	if out.Error != "" {
 		return "", 0, fmt.Errorf("%s", out.Error)
 	}
-	return whisperClean(out.Text), time.Since(t0), nil
+	t := whisperClean(out.Text)
+	if t == "" && strings.TrimSpace(out.Text) != "" {
+		logf("Whisper: ha escrit %q (soroll, no compta)", strings.TrimSpace(out.Text))
+	}
+	return t, time.Since(t0), nil
 }
 
 // wavSeconds: the length of a .wav (from its header)

@@ -35,7 +35,10 @@ func whisperServe() error {
 		return true
 	}
 	dir := whisperDir()
-	args := []string{"-m", filepath.Join(dir, whisperModel), "--host", "127.0.0.1", "--port", strconv.Itoa(whisperPort), "-t", "4", "-l", "es"}
+	// -nc: each phrase on its own. Without it the server carries what it wrote before into the next phrase, and after
+	// a laugh or a silence it got stuck writing "[RÍE]" for everything (which the app cleans to nothing).
+	// -sns: no sound tags like [RÍE] or (música).
+	args := []string{"-m", filepath.Join(dir, whisperModel), "--host", "127.0.0.1", "--port", strconv.Itoa(whisperPort), "-t", "4", "-l", "es", "-nc", "-sns"}
 	sig := strings.Join(args, " ")
 	wsMu.Lock()
 	running := wsCmd != nil
