@@ -1,7 +1,7 @@
 {
- "version": "2.1.20",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.20.exe",
+ "version": "2.1.21",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.21.exe",
  "size": 9946624,
- "sha256": "19af988d4edc00d59830534ab2e39d6e9db15111d241996a01f2eba0e8f394da",
- "notes": "- Clips: botó 'Esborrar' a cada jugada i 'Esborrar-les totes' (s'esborren de l'app i de l'ordinador)\n- Nova opció, activada: les jugades de menys de 60 punts s'esborren soles al cap de 3 hores"
+ "sha256": "eb22d2e2a7ed45b8c80e305eb80d66b17c0327e6310f4789adb2df29eef30e70",
+ "notes": "- Veu en castellà: diu 'definitiva' en lloc de 'ulti' (la veu ho lletrejava U-L-T-I)"
 }
