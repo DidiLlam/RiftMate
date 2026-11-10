@@ -2029,12 +2029,14 @@ function mirrorPush(){
     const sps = [$(`#s1-${i}`)?.value, $(`#s2-${i}`)?.value].filter(Boolean);
     const known = CHAMPS.find(c => c.toLowerCase() === name.toLowerCase()), ri = $(`#i${i}-R`);
     rows.push({row: i, name, lane: LANE_NAMES[i], icon: known ? champImg(champId(known)) : "", spells: sps.map((sp, k) => { const t = timers[`${i}-${slotFor(i, sp)}`];
-      return {spell: sp, icon: SPELL_IMG[sp] ? spellIcon(sp) : "", kind: sp === "Flash" ? "flash" : sps.includes("Flash") ? "other" : k === 0 ? "flash" : "other", left: t ? Math.max(0, (t.end - now) / 1000) : 0}; }),
-      ult: {left: timers[`${i}-R`] ? Math.max(0, (timers[`${i}-R`].end - now) / 1000) : 0, has: true, icon: ri && ri.style.display !== "none" && ri.src ? ri.src : ""},
-      zh: {left: timers[`${i}-Zhonya`] ? Math.max(0, (timers[`${i}-Zhonya`].end - now) / 1000) : 0, has: !!$(`#t${i}-Zhonya`)?.classList.contains("owned"), icon: itemIcon(3157)}}); }
-  const gt = lastData?.gameData?.gameTime, obj = [];
-  if (game && gt != null && typeof help !== "undefined" && help?.obj) for (const [k, n] of [["drag", "Drac"], ["baron", "Baró"], ["herald", "Herald"], ["grubs", "Larves"]]) { const at = help.obj[k]; if (at > 0 && at < Infinity) obj.push({name: n, left: at - gt}); }
-  fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
+      return {spell: sp, icon: SPELL_IMG[sp] ? spellIcon(sp) : "", kind: sp === "Flash" ? "flash" : sps.includes("Flash") ? "other" : k === 0 ? "flash" : "other", left: t ? Math.max(0, (t.end - now) / 1000) : 0, end: t ? t.end : 0}; }),
+      ult: {left: timers[`${i}-R`] ? Math.max(0, (timers[`${i}-R`].end - now) / 1000) : 0, end: timers[`${i}-R`]?.end || 0, has: true, icon: ri && ri.style.display !== "none" && ri.src ? ri.src : ""},
+      zh: {left: timers[`${i}-Zhonya`] ? Math.max(0, (timers[`${i}-Zhonya`].end - now) / 1000) : 0, end: timers[`${i}-Zhonya`]?.end || 0, has: !!$(`#t${i}-Zhonya`)?.classList.contains("owned"), icon: itemIcon(3157)}}); }
+  // the game clock now (not when the game data last arrived) and absolute times (ms): the overlay counts from them
+  // on its own, so a late or bunched update can't make it jump back and forth
+  const gt = gtNow(), obj = [], t0 = gt != null ? now - gt * 1000 : 0;
+  if (game && gt != null && typeof help !== "undefined" && help?.obj) for (const [k, n] of [["drag", "Drac"], ["baron", "Baró"], ["herald", "Herald"], ["grubs", "Larves"]]) { const at = help.obj[k]; if (at > 0 && at < Infinity) obj.push({name: n, left: at - gt, end: t0 + at * 1000}); }
+  fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, t0: game ? t0 : 0, rows: game ? rows : [], obj})}).catch(() => {});
 }
 if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush, 1000); setInterval(() => { if (!$("#viewA").hidden && mobOn) mobRefresh(); }, 5000); }
 // what a phrase would do: "Flash|2" (spell and row), or "" if it isn't a timer command

@@ -109,6 +109,7 @@ type ovClass struct {
 // what the page sends (the same state the phone gets)
 type ovTimer struct {
 	Left float64 `json:"left"`
+	End  float64 `json:"end"` // when it comes back (ms since 1970); counts from this when there is one
 	Has  bool    `json:"has"`
 	Icon string  `json:"icon"`
 }
@@ -122,6 +123,7 @@ type ovState struct {
 			Spell string  `json:"spell"`
 			Kind  string  `json:"kind"`
 			Left  float64 `json:"left"`
+			End   float64 `json:"end"`
 			Icon  string  `json:"icon"`
 		} `json:"spells"`
 		Ult *ovTimer `json:"ult"`
@@ -130,7 +132,9 @@ type ovState struct {
 	Obj []struct {
 		Name string  `json:"name"`
 		Left float64 `json:"left"`
+		End  float64 `json:"end"`
 	} `json:"obj"`
+	T0 float64 `json:"t0"` // when the game clock was 0 (ms since 1970)
 }
 
 type ovChip struct {
@@ -348,12 +352,29 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 		}
 		return "wait", []ovRect{{0, 0, w, sc(24)}}, "RiftMate · esperant la partida", nil, nil, sc(24)
 	}
+	// from the absolute times when the page sends them (steady), otherwise from "left" and the age of the update
+	nowMs := float64(time.Now().UnixMilli())
+	leftOf := func(left, end float64) float64 {
+		if end > 0 {
+			return (end - nowMs) / 1000
+		}
+		if end < 0 || left <= 0 {
+			return 0
+		}
+		return left - age
+	}
 	head := ""
-	if st.Time != nil {
+	if st.T0 > 0 {
+		head = ovFmt((nowMs - st.T0) / 1000)
+	} else if st.Time != nil {
 		head = ovFmt(*st.Time + age)
 	}
 	for _, o := range st.Obj {
-		if l := o.Left - age; l > -45 && l <= 90 {
+		l := o.Left - age
+		if o.End > 0 {
+			l = (o.End - nowMs) / 1000
+		}
+		if l > -45 && l <= 90 {
 			if l > 0 {
 				head += "  ·  " + o.Name + " " + ovFmt(l)
 			} else {
@@ -371,13 +392,13 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 		faces = append(faces, ovFace{r: ovRect{pad, y + pad, pad + sc(ovPortrait), y + pad + sc(ovPortrait)}, name: r.Name, icon: r.Icon})
 		var list []ovChip
 		for _, sp := range r.Spells {
-			list = append(list, ovChip{row: r.Row, kind: sp.Kind, label: sp.Spell, left: sp.Left - age, icon: sp.Icon})
+			list = append(list, ovChip{row: r.Row, kind: sp.Kind, label: sp.Spell, left: leftOf(sp.Left, sp.End), icon: sp.Icon})
 		}
 		if r.Ult != nil {
-			list = append(list, ovChip{row: r.Row, kind: "R", label: "R", left: r.Ult.Left - age, icon: r.Ult.Icon})
+			list = append(list, ovChip{row: r.Row, kind: "R", label: "R", left: leftOf(r.Ult.Left, r.Ult.End), icon: r.Ult.Icon})
 		}
 		if r.Zh != nil { // always, dimmed while they don't have it (as in the Timers tab)
-			list = append(list, ovChip{row: r.Row, kind: "Zhonya", label: "Zhonya", left: r.Zh.Left - age, icon: r.Zh.Icon, faded: !r.Zh.Has})
+			list = append(list, ovChip{row: r.Row, kind: "Zhonya", label: "Zhonya", left: leftOf(r.Zh.Left, r.Zh.End), icon: r.Zh.Icon, faded: !r.Zh.Has})
 		}
 		x := pad + sc(ovPortrait) + sc(9)
 		top := y + pad + (sc(ovPortrait)-cw)/2
