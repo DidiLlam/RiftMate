@@ -25,12 +25,13 @@ const playsSupported = true
 const ffmpegZip = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-lgpl-shared.zip"
 
 var (
-	capMu  sync.Mutex
-	capCmd *exec.Cmd
-	capIn  io.WriteCloser
-	capT0  time.Time
-	capAud *gameAudio
-	capDL  sync.Mutex
+	capMu      sync.Mutex
+	capCmd     *exec.Cmd
+	capIn      io.WriteCloser
+	capT0      time.Time
+	capAud     *gameAudio
+	capNoAudio bool // the sound made ffmpeg fail: this run of the app records without it
+	capDL      sync.Mutex
 )
 
 func ffDir() string   { return filepath.Join(filepath.Dir(dataDir()), "ffmpeg") }
@@ -149,7 +150,11 @@ func captureStart() {
 	}
 	os.RemoveAll(capRing())
 	os.MkdirAll(capRing(), 0o755)
-	aud, ain := audioPrepare() // the game's sound, if Windows lets us capture it
+	var aud *gameAudio
+	var ain []string
+	if !capNoAudio {
+		aud, ain = audioPrepare() // the game's sound, if Windows lets us capture it
+	}
 	args := append(capInput(), ain...)
 	args = append(args, eargs...)
 	if aud != nil {
@@ -196,6 +201,12 @@ func captureStart() {
 			map[bool]string{true: ": " + strings.TrimSpace(errb.String()), false: ""}[errb.Len() > 0 && err != nil])
 		if mine {
 			playsSet("ready", "")
+		}
+		// it stopped right away with the sound: once more without it, so the game still gets its clips
+		if mine && aud != nil && err != nil && time.Since(capT0) < 20*time.Second {
+			capNoAudio = true
+			logf("Jugades: torno a començar sense so")
+			go captureStart()
 		}
 	}()
 }

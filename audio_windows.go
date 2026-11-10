@@ -162,7 +162,7 @@ func audioPrepare() (*gameAudio, []string) {
 		logf("Jugades: no puc capturar el so del joc (%v); clips sense so", err)
 		return nil, nil
 	}
-	return a, []string{"-thread_queue_size", "1024", "-f", "s16le", "-ar", fmt.Sprint(audRate), "-ac", fmt.Sprint(audChannels), "-i", audPipe}
+	return a, []string{"-f", "s16le", "-ar", fmt.Sprint(audRate), "-ac", fmt.Sprint(audChannels), "-i", audPipe}
 }
 
 func (a *gameAudio) Stop() {
