@@ -1,7 +1,7 @@
 {
- "version": "2.1.5",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.5.exe",
- "size": 9900544,
- "sha256": "53e29ff0a157ceae977fe0a1f1bf079494ef4b9b65fa078ddc726b6212f786ab",
- "notes": "- Arreglat un error greu: des de la 2.1.0 l'app es tancava sola en acabar la partida i no guardava l'informe"
+ "version": "2.1.6",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.6.exe",
+ "size": 9901056,
+ "sha256": "1d915a5a6d527432fa67ee78c308cd620bf7c1e6e8b17ac231e8bd20f525f0d2",
+ "notes": "- Whisper: tornava sempre buit per una opció (-nf) que vaig posar a la 2.0.85; treta, i el servidor de Whisper es reinicia sol si ve d'una versió anterior"
 }
