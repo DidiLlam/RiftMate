@@ -5,9 +5,11 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -32,15 +34,27 @@ func whisperServe() error {
 		r.Body.Close()
 		return true
 	}
+	dir := whisperDir()
+	args := []string{"-m", filepath.Join(dir, whisperModel), "--host", "127.0.0.1", "--port", strconv.Itoa(whisperPort), "-t", "4", "-l", "es"}
+	sig := strings.Join(args, " ")
 	wsMu.Lock()
 	running := wsCmd != nil
 	wsMu.Unlock()
-	if running || alive() { // ours, or the one a previous run of the app left (after an update)
+	if running {
 		return nil
 	}
-	dir := whisperDir()
-	cmd := exec.Command(filepath.Join(dir, "whisper-server.exe"), "-m", filepath.Join(dir, whisperModel),
-		"--host", "127.0.0.1", "--port", strconv.Itoa(whisperPort), "-t", "4", "-nf", "-l", "es")
+	if alive() { // one a previous run of the app left going (after an update): kept only if started the same way
+		if b, _ := os.ReadFile(filepath.Join(dir, "servidor.txt")); string(b) == sig {
+			return nil
+		}
+		k := exec.Command("taskkill", "/IM", "whisper-server.exe", "/F")
+		k.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+		k.Run()
+		logf("Whisper: reinicio el servidor (era d'una versió anterior)")
+		time.Sleep(time.Second)
+	}
+	os.WriteFile(filepath.Join(dir, "servidor.txt"), []byte(sig), 0o644)
+	cmd := exec.Command(filepath.Join(dir, "whisper-server.exe"), args...)
 	cmd.Dir = dir
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000 | 0x00004000} // no window, below normal priority
 	if err := cmd.Start(); err != nil {
