@@ -323,6 +323,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 .t.run .spi{filter:grayscale(1) brightness(.55)}
 .plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px}.play video{width:100%;border-radius:8px;background:#000;aspect-ratio:16/9}.playtxt{margin-top:6px;display:flex;flex-direction:column;gap:2px}.pscore{display:inline-block;min-width:2.2em;text-align:center;font-weight:800;background:var(--accent,#2fc49c);color:#06231b;border-radius:6px;padding:0 6px;margin-right:6px}
 .advwrap>summary{cursor:pointer;font-weight:650}.advwrap[open]>summary{margin-bottom:10px}.advwrap>section.card{box-shadow:none;border:1px solid var(--line);margin:10px 0 0}
+#status:empty{display:none}
 .newslist{margin:6px 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:7px}
 .spi2{width:18px;height:18px;border-radius:4px;vertical-align:-4px}
 .t select{font-size:.75rem;font-weight:500;color:var(--muted)}
@@ -406,15 +407,15 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <div class="csgrid"><div><h3>Què pickejar</h3><div id="csPick"></div></div><div><h3>Encanteris</h3><div id="csSpells"></div></div><div><h3>Matchup</h3><div id="csMatch"></div></div></div>
   </section>
   <section class="card" id="mCard" hidden><h2 id="mTitle">Matchup</h2><div id="mBody"></div></section>
-  <div class="bar">
+  <div class="bar" hidden>
     <span class="micstate" id="micState">Micro: s'activarà sol quan comenci la partida</span>
     <button class="b" id="resetAll">Anul·lar tots</button>
     <button class="b" id="chatCopy" type="button" title="Copia els temporitzadors dels rivals per enganxar-los al xat del joc (Enter, Ctrl+V, Enter)">Copiar per al xat</button>
   </div>
-  <div class="game"><span class="dot" id="gameDot"></span><span id="gameTxt">Esperant que comenci una partida…</span></div>
-  <div class="heard"><span class="note">He sentit:</span> <b id="heard">—</b></div>
+  <div class="game" hidden><span class="dot" id="gameDot"></span><span id="gameTxt">Esperant que comenci una partida…</span></div>
+  <div class="heard" hidden><span class="note">He sentit:</span> <b id="heard">—</b></div>
   <div class="aibox" id="aiBox" hidden><div id="aiLog"></div></div>
-  <p class="note" id="status">El micròfon s'activa sol quan comença la partida. Digues "flash Ahri", "ulti Darius", "zhonya mid" o "cancel·la flash Ahri". Si la detecció falla, també pots dir els rivals: "top Darius", "mid Ahri".</p>
+  <p class="note" id="status"></p>
   <div class="teams" id="teams">
     <div class="teamcol" id="colFoe"><h2 class="sect"><span class="side" id="sFoe"></span><span id="hFoe">Rivals</span></h2><div id="enemies"></div></div>
     <div class="teamcol" id="colAlly"><h2 class="sect"><span class="side" id="sAlly"></span><span id="hAlly">El meu equip</span></h2><div id="allies"></div></div>
