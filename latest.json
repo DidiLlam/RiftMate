@@ -1,7 +1,7 @@
 {
- "version": "2.0.76",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.76.exe",
- "size": 9708544,
- "sha256": "9fbc768c84d54117febd539faa879c7056ba7a44ad6b19b0c30437819cc4fe47",
- "notes": "- Overlay: els clics passen al joc (et pots moure amb el botó dret per sobre); mantén Ctrl per moure'l o clicar-hi\n- Overlay: la Zhonya surt sempre, enfosquida si el rival no la té"
+ "version": "2.0.77",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.77.exe",
+ "size": 9709056,
+ "sha256": "5cf5eb8d59af19816d0e6f7b097563b9139f01f6d661c6a40cb275afe3dd134b",
+ "notes": "- Veu: si un temporitzador ja corre, tornar-lo a dir no el reinicia (p. ex. 'encara li queden 2 minuts al flash de Xerath'); només compta de nou en els últims 15 s\n- Per corregir-ne un de mal marcat: 'anul·la flash Xerath' i torna'l a dir"
 }
