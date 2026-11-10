@@ -1,7 +1,7 @@
 {
- "version": "2.1.9",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.9.exe",
- "size": 9905152,
- "sha256": "1ccbea1e3d0ce15024011e0be2e75f09d0b2cc4b24eebed10babbb9d34af70c1",
- "notes": "- Clips: els de 80 punts o més es guarden per sempre; els altres només mentre són del top 3 de les últimes 10 partides"
+ "version": "2.1.10",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.10.exe",
+ "size": 9906688,
+ "sha256": "fab4825f081b9473f50ce7af14b0802f44dcace066ac4c75d8449cd0c7b1d8f7",
+ "notes": "- Gràfic de LP: 'Últimes 15' ara agafa totes les teves partides de Solo/Duo de Riot, també les que l'app no va poder apuntar (com les dues d'avui en què es va tancar sola); els LP d'aquestes surten aproximats (~)"
 }
