@@ -481,5 +481,6 @@ func voiceStatsFlush() {
 	}
 	logf("Veu (resum de la partida): %d frases a Whisper, %.2f s de mitjana, %.2f s la més lenta; %d marcades a l'instant per Windows, %d sense text a Whisper",
 		v.n, (v.total / time.Duration(v.n)).Seconds(), v.max.Seconds(), v.fast, v.fastFix)
-	*v = voiceStats{}
+	// reset the numbers only (overwriting the whole struct would also wipe its lock while it's held: a crash)
+	v.n, v.cmds, v.fast, v.fastOK, v.fastFix, v.total, v.max, v.dbs = 0, 0, 0, 0, 0, 0, 0, nil
 }
