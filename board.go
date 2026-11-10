@@ -17,6 +17,7 @@ type BoardPlayer struct {
 	Champ    string    `json:"champ"`
 	Level    int       `json:"level"`
 	Spells   [2]string `json:"spells"`
+	Casts    [2]int    `json:"casts"` // how many times each spell was used in the game
 	Keystone int       `json:"keystone"`
 	SubStyle int       `json:"sub"`
 	Items    [7]int    `json:"items"`
@@ -93,9 +94,9 @@ func makeBoardOpt(c Config, m *matchDTO, me int, withRanks bool) *Board {
 			name = p.SummonerName
 		}
 		bp := BoardPlayer{Name: name, Tag: p.TagLine, Champ: p.ChampionName, Level: p.ChampLevel,
-			Spells: [2]string{spellNames[p.Summoner1], spellNames[p.Summoner2]},
-			Items:  [7]int{p.Item0, p.Item1, p.Item2, p.Item3, p.Item4, p.Item5, p.Item6},
-			K:      p.Kills, D: p.Deaths, A: p.Assists, CS: p.Minions + p.Neutral, KP: p.Challenges.KP, Damage: p.Damage,
+			Spells: [2]string{spellNames[p.Summoner1], spellNames[p.Summoner2]}, Casts: [2]int{p.Sum1Casts, p.Sum2Casts},
+			Items: [7]int{p.Item0, p.Item1, p.Item2, p.Item3, p.Item4, p.Item5, p.Item6},
+			K:     p.Kills, D: p.Deaths, A: p.Assists, CS: p.Minions + p.Neutral, KP: p.Challenges.KP, Damage: p.Damage,
 			Gold: p.GoldEarned, Vision: p.VisionScore, Team: p.TeamID, Pos: p.TeamPosition, Me: p.ParticipantID == me,
 			FirstB: p.FirstBlood, Multi: p.LargestMulti, Remake: p.EarlySurr}
 		if len(p.Perks.Styles) > 0 && len(p.Perks.Styles[0].Selections) > 0 {

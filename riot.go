@@ -202,6 +202,8 @@ type matchDTO struct {
 			LargestMulti  int    `json:"largestMultiKill"`
 			Summoner1     int    `json:"summoner1Id"`
 			Summoner2     int    `json:"summoner2Id"`
+			Sum1Casts     int    `json:"summoner1Casts"`
+			Sum2Casts     int    `json:"summoner2Casts"`
 			Item0         int    `json:"item0"`
 			Item1         int    `json:"item1"`
 			Item2         int    `json:"item2"`

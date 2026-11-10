@@ -321,6 +321,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 #allies{display:flex;flex-direction:column;gap:10px}
 .spi{width:40px;height:40px;border-radius:7px;display:block;box-shadow:0 0 0 1px var(--line)}
 .t.run .spi{filter:grayscale(1) brightness(.55)}
+.newslist{margin:6px 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:7px}
+.spi2{width:18px;height:18px;border-radius:4px;vertical-align:-4px}
 .t select{font-size:.75rem;font-weight:500;color:var(--muted)}
 .t .nm.alt{display:none}
 
@@ -391,6 +393,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <div class="session" id="session" hidden></div>
   <div class="view" id="viewT">
     <section class="card welcome" id="welcome" hidden></section>
+    <section class="card news" id="news" hidden></section>
     <div class="rankbadge" id="rankBadge" hidden></div>
     <section class="card" id="scoutCard" hidden><h2>Jugadors d'aquesta partida</h2><div id="scoutBody"></div></section>
   <section class="card cs" id="csCard" hidden>
@@ -416,6 +419,10 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   </div>
   <div class="view" id="viewA" hidden>
   <nav class="subtabs" id="setTabs" role="tablist"><button type="button" data-g="veu">Veu</button><button type="button" data-g="coach">Coach</button><button type="button" data-g="partida">En partida</button><button type="button" data-g="app">Compte i app</button></nav>
+  <p class="note setintro" data-g="veu">Com t'escolta l'app: el micròfon, els noms dels campions i els avisos que diu en veu alta.</p>
+  <p class="note setintro" data-g="coach">Què et diu el coach durant la partida i la IA a qui pots preguntar.</p>
+  <p class="note setintro" data-g="partida">El que veus i fas mentre jugues: l'overlay, el teu duo, les ajudes, les dreceres i el mòbil.</p>
+  <p class="note setintro" data-g="app">El teu compte, les claus, les còpies de seguretat i l'aspecte de l'app.</p>
   <section class="card" id="statusCard" data-g="app"><h2>Estat de l'app</h2><div id="statusBody"><p class="note">Carregant…</p></div>
     <div class="bar"><button class="b" type="button" id="statusCopy">Copiar el diagnòstic</button><span class="note">Si alguna cosa no va, copia això i envia-ho.</span></div></section>
   <div class="settings">
@@ -447,6 +454,19 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <div class="row2"><label for="cMin">Recordatori cada</label><input type="number" id="cMin" min="30" max="600" value="70"><span>–</span><input type="number" id="cMax" min="30" max="900" value="110"><span>segons</span></div>
     <p class="note" id="coachLast">El coach comença sol quan es detecta la partida.</p>
   </section>
+  <section class="card" data-g="partida" id="ovCard"><h2>Overlay dins del joc</h2>
+    <label class="ph-item" for="cOverlay"><input type="checkbox" id="cOverlay"><span>Mostrar els temporitzadors a sobre del joc</span></label>
+    <div id="ovOpts" hidden>
+      <div class="ovrow"><label>Opacitat <input type="range" id="ovAlpha" min="40" max="255" step="5"></label>
+        <label>Tornar a la cantonada <select id="ovPos"><option value="tr">Dalt a la dreta</option><option value="tl">Dalt a l'esquerra</option><option value="br">Baix a la dreta</option><option value="bl">Baix a l'esquerra</option></select></label></div>
+      <label class="ph-item" for="ovLock"><input type="checkbox" id="ovLock"><span>Bloquejar-lo del tot (ni amb Ctrl es pot moure ni clicar)</span></label>
+      <label class="ph-item" for="ovAlways"><input type="checkbox" id="ovAlways"><span>Mostrar-lo també fora de partida (per col·locar-lo)</span></label>
+    </div>
+    <p class="note">Els clics passen al joc, així pots moure't amb el botó dret encara que hi passis per sobre. Per moure'l o clicar-hi, mantén <b>Ctrl</b> premut: l'arrossegues on vulguis (es queda on el deixes) i, clicant un encanteri, la ulti o la Zhonya, el marques o el cancel·les. Els temporitzadors s'activen amb la veu, com sempre. Surt a sobre del joc en "Sense vores" i, a la majoria d'ordinadors amb Windows 10/11, també en pantalla completa. No toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></section>
+  <section class="card" data-g="partida" id="duoCard"><h2>Temporitzadors amb el teu duo</h2>
+    <p class="note">Si el teu company també té RiftMate, poseu el mateix codi i el que marqui un (amb la veu, un clic o l'overlay) li sortirà a l'altre. Només s'envia el campió, l'encanteri i quan torna.</p>
+    <div class="bar"><input type="text" id="duoCode" maxlength="12" placeholder="Codi" style="width:9em;text-transform:uppercase" data-noi18n><button class="b" type="button" id="duoJoin">Unir-me</button><button class="b" type="button" id="duoNew">Crear un codi</button><button class="b" type="button" id="duoOff" hidden>Deixar-ho</button></div>
+    <p class="note" id="duoState"></p></section>
   <section class="card" id="helpCard"><h2>Ajuda en partida</h2>
     <label class="ph-item" for="cWave"><input type="checkbox" id="cWave" checked><span>Onades: quan pots empènyer i quan no, segons on s'ha vist el jungla rival i quan mates el teu rival</span></label>
     <label class="ph-item" for="cGold"><input type="checkbox" id="cGold" checked><span>Or i compres: quan pots comprar el següent objecte i quan tornar a base</span></label>
@@ -519,19 +539,6 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <table class="wtab hk"><tbody><tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>Flash del top, jungla, mig, ADC i suport rivals</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>5</kbd></td><td>L'altre encanteri (Ignite, Teleport, Heal…)</td></tr></tbody></table>
     <p class="note">Si tornes a prémer la mateixa drecera mentre el temporitzador corre, el cancel·la. Sona un to per confirmar-ho.</p></section>
-  <section class="card" data-g="partida" id="duoCard"><h2>Temporitzadors amb el teu duo</h2>
-    <p class="note">Si el teu company també té RiftMate, poseu el mateix codi i el que marqui un (amb la veu, un clic o l'overlay) li sortirà a l'altre. Només s'envia el campió, l'encanteri i quan torna.</p>
-    <div class="bar"><input type="text" id="duoCode" maxlength="12" placeholder="Codi" style="width:9em;text-transform:uppercase" data-noi18n><button class="b" type="button" id="duoJoin">Unir-me</button><button class="b" type="button" id="duoNew">Crear un codi</button><button class="b" type="button" id="duoOff" hidden>Deixar-ho</button></div>
-    <p class="note" id="duoState"></p></section>
-  <section class="card" data-g="partida" id="ovCard"><h2>Overlay dins del joc <span class="pill">prova</span></h2>
-    <label class="ph-item" for="cOverlay"><input type="checkbox" id="cOverlay"><span>Mostrar els temporitzadors a sobre del joc</span></label>
-    <div id="ovOpts" hidden>
-      <div class="ovrow"><label>Opacitat <input type="range" id="ovAlpha" min="40" max="255" step="5"></label>
-        <label>Tornar a la cantonada <select id="ovPos"><option value="tr">Dalt a la dreta</option><option value="tl">Dalt a l'esquerra</option><option value="br">Baix a la dreta</option><option value="bl">Baix a l'esquerra</option></select></label></div>
-      <label class="ph-item" for="ovLock"><input type="checkbox" id="ovLock"><span>Bloquejar-lo del tot (ni amb Ctrl es pot moure ni clicar)</span></label>
-      <label class="ph-item" for="ovAlways"><input type="checkbox" id="ovAlways"><span>Mostrar-lo també fora de partida (per col·locar-lo)</span></label>
-    </div>
-    <p class="note">Els clics passen al joc, així pots moure't amb el botó dret encara que hi passis per sobre. Per moure'l o clicar-hi, mantén <b>Ctrl</b> premut: l'arrossegues on vulguis (es queda on el deixes) i, clicant un encanteri, la ulti o la Zhonya, el marques o el cancel·les. Els temporitzadors s'activen amb la veu, com sempre. Surt a sobre del joc en "Sense vores" i, a la majoria d'ordinadors amb Windows 10/11, també en pantalla completa. No toca ni llegeix el joc. Riot no permet als programes de tercers comptar les recàrregues dels rivals; RiftMate ho fa a partir del que tu dius o marques, però fes-lo servir sabent-ho.</p></section>
   <section class="card" data-g="partida" id="mobCard"><h2>El mòbil com a segona pantalla</h2>
     <label class="ph-item" for="cMobile"><input type="checkbox" id="cMobile"><span>Veure els temporitzadors al mòbil (a la mateixa wifi de casa)</span></label>
     <div id="mobBody" class="mob"></div>
@@ -1963,7 +1970,19 @@ function startTimer(i, slot, spell, fromVoice){
   const lag = fromVoice ? Math.min(Math.max(0, +store.get("voiceLag", 10) || 0), 30, total - 1) : 0;
   const left = total - lag;
   timers[key] = {end: Date.now() + left*1000, total, warned: left <= 35, spell, started: Date.now(), who: () => $(`#name${i}`).value.trim() || rowLabel(i)};
-  render(); clipSoon(); duoTell(i, spell, left);
+  render(); clipSoon(); duoTell(i, spell, left); markAdd(i, spell);
+}
+// the enemy spells marked in this game, for the report ("how many you caught")
+let marksLog = [];
+function markAdd(i, spell){
+  if (!game || i > 4 || !SPELL_IMG[spell]) return;
+  marksLog.push((rowEnglish(i) || $(`#name${i}`).value.trim()) + "|" + spell); marksPush();
+}
+let marksT = 0;
+function marksPush(){
+  clearTimeout(marksT);
+  marksT = setTimeout(() => { const m = {}; for (const k of marksLog) m[k] = (m[k] || 0) + 1;
+    if (location.protocol.startsWith("http")) fetch("/api/marks", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(m)}).catch(() => {}); }, 800);
 }
 $("#resetAll").addEventListener("click", () => { for (const k in timers) delete timers[k]; render(); });
 // ---------- the phone as a second screen ----------
@@ -2031,7 +2050,7 @@ function duoApply(m){
     const left = m.back - gt; if (left <= 1) return;
     const total = sp === "R" ? (ultCooldown(i) || left) : (CD[sp] || left);
     timers[key] = {end: Date.now() + left * 1000, total: Math.max(total, left), warned: left <= 35, spell: sp, started: Date.now(), who: () => $(`#name${i}`).value.trim() || rowLabel(i)};
-    render(); clipSoon(); tone([700, 940], .15);
+    render(); clipSoon(); tone([700, 940], .15); markAdd(i, sp);
     $("#status").textContent = `El teu duo ha marcat: ${NAMES[sp] || sp} ${de(who)}.`; $("#status").className = "note";
     plog(`Duo: ${sp} ${who} (queden ${Math.round(left)} s)`);
   } finally { duoApplying = false; }
@@ -2524,9 +2543,11 @@ function voiceLine(l){
     let f = {}; try { f = JSON.parse(l.text); } catch (e) {}
     if (!f.t) return;
     const before = Object.fromEntries(Object.entries(timers).map(([k, v]) => [k, v]));
+    const ml = marksLog.length;
     $("#heard").textContent = f.t; handle(f.t, true, {reset: true});
+    const addedMarks = marksLog.slice(ml);
     const changed = Object.keys({...before, ...timers}).filter(k => before[k] !== timers[k]);
-    fastMarks.set(f.id, {t: f.t, cmd: cmdOf(f.t), prev: Object.fromEntries(changed.map(k => [k, before[k]])), now: Object.fromEntries(changed.map(k => [k, timers[k]]))});
+    fastMarks.set(f.id, {t: f.t, cmd: cmdOf(f.t), marks: addedMarks, prev: Object.fromEntries(changed.map(k => [k, before[k]])), now: Object.fromEntries(changed.map(k => [k, timers[k]]))});
     if (fastMarks.size > 20) fastMarks.delete(fastMarks.keys().next().value);
   }
   else if (l.kind === "heardw") {
@@ -2542,7 +2563,7 @@ function voiceLine(l){
       // Windows was wrong: put back what it changed (only if nothing else touched it since), then do what Whisper heard
       let undone = false;
       for (const [k, v] of Object.entries(fm.prev)) if (timers[k] === fm.now[k]) { if (v) timers[k] = v; else delete timers[k]; undone = true; }
-      if (undone) { render(); clipSoon(); plog(`Veu: desfet "${fm.t}" (Whisper ha sentit "${w.w || "res"}")`); if (!cw) { $("#status").textContent = `Desfet: "${fm.t}" no era el que has dit.`; $("#status").className = "note"; } }
+      if (undone) { for (const k of fm.marks || []) { const j = marksLog.lastIndexOf(k); if (j >= 0) marksLog.splice(j, 1); } marksPush(); render(); clipSoon(); plog(`Veu: desfet "${fm.t}" (Whisper ha sentit "${w.w || "res"}")`); if (!cw) { $("#status").textContent = `Desfet: "${fm.t}" no era el que has dit.`; $("#status").className = "note"; } }
       if (!cw) return;
     }
     if (w.w) $("#heard").textContent = w.w;
@@ -2674,6 +2695,7 @@ function updateItems(data, silent){
   });
 }
 function onGameEnd(){
+  setTimeout(() => { marksLog = []; }, 3000);
   { const n = sayQ.length; for (let k = sayQ.length - 1; k >= 0; k--) if (sayQ[k].live) sayQ.splice(k, 1); if (n > sayQ.length) plog(`Coach: ${n - sayQ.length} frases de la partida que encara no havia dit, descartades`); }
   setTimeout(() => micOff("partida acabada"), 1500);
   helpEnd(); aiHistory = []; lastData = null; game = null; micTesting = false; setTimeout(() => renderUpdate(), 500); setTimeout(updateMic, 1600); coach = null; clearEnemies(); $("#mCard").hidden = true; if (on("vGame")) { tone([990,660], .3); speak("Partida acabada."); }
@@ -3761,6 +3783,24 @@ function renderWelcome(force){
   $("#welcomeOk").addEventListener("click", () => { store.set("welcomeDone", true); el.hidden = true; });
 }
 
+// ---------- What's new: once, after updating to a new minor version ----------
+const NEWS = {"2.1": [
+  ["La veu t'entén millor", "Whisper (un model modern de reconeixement de veu) comprova cada frase en aquest ordinador: el que diu el teu company, el joc o el Discord ja no marca res. Els temporitzadors es marquen a l'instant i, si no era el que has dit, es desfan sols."],
+  ["Ordres clares", "Només compta l'ordre sola: \"flash Darius\" el marca, i si ja comptava el reinicia; \"cancela flash Darius\" l'anul·la. Dins d'una frase no compta mai."],
+  ["Overlay dins del joc", "Les fotos dels rivals amb els seus encanteris, la ulti i la Zhonya a sobre del joc. Mantén Ctrl per moure'l o clicar-lo."],
+  ["Temporitzadors amb el teu duo", "Poseu el mateix codi i el que marqui un li surt a l'altre."],
+  ["Selecció de campions", "Dedueix el teu rival de línia i et diu quin dels teus campions et va millor contra ell."],
+  ["A l'informe", "Quants encanteris dels rivals has marcat de tots els que han fet servir."],
+  ["Ajustos endreçats", "Quatre grups clars: Veu, Coach, En partida i Compte i app."]]};
+function renderNews(ver){
+  const el = $("#news"); if (!el) return;
+  const minor = String(ver).split(".").slice(0, 2).join("."), items = NEWS[minor];
+  if (!items || store.get("newsSeen", "") === minor) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<h2>Novetats de la versió ${esc(minor)}</h2><ul class="newslist">${items.map(([t, d]) => `<li><b>${esc(t)}.</b> ${esc(d)}</li>`).join("")}</ul>
+    <div class="bar"><button class="b" type="button" id="newsOk">Entesos</button></div>`;
+  $("#newsOk").addEventListener("click", () => { store.set("newsSeen", minor); el.hidden = true; });
+}
 $("#welcomeShow").addEventListener("click", () => { showTab("T"); renderWelcome(true); window.scrollTo({top: 0, behavior: "smooth"}); });
 
 // ---------- Per-account settings: champions and role belong to the account logged in ----------
@@ -3954,7 +3994,7 @@ setInterval(() => { if (!game) sideArt(); }, 15 * 60 * 1000);
 async function loadMe(){
   if (!location.protocol.startsWith("http")) return;
   let m; try { m = await (await fetch("/api/me", {cache: "no-store"})).json(); } catch (e) { return; }
-  if (m.version) $("#appVer").textContent = "v" + m.version;
+  if (m.version) { $("#appVer").textContent = "v" + m.version; renderNews(m.version); }
   applyAccount(m);
   if (!m.name) { $("#meChip").hidden = true; return; }
   $("#meName").textContent = m.name; $("#meTag").textContent = m.tag ? "#" + m.tag : "";
@@ -5463,7 +5503,7 @@ const SET_BY_TITLE = {"Altres avisos de veu": "veu", "Mapa de l'informe (clau de
 function setGroup(g){
   try { localStorage.setItem("setGroup", g); } catch (e) {}
   document.querySelectorAll("#setTabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.g === g));
-  document.querySelectorAll("#viewA section.card, #viewA details, #viewA .bar[data-g]").forEach(el => {
+  document.querySelectorAll("#viewA section.card, #viewA details, #viewA .bar[data-g], #viewA p.setintro").forEach(el => {
     if (!el.dataset.g) { const t = el.querySelector("h2")?.textContent?.trim(); el.dataset.g = SET_GROUP[el.id] || SET_BY_TITLE[t] || SET_BY_TITLE[Object.keys(SET_BY_TITLE).find(k => tr(k) === t)] || "app"; }
     if (el.closest("section.card") && el.closest("section.card") !== el) return;   // a block inside a card follows the card
     el.toggleAttribute("data-hide", el.dataset.g !== g);
@@ -6320,6 +6360,23 @@ document.addEventListener("click", e => {
 });
 { const el = $("#vcMode"), v = store.get("vcMode", "auto"); if (el) { el.value = v; el.addEventListener("change", () => { store.set("vcMode", el.value); vcPoll(`?mode=${el.value}&lang=${speechChoice().lang}`); }); } }
 if (location.protocol.startsWith("http")) { setTimeout(() => vcPoll(`?mode=${store.get("vcMode", "auto")}&lang=${speechChoice().lang}`), 1500); setInterval(() => vcPoll(), 5000); }
+// how many of the enemy summoner spells used in the game you marked (Riot counts each use)
+function marksCard(r){
+  const b = r.map?.board, me = b?.players?.find(p => p.me); if (!b || !me || !r.marks) return "";
+  const rows = [];
+  let got = 0, all = 0;
+  for (const p of b.players.filter(p => p.team !== me.team)) for (let k = 0; k < 2; k++) {
+    const sp = p.spells?.[k], used = p.casts?.[k] || 0; if (!sp || sp === "Smite") continue;
+    const mk = r.marks[`${displayChamp(p.champ)}|${sp}`] || r.marks[`${p.champ}|${sp}`] || Object.entries(r.marks).filter(([key]) => norm(key) === norm(`${p.champ}|${sp}`) || norm(key.split("|")[0]) === norm(displayChamp(p.champ)) && key.endsWith("|" + sp)).reduce((a, [, n]) => a + n, 0);
+    if (!used && !mk) continue;
+    got += Math.min(mk, used); all += used;
+    rows.push(`<tr><td><span class="ch"><img src="${champImg(p.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(displayChamp(p.champ))}</b></span></td><td><img class="spi2" src="${spellIcon(sp)}" alt="" onerror="this.remove()"> ${esc(NAMES[sp] || sp)}</td><td class="n">${mk}</td><td class="n">${used}</td></tr>`);
+  }
+  if (!rows.length) return "";
+  return `<section class="card"><h2>Encanteris dels rivals que has marcat</h2>
+    <p>${all ? `N'has marcat <b>${got} de ${all}</b> (${Math.round(100 * got / all)}%).` : "Els rivals no n'han fet servir cap."} <span class="note">No cal marcar-los tots: els importants són els del teu rival de línia i el jungla.</span></p>
+    <div class="tbl"><table><tr><th>Rival</th><th>Encanteri</th><th>Marcats</th><th>Fets servir</th></tr>${rows.join("")}</table></div></section>`;
+}
 function renderReport(r){
   curReport = r;
   if (!r) { $("#report").innerHTML = `<section class="card"><h2>Última partida</h2><p class="note">Encara no hi ha cap informe. Juga una partida amb el programa obert.</p></section>`; return; }
@@ -6334,6 +6391,7 @@ function renderReport(r){
   $("#report").innerHTML = `
   ${reportTop(r)}
   <section class="card" id="mapCard"></section>
+  ${marksCard(r)}
   <section class="card" ${sup ? "hidden" : ""}><h2>${jg ? "Farm" : "Farm i línia"}</h2>
     ${csChart(r)}
     <div class="tbl">${csTable(r)}</div>

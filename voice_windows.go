@@ -254,6 +254,7 @@ func voiceStart(champs []string, lanes bool) error {
 }
 
 func voiceStop() {
+	voiceStatsFlush()
 	vMu.Lock()
 	cmd := vCmd
 	vCmd = nil
@@ -277,6 +278,7 @@ func voiceClip(line string) {
 	path, text, kind := f[0], f[1], f[4]
 	conf, _ := strconv.ParseFloat(f[2], 64)
 	lvs := ""
+	db0, _ := strconv.ParseFloat(f[3], 64)
 	if db, err := strconv.ParseFloat(f[3], 64); err == nil {
 		ok, ref := voiceLoudEnough(db, kind == "HEARD" && conf >= 0.65)
 		if !ok {
@@ -297,7 +299,7 @@ func voiceClip(line string) {
 			logf("Veu de Windows: \"%s\" (%.2f%s), Whisper ho comprova", text, conf, lvs)
 		}
 	}
-	if whisperQueue(wClip{Path: path, Grammar: text, Kind: kind, Conf: conf, At: time.Now(), Fast: fast}) {
+	if whisperQueue(wClip{Path: path, Grammar: text, Kind: kind, Conf: conf, At: time.Now(), Fast: fast, DB: db0}) {
 		return
 	}
 	os.Remove(path)

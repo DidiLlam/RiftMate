@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.0.86"
+	version = "2.1.0"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -168,6 +168,9 @@ func (r *Recorder) step(g *AllGame) {
 		r.warnedNoMe = false
 		go captureGameID()
 		logf("Enregistrant partida: %s (%s, posicio %q, equip %s), %d jugadors, minut %.1f", me.ChampionName, myID, me.Position, me.Team, len(g.AllPlayers), t/60)
+		if t < 120 {
+			marksTake() // a new game: nothing marked yet
+		}
 		r.rec = &Record{Date: time.Now().Format("2006-01-02 15:04"), Me: *me, Mode: g.GameData.GameMode}
 		go lpAtStart(r.rec.Date, pidOf(me))
 	}
@@ -214,6 +217,7 @@ func (r *Recorder) finish(result string) {
 		return
 	}
 	logf("Final de partida (resultat %q, durada %.1f min, %d instantanies, %d esdeveniments)", result, rec.Duration/60, len(rec.Snaps), len(rec.Events))
+	usageLog(rec.Duration)
 	if rec.Mode == "PRACTICETOOL" {
 		logf("Eina de pràctica: no es guarda com a partida")
 		return
@@ -240,6 +244,11 @@ func (r *Recorder) finish(result string) {
 		}()
 		report = analyse(rec)
 	}()
+	if rm, ok := report.(map[string]any); ok {
+		if mk := marksTake(); len(mk) > 0 {
+			rm["marks"] = mk // the enemy spells you marked in this game ("Champ|Spell": times)
+		}
+	}
 	dir := dataDir()
 	os.MkdirAll(dir, 0o755)
 	stamp := strings.NewReplacer(":", "", " ", "_").Replace(rec.Date)
@@ -528,8 +537,8 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/overlay", overlayHandler(send))
 	mux.HandleFunc("/api/whisper", whisperHandler(send))
 	mux.HandleFunc("/api/duo", duoHandler(send))
+	mux.HandleFunc("/api/marks", marksHandler(send))
 	mux.HandleFunc("/api/duo/send", duoHandler(send))
-	mux.HandleFunc("/overlay", overlayPageHandler)
 	mux.HandleFunc("/api/backup", backupHandler)
 	mux.HandleFunc("/api/restore", restoreHandler(send))
 	mux.HandleFunc("/api/model", modelHandler)

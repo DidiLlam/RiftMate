@@ -79,12 +79,6 @@ func overlayAuto() {
 	}
 }
 
-func overlayPageHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	w.Write([]byte(overlayPage))
-}
-
 var ovCfgMu sync.Mutex
 
 func overlaySave(c overlayCfg) {

@@ -44,7 +44,8 @@ type wClip struct {
 	Path, Grammar, Kind string
 	Conf                float64
 	At                  time.Time
-	Fast                int // the page already acted on Windows' version (id): Whisper only confirms or undoes it
+	Fast                int     // the page already acted on Windows' version (id): Whisper only confirms or undoes it
+	DB                  float64 // how loud (0: not measured)
 }
 
 func whisperDir() string { return filepath.Join(filepath.Dir(dataDir()), "whisper") }
@@ -97,6 +98,7 @@ func whisperEnsure() {
 			logf("Whisper: no s'ha pogut engegar: %v", err)
 			return
 		}
+		whisperWarm()
 		whisperSet("ready", "")
 		logf("Whisper: llest")
 		wMu.Lock()
@@ -244,7 +246,8 @@ func whisperWorker() {
 			questionAppend(text)
 			continue
 		}
-		logf("Veu (Whisper, %.1f s): \"%s\"  [Windows: \"%s\" %.2f]", dur.Seconds(), text, c.Grammar, c.Conf)
+		vStat.add(c, text, dur)
+		logf("Veu (Whisper, %.2f s, %.0f dB): \"%s\"  [Windows: \"%s\" %.2f %s]", dur.Seconds(), c.DB, text, c.Grammar, c.Conf, c.Kind)
 		b, _ := json.Marshal(map[string]any{"w": text, "g": c.Grammar, "c": c.Conf, "id": c.Fast})
 		voicePush("heardw", string(b))
 	}
@@ -422,4 +425,69 @@ func questionAppend(t string) {
 			voicePush("question", q)
 		}
 	})
+}
+
+// whisperWarm: one second of silence through it, so the first real phrase isn't the slow one
+func whisperWarm() {
+	f := filepath.Join(os.TempDir(), "riftmate-escalfa.wav")
+	n := 16000 * 2
+	b := make([]byte, 44+n)
+	copy(b, "RIFF")
+	le32 := func(o int, v uint32) { b[o], b[o+1], b[o+2], b[o+3] = byte(v), byte(v>>8), byte(v>>16), byte(v>>24) }
+	le32(4, uint32(36+n))
+	copy(b[8:], "WAVEfmt ")
+	le32(16, 16)
+	b[20], b[22] = 1, 1 // PCM, mono
+	le32(24, 16000)
+	le32(28, 32000)
+	b[32], b[34] = 2, 16
+	copy(b[36:], "data")
+	le32(40, uint32(n))
+	if os.WriteFile(f, b, 0o644) == nil {
+		_, d, err := whisperTranscribe(f)
+		os.Remove(f)
+		logf("Whisper: escalfat (%.2f s, %v)", d.Seconds(), err)
+	}
+}
+
+// vStat: how the voice did in this game, for the log (to tune it with real numbers)
+type voiceStats struct {
+	mu                             sync.Mutex
+	n, cmds, fast, fastOK, fastFix int
+	total, max                     time.Duration
+	dbs                            []float64
+}
+
+var vStat voiceStats
+
+func (v *voiceStats) add(c wClip, text string, d time.Duration) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	v.n++
+	v.total += d
+	if d > v.max {
+		v.max = d
+	}
+	if c.DB != 0 {
+		v.dbs = append(v.dbs, c.DB)
+	}
+	if c.Fast > 0 {
+		v.fast++
+		if strings.EqualFold(strings.Join(strings.Fields(text), " "), "") {
+			v.fastFix++
+		}
+	}
+}
+
+// voiceStatsFlush: one line at the end of the game, then start again
+func voiceStatsFlush() {
+	v := &vStat
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if v.n == 0 {
+		return
+	}
+	logf("Veu (resum de la partida): %d frases a Whisper, %.2f s de mitjana, %.2f s la més lenta; %d marcades a l'instant per Windows, %d sense text a Whisper",
+		v.n, (v.total / time.Duration(v.n)).Seconds(), v.max.Seconds(), v.fast, v.fastFix)
+	*v = voiceStats{}
 }
