@@ -1,7 +1,7 @@
 {
- "version": "2.0.77",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.77.exe",
+ "version": "2.0.78",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.78.exe",
  "size": 9709056,
- "sha256": "5cf5eb8d59af19816d0e6f7b097563b9139f01f6d661c6a40cb275afe3dd134b",
- "notes": "- Veu: si un temporitzador ja corre, tornar-lo a dir no el reinicia (p. ex. 'encara li queden 2 minuts al flash de Xerath'); només compta de nou en els últims 15 s\n- Per corregir-ne un de mal marcat: 'anul·la flash Xerath' i torna'l a dir"
+ "sha256": "ff5829acef8e8bca4a0c8bdf0ffee764a42b310da009dfd831c3b1af39ecf882",
+ "notes": "- Veu: un temporitzador que ja corre només canvia si dius 'cancel·la' (p. ex. 'cancela flash Xerath'); tornar-lo a anomenar mai el reinicia"
 }
