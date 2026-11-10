@@ -1,7 +1,7 @@
 {
- "version": "2.1.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.0.exe",
- "size": 9817088,
- "sha256": "40b2cd1c667dcc769554c0f5857dd351df5686c8ce48218e8339ce2c9b41f83c",
- "notes": "- Versió 2.1: la veu amb Whisper, l'overlay, el duo i la selecció de campions, tot endreçat\n- Ajustos en quatre grups clars (Veu, Coach, En partida, Compte i app), amb l'overlay i el duo al principi\n- A l'informe: quants encanteris dels rivals has marcat de tots els que han fet servir\n- El registre guarda la velocitat de Whisper, el volum de cada frase i el consum de RiftMate per partida, per afinar-ho\n- Pantalla de novetats en actualitzar\n- Neteja: fora l'overlay antic de navegador"
+ "version": "2.1.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.1.exe",
+ "size": 9822720,
+ "sha256": "8df742bc5fbcb9a4ec35ee920612ec27dc8284b71c73fc27efc8d50ae058631d",
+ "notes": "- Duo automàtic: si el teu company d'equip també té RiftMate, els temporitzadors es comparteixen sols a cada partida, sense codis\n- El codi queda com a opció per a fora de partida"
 }
