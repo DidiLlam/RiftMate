@@ -1,7 +1,7 @@
 {
- "version": "2.1.15",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.15.exe",
+ "version": "2.1.16",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.16.exe",
  "size": 9932800,
- "sha256": "579292b2b2e5831d614a0e87592c345b5b0881794ccb8fc22fd8ff0ad069e05f",
- "notes": "- Clips: arreglat l'error que impedia gravar amb so (ffmpeg rebutjava una opció i no gravava res)\n- Si la gravació amb so falla en començar, torna a començar sola sense so, perquè no et quedis sense clips"
+ "sha256": "e31c6b8de8d1c2cf6bb61bf4edb13c1043a86ac2beb8b0624a2babf73a983eaf",
+ "notes": "- Temporitzador: fora la barra de sota (estat del micro, Anul·lar tots, Copiar per al xat, He sentit i el text d'ajuda); els avisos curts de la veu continuen sortint quan n'hi ha"
 }
