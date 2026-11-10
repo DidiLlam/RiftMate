@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,7 @@ type wClip struct {
 	Path, Grammar, Kind string
 	Conf                float64
 	At                  time.Time
+	Fast                int // the page already acted on Windows' version (id): Whisper only confirms or undoes it
 }
 
 func whisperDir() string { return filepath.Join(filepath.Dir(dataDir()), "whisper") }
@@ -232,7 +234,7 @@ func whisperWorker() {
 		}
 		if err != nil {
 			logf("Whisper: error %v; faig servir el que ha entès Windows", err)
-			if c.Kind == "HEARD" {
+			if c.Kind == "HEARD" && c.Fast == 0 {
 				voicePush("heard", c.Grammar)
 			}
 			continue
@@ -243,7 +245,7 @@ func whisperWorker() {
 			continue
 		}
 		logf("Veu (Whisper, %.1f s): \"%s\"  [Windows: \"%s\" %.2f]", dur.Seconds(), text, c.Grammar, c.Conf)
-		b, _ := json.Marshal(map[string]any{"w": text, "g": c.Grammar, "c": c.Conf})
+		b, _ := json.Marshal(map[string]any{"w": text, "g": c.Grammar, "c": c.Conf, "id": c.Fast})
 		voicePush("heardw", string(b))
 	}
 }
@@ -259,7 +261,8 @@ func whisperSetGame(champs []string) {
 	wPromptMu.Lock()
 	defer wPromptMu.Unlock()
 	names := strings.Join(champs, ", ")
-	wPrompt = "Flash de Ahri. Ignite de Garen. Ulti de Jhin. Zhonya de Kindred. Barrera, heal, exhaust, teleport, ghost, cleanse, smite. Coach. " + names + "."
+	// only this game's names (an example name here made it write that name instead of the one said)
+	wPrompt = "Flash, ignite, ulti, zhonya, barrera, heal, exhaust, teleport, ghost, cleanse, smite, coach. " + names + "."
 }
 
 func whisperSetLang(l string) {
@@ -285,6 +288,15 @@ func whisperTranscribe(path string) (string, time.Duration, error) {
 	mw.WriteField("language", wLang)
 	wPromptMu.Unlock()
 	mw.WriteField("temperature", "0.0")
+	// only as much audio as the phrase lasts: Whisper otherwise always works on 30 s (4-5 s per phrase on a CPU)
+	if d := wavSeconds(wav); d > 0 {
+		ac := int(d*50) + 64
+		if ac > 1500 {
+			ac = 1500
+		}
+		mw.WriteField("audio_ctx", fmt.Sprint(ac))
+	}
+	mw.WriteField("beam_size", "1")
 	mw.WriteField("response_format", "json")
 	mw.Close()
 	req, _ := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d/inference", whisperPort), &body)
@@ -309,8 +321,36 @@ func whisperTranscribe(path string) (string, time.Duration, error) {
 	return whisperClean(out.Text), time.Since(t0), nil
 }
 
-// whisperClean: one line, without what Whisper writes for silence or noise
+// wavSeconds: the length of a .wav (from its header)
+func wavSeconds(b []byte) float64 {
+	if len(b) < 44 || string(b[0:4]) != "RIFF" || string(b[8:12]) != "WAVE" {
+		return 0
+	}
+	byteRate := 0.0
+	for i := 12; i+8 <= len(b); {
+		id, n := string(b[i:i+4]), int(uint32(b[i+4])|uint32(b[i+5])<<8|uint32(b[i+6])<<16|uint32(b[i+7])<<24)
+		if id == "fmt " && i+16 <= len(b) {
+			byteRate = float64(uint32(b[i+16]) | uint32(b[i+17])<<8 | uint32(b[i+18])<<16 | uint32(b[i+19])<<24)
+		}
+		if id == "data" {
+			if byteRate <= 0 {
+				return 0
+			}
+			if n > len(b)-i-8 || n <= 0 {
+				n = len(b) - i - 8
+			}
+			return float64(n) / byteRate
+		}
+		i += 8 + n + n%2
+	}
+	return 0
+}
+
+var wJunk = regexp.MustCompile(`[\[\(][^\]\)]*[\]\)]`)
+
+// whisperClean: one line, without what Whisper writes for silence or noise ("[RÍE]", "(música)")
 func whisperClean(s string) string {
+	s = wJunk.ReplaceAllString(s, " ")
 	s = strings.Join(strings.Fields(s), " ")
 	low := strings.ToLower(s)
 	for _, junk := range []string{"[blank_audio]", "[música]", "[music]", "(música)", "[ruido]", "[silencio]", "subtítulos", "gracias por ver", "suscríbete"} {

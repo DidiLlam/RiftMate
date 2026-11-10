@@ -21,7 +21,7 @@ var (
 )
 
 // whisperServe starts whisper.cpp's own little server with the model loaded once (each phrase then takes a
-// fraction of a second). Low priority and 2 threads, so the game keeps its CPU.
+// fraction of a second). Low priority (the game goes first), 4 threads for a short burst per phrase.
 func whisperServe() error {
 	cl := &http.Client{Timeout: 2 * time.Second}
 	alive := func() bool {
@@ -40,7 +40,7 @@ func whisperServe() error {
 	}
 	dir := whisperDir()
 	cmd := exec.Command(filepath.Join(dir, "whisper-server.exe"), "-m", filepath.Join(dir, whisperModel),
-		"--host", "127.0.0.1", "--port", strconv.Itoa(whisperPort), "-t", "2", "-l", "es")
+		"--host", "127.0.0.1", "--port", strconv.Itoa(whisperPort), "-t", "4", "-nf", "-l", "es")
 	cmd.Dir = dir
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000 | 0x00004000} // no window, below normal priority
 	if err := cmd.Start(); err != nil {

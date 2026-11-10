@@ -2001,6 +2001,12 @@ function mirrorPush(){
   fetch("/api/mirror", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({time: game ? gt : null, rows: game ? rows : [], obj})}).catch(() => {});
 }
 if (location.protocol.startsWith("http")) { mobRefresh(); setInterval(mirrorPush, 1000); setInterval(() => { if (!$("#viewA").hidden && mobOn) mobRefresh(); }, 5000); }
+// what a phrase would do: "Flash|2" (spell and row), or "" if it isn't a timer command
+const fastMarks = new Map();
+function cmdOf(text){
+  const words = norm(text).split(" "), s = findSpell(words); if (!s) return "";
+  const i = findEnemy(words, s.w); return i < 0 ? "" : `${s.sp}|${i}|${CANCEL.some(c => words.includes(c)) ? "x" : ""}`;
+}
 // ---------- Duo: shared timers ----------
 let duoCode = "", duoSince = -1, duoApplying = false;
 function gtNow(){ const g = lastData?.gameData?.gameTime; return typeof g === "number" ? g + (Date.now() - (lastDataAt || Date.now())) / 1000 : null; }
@@ -2484,23 +2490,49 @@ async function pollNative(){
   try { st = await (await fetch(`/api/voice?since=${voiceSince}`, {cache: "no-store", headers: {"X-RiftMate": "2"}})).json(); } catch (e) { return; }
   for (const l of st.lines) {
     voiceSince = Math.max(voiceSince, l.seq);
-    if (l.kind === "heard") { $("#heard").textContent = l.text; handle(l.text); }
-    else if (l.kind === "question") questionHeard(l.text);
-    else if (l.kind === "heardw") {
-      // Whisper wrote out what was really said: that's what counts. Only when Whisper's text isn't a command and
-      // Windows was very sure of its own (a fast "flash Ahri" Whisper got wrong), Windows' version is tried.
-      let w = {}; try { w = JSON.parse(l.text); } catch (e) {}
-      if (w.w) $("#heard").textContent = w.w;
-      // commands are short; a long sentence is talk (unless it starts by calling the coach)
-      const nw = w.w ? norm(w.w).split(" ").length : 0, toCoach = /^(oye |escolta |hey )?(coach|koch|couch|cauch|kouch|entrenador)\b/.test(norm(w.w || ""));
-      if (nw > 7 && !toCoach) { plog(`Veu: "${w.w}" és una conversa, no una ordre`); continue; }
-      const acted = w.w ? handle(w.w, true) : false;
-      if (!acted && w.g && w.c >= 0.8) { plog(`Veu: Whisper "${w.w || ""}" no és cap ordre; Windows n'estava segur: "${w.g}"`); handle(w.g, true); }
-    }
-    else if (l.kind === "ready") { $("#status").textContent = `Micro de Windows escoltant (${l.text}). Digues per exemple "flash Ahri".`; $("#status").className = "note"; }
-    else if (l.kind === "error") return fallbackWeb(l.text === "no_recognizer" ? "Windows no té cap reconeixedor de veu instal·lat" : l.text);
-    else if (l.kind === "stopped" && listening && engineNow === "win") return fallbackWeb("el reconeixedor s'ha aturat");
+    if (voiceLine(l) === "stop") return;
   }
+}
+// one line from the native recognizer (and Whisper)
+function voiceLine(l){
+  if (l.kind === "heard") { $("#heard").textContent = l.text; handle(l.text); }
+  else if (l.kind === "question") questionHeard(l.text);
+  else if (l.kind === "heardf") {
+    // Windows was sure: act now, remember what it changed, and let Whisper confirm or undo it
+    let f = {}; try { f = JSON.parse(l.text); } catch (e) {}
+    if (!f.t) return;
+    const before = Object.fromEntries(Object.entries(timers).map(([k, v]) => [k, v]));
+    $("#heard").textContent = f.t; handle(f.t, true);
+    const changed = Object.keys({...before, ...timers}).filter(k => before[k] !== timers[k]);
+    fastMarks.set(f.id, {t: f.t, cmd: cmdOf(f.t), prev: Object.fromEntries(changed.map(k => [k, before[k]])), now: Object.fromEntries(changed.map(k => [k, timers[k]]))});
+    if (fastMarks.size > 20) fastMarks.delete(fastMarks.keys().next().value);
+  }
+  else if (l.kind === "heardw") {
+    // Whisper wrote out what was really said: that's what counts. Only when Whisper's text isn't a command and
+    // Windows was very sure of its own (a fast "flash Ahri" Whisper got wrong), Windows' version is tried.
+    let w = {}; try { w = JSON.parse(l.text); } catch (e) {}
+    const fm = w.id ? fastMarks.get(w.id) : null;
+    if (fm) {
+      fastMarks.delete(w.id);
+      const cw = cmdOf(w.w || "");
+      if (cw && fm.cmd && cw === fm.cmd) return;                     // the same command: already done
+      if (!cw && w.c >= 0.8) return;                                  // Whisper got nothing useful, Windows was very sure: keep it
+      // Windows was wrong: put back what it changed (only if nothing else touched it since), then do what Whisper heard
+      let undone = false;
+      for (const [k, v] of Object.entries(fm.prev)) if (timers[k] === fm.now[k]) { if (v) timers[k] = v; else delete timers[k]; undone = true; }
+      if (undone) { render(); clipSoon(); plog(`Veu: desfet "${fm.t}" (Whisper ha sentit "${w.w || "res"}")`); if (!cw) { $("#status").textContent = `Desfet: "${fm.t}" no era el que has dit.`; $("#status").className = "note"; } }
+      if (!cw) return;
+    }
+    if (w.w) $("#heard").textContent = w.w;
+    // commands are short; a long sentence is talk (unless it starts by calling the coach)
+    const nw = w.w ? norm(w.w).split(" ").length : 0, toCoach = /^(oye |escolta |hey )?(coach|koch|couch|cauch|kouch|entrenador)\b/.test(norm(w.w || ""));
+    if (nw > 7 && !toCoach) { plog(`Veu: "${w.w}" és una conversa, no una ordre`); return; }
+    const acted = w.w ? handle(w.w, true) : false;
+    if (!acted && w.g && w.c >= 0.8) { plog(`Veu: Whisper "${w.w || ""}" no és cap ordre; Windows n'estava segur: "${w.g}"`); handle(w.g, true); }
+  }
+  else if (l.kind === "ready") { $("#status").textContent = `Micro de Windows escoltant (${l.text}). Digues per exemple "flash Ahri".`; $("#status").className = "note"; }
+  else if (l.kind === "error") { fallbackWeb(l.text === "no_recognizer" ? "Windows no té cap reconeixedor de veu instal·lat" : l.text); return "stop"; }
+  else if (l.kind === "stopped" && listening && engineNow === "win") { fallbackWeb("el reconeixedor s'ha aturat"); return "stop"; }
 }
 $("#micTest").addEventListener("click", () => {
   unlockAudio();

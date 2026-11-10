@@ -265,6 +265,8 @@ func voiceStop() {
 
 var _ = errors.New
 
+var fastSeq int
+
 // voiceClip: a phrase with its audio. Too quiet to be you: dropped. Whisper ready: it decides what was said.
 // Otherwise, as before: what Windows understood, if it was sure enough.
 func voiceClip(line string) {
@@ -284,7 +286,18 @@ func voiceClip(line string) {
 		}
 		lvs = fmt.Sprintf(", %.0f dB", db)
 	}
-	if whisperQueue(wClip{Path: path, Grammar: text, Kind: kind, Conf: conf, At: time.Now()}) {
+	// Windows sure enough: the page acts on it now (no waiting), and Whisper confirms it or undoes it a moment later
+	fast := 0
+	if kind == "HEARD" && conf >= 0.62 {
+		if st, _ := whisperStatus(); st == "ready" {
+			fastSeq++
+			fast = fastSeq
+			b, _ := json.Marshal(map[string]any{"id": fast, "t": text})
+			voicePush("heardf", string(b))
+			logf("Veu de Windows: \"%s\" (%.2f%s), Whisper ho comprova", text, conf, lvs)
+		}
+	}
+	if whisperQueue(wClip{Path: path, Grammar: text, Kind: kind, Conf: conf, At: time.Now(), Fast: fast}) {
 		return
 	}
 	os.Remove(path)
