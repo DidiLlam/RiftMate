@@ -1,7 +1,7 @@
 {
- "version": "2.0.78",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.78.exe",
+ "version": "2.0.79",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.79.exe",
  "size": 9709056,
- "sha256": "ff5829acef8e8bca4a0c8bdf0ffee764a42b310da009dfd831c3b1af39ecf882",
- "notes": "- Veu: un temporitzador que ja corre només canvia si dius 'cancel·la' (p. ex. 'cancela flash Xerath'); tornar-lo a anomenar mai el reinicia"
+ "sha256": "e239162be46ba494159f210028f6aefdb7bb8d32d3f9af5f4f9986d1781399de",
+ "notes": "- Veu: ja no s'activen temporitzadors que no has demanat. Si s'entén l'encanteri amb un altre nom ('heal Mel', 'Shen barrier', 'Ambessa barrera'), no l'endevina: no fa res\n- Només l'encanteri sol ('barrera', 'el heal') va al rival que el porta, si només el porta un"
 }
