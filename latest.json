@@ -1,7 +1,7 @@
 {
- "version": "2.0.79",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.79.exe",
- "size": 9709056,
- "sha256": "e239162be46ba494159f210028f6aefdb7bb8d32d3f9af5f4f9986d1781399de",
- "notes": "- Veu: ja no s'activen temporitzadors que no has demanat. Si s'entén l'encanteri amb un altre nom ('heal Mel', 'Shen barrier', 'Ambessa barrera'), no l'endevina: no fa res\n- Només l'encanteri sol ('barrera', 'el heal') va al rival que el porta, si només el porta un"
+ "version": "2.0.80",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.80.exe",
+ "size": 9716224,
+ "sha256": "7aa39779335ae972045b520f1d9ab6c9bced8bf4d871aebbe0250e3a1f2aa4a9",
+ "notes": "- Nou: prem per parlar (Ajustos → Altres avisos de veu). Només compta el que dius mentre mantens premut un botó lateral del ratolí, la roda, Bloq Majús o Alt Gr; el que digui el company, el joc o el Discord s'ignora\n- El registre ara guarda la seguretat de cada frase entesa, per afinar el filtre"
 }
