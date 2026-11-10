@@ -1,7 +1,7 @@
 {
- "version": "2.1.7",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.7.exe",
- "size": 9901568,
- "sha256": "fd8d80899aa6487dc6c6070da59ac80c3bd19b7ba6d26a9458e103654e453418",
- "notes": "- Whisper: cada frase es transcriu per separat. Abans arrossegava el que havia escrit abans i, després d'un riure o d'un silenci, es quedava encallat escrivint [RÍE] a tot (que l'app netejava i quedava buit)\n- El registre mostra què ha escrit Whisper quan és soroll"
+ "version": "2.1.8",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.8.exe",
+ "size": 9905664,
+ "sha256": "9aa90af713f6ebf75cd810bad80940f3dd833ed9df8b44ce2834fe66e0c805d2",
+ "notes": "- Informes té dues subpestanyes: Partides i Jugades (el rànquing dels teus clips, amb filtre per setmana i per campió)\n- Ajustos endreçats: cada grup amb les targetes en ordre, menys text, i el que gairebé no es toca a 'Opcions avançades'\n- Nova targeta 'Selecció de campions i xat'; 'Què t'avisa durant la partida' passa a Coach"
 }
