@@ -1,7 +1,7 @@
 {
- "version": "2.0.84",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.84.exe",
- "size": 9796096,
- "sha256": "4b5f65b45f6c472b8630670b2901d70988a11b81ede9c88c3d8e34247f0f0987",
- "notes": "- Coach: després de dir 'coach', la pregunta també la transcriu Whisper (si està llest)\n- Nou: temporitzadors amb el duo (Ajustos → En partida). Poseu el mateix codi i el que marqui un li surt a l'altre, també a l'overlay\n- Selecció de campions: dedueix el teu rival de línia i et diu en veu alta quin dels teus campions et va millor contra ell, amb el teu historial"
+ "version": "2.0.85",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.0.85.exe",
+ "size": 9800192,
+ "sha256": "a910d5b9c59ca819e13b61e98acc50fef411d675392abd6e704c264e19497f54",
+ "notes": "- Veu més ràpida: si Windows està prou segur, el temporitzador es marca a l'instant i Whisper només ho comprova (si no era el que has dit, ho desfà)\n- Whisper molt més ràpid: ara només processa la durada de la frase (abans sempre 30 s, uns 4,5 s per frase)\n- Arreglat: Whisper a vegades escrivia 'Ahri' perquè el feia servir d'exemple"
 }
