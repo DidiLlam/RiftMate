@@ -332,6 +332,17 @@ func ovRead() (ovState, float64, bool) {
 var ovShort = map[string]string{"Flash": "FLASH", "Ignite": "IGNITE", "Teleport": "TP", "Heal": "HEAL", "Exhaust": "EXH", "Barrier": "BARR",
 	"Ghost": "GHOST", "Cleanse": "CLNS", "Smite": "SMITE", "R": "ULTI", "Zhonya": "ZHONYA"}
 
+var ovT0 float64
+
+// ovClock: the game clock (whole seconds gone, like the game shows it)
+func ovClock(s float64) string {
+	if s < 0 {
+		s = 0
+	}
+	n := int(math.Floor(s))
+	return fmt.Sprintf("%d:%02d", n/60, n%60)
+}
+
 func ovFmt(s float64) string {
 	n := int(math.Ceil(s))
 	return fmt.Sprintf("%d:%02d", n/60, n%60)
@@ -365,9 +376,16 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 	}
 	head := ""
 	if st.T0 > 0 {
-		head = ovFmt((nowMs - st.T0) / 1000)
+		// each update's start time differs by a few milliseconds (how long the game data took to arrive): small
+		// differences are smoothed out instead of followed, so the clock never ticks back
+		if d := st.T0 - ovT0; d > 1500 || d < -1500 {
+			ovT0 = st.T0
+		} else {
+			ovT0 += d * 0.02
+		}
+		head = ovClock((nowMs - ovT0) / 1000)
 	} else if st.Time != nil {
-		head = ovFmt(*st.Time + age)
+		head = ovClock(*st.Time + age)
 	}
 	for _, o := range st.Obj {
 		l := o.Left - age
