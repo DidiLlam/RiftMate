@@ -1,7 +1,7 @@
 {
- "version": "2.1.17",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.17.exe",
- "size": 9932800,
- "sha256": "afba30ab9a5aecefcb5cca4c91e4885a0bd5eb4806ff7f7daf57ce82a5315b4b",
- "notes": "- La imatge de la pantalla de benvinguda ara surt sempre a dalt, sobre les pestanyes"
+ "version": "2.1.18",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.18.exe",
+ "size": 9939456,
+ "sha256": "4bed05c5fd945503d2a72b019392f832fe696ccb20bed6132b939597f6419b4b",
+ "notes": "- Clips: si la IA no els pot puntuar (ja ha gastat les peticions del dia), surten amb una frase que explica la jugada i la IA els puntua més tard sola\n- El registre diu quan la IA no ha pogut puntuar i per què"
 }
