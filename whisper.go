@@ -291,15 +291,7 @@ func whisperTranscribe(path string) (string, time.Duration, error) {
 	mw.WriteField("language", wLang)
 	wPromptMu.Unlock()
 	mw.WriteField("temperature", "0.0")
-	// only as much audio as the phrase lasts: Whisper otherwise always works on 30 s (4-5 s per phrase on a CPU)
-	if d := wavSeconds(wav); d > 0 {
-		ac := int(d*50) + 64
-		if ac > 1500 {
-			ac = 1500
-		}
-		mw.WriteField("audio_ctx", fmt.Sprint(ac))
-	}
-	mw.WriteField("beam_size", "1")
+	// (a shorter audio window, tried in 2.0.85 to make it faster, left Whisper deaf: it answered nothing)
 	mw.WriteField("response_format", "json")
 	mw.Close()
 	req, _ := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d/inference", whisperPort), &body)

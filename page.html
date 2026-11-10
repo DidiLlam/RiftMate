@@ -2598,7 +2598,8 @@ function voiceLine(l){
       fastMarks.delete(w.id);
       const cw = cmdOf(w.w || "");
       if (cw && fm.cmd && cw === fm.cmd) return;                     // the same command: already done
-      if (!cw && w.c >= 0.8) return;                                  // Whisper got nothing useful, Windows was very sure: keep it
+      if (!cw && !(w.w || "").trim()) return;                         // Whisper wrote nothing (it may not have caught it): keep what Windows heard
+      if (!cw && w.c >= 0.8) return;                                  // Windows was very sure: keep it
       // Windows was wrong: put back what it changed (only if nothing else touched it since), then do what Whisper heard
       let undone = false;
       for (const [k, v] of Object.entries(fm.prev)) if (timers[k] === fm.now[k]) { if (v) timers[k] = v; else delete timers[k]; undone = true; }
