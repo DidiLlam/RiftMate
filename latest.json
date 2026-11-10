@@ -1,7 +1,7 @@
 {
- "version": "2.1.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.1.exe",
- "size": 9822720,
- "sha256": "8df742bc5fbcb9a4ec35ee920612ec27dc8284b71c73fc27efc8d50ae058631d",
- "notes": "- Duo automàtic: si el teu company d'equip també té RiftMate, els temporitzadors es comparteixen sols a cada partida, sense codis\n- El codi queda com a opció per a fora de partida"
+ "version": "2.1.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.2.exe",
+ "size": 9900544,
+ "sha256": "e0e304ba066b7417efd5647efbfb46087fd0d923ccea63ff3b93482d1cf7d7c9",
+ "notes": "- Prova: clips de les teves millors jugades (Ajustos → En partida, desactivat per defecte). Grava amb la targeta gràfica i guarda els segons de cada kill, multikill o robatori\n- Després de la partida la IA els puntua (0-100): el top 3 surt a l'informe i les 10 millors al rànquing\n- El registre diu quant processador fa servir la gravació"
 }
