@@ -2640,6 +2640,10 @@ function voiceLine(l){
       fastMarks.delete(w.id);
       const cw = cmdOf(w.w || "");
       if (cw && fm.cmd && cw === fm.cmd) return;                     // the same command: already done
+      // Whisper often misspells the champion ("Flash the ginger", "barrera, lejinch" for Jinx): if it heard the same
+      // spell in a short phrase, it's a confirmation, not something else
+      { const ww = norm(w.w || "").split(" ").filter(Boolean), sw = findSpell(ww), sf = fm.cmd.split("|")[0];
+        if (!cw && sw && sw.sp === sf && ww.length <= 5) { plog(`Veu: Whisper "${w.w}" confirma "${fm.t}"`); return; } }
       if (!cw && !(w.w || "").trim()) return;                         // Whisper wrote nothing (it may not have caught it): keep what Windows heard
       if (!cw && w.c >= 0.8) return;                                  // Windows was very sure: keep it
       // Windows was wrong: put back what it changed (only if nothing else touched it since), then do what Whisper heard
