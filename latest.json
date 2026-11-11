@@ -1,7 +1,7 @@
 {
- "version": "2.1.26",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.26.exe",
- "size": 9990144,
- "sha256": "1c663b53e2e8c0bdce060610aedbba0b4e759cf4d28501b52272df2705790b14",
- "notes": "- Nova pestanya MMR: estimació del teu MMR (pels LP que guanyes i perds i pel rang de la gent amb qui jugues), si està per sobre o per sota del teu rang, l'evolució i com et va amb duo i en solitari\n- A partir d'ara cada informe guarda el rang mitjà dels altres jugadors i si jugaves amb duo"
+ "version": "2.1.27",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.27.exe",
+ "size": 9992704,
+ "sha256": "fee6b51caff304e792a3c29bf26e53b0fac141a6364309ddfe62a24abce15984",
+ "notes": "- MMR: nova targeta 'Resultat' a dalt, amb el teu MMR i el del teu rang en números, els escuts oficials de cada lliga i la diferència (salut)"
 }
