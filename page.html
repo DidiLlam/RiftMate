@@ -227,6 +227,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .cform{margin:0 0 8px;font-size:.92rem}.wrt .ch img{width:28px;height:28px;border-radius:6px}
 .wrbar{position:relative;height:8px;width:90px;border-radius:4px;background:var(--line);display:inline-block;vertical-align:middle;margin-right:8px;overflow:hidden}
 .wrbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}.wrbar.bad i{background:var(--loss)}
+.scr.duel img{width:28px;height:28px}.scr.duel .dl{min-width:52px}.scr.duel .dc{display:inline-flex;align-items:center;gap:6px;min-width:170px}.scr.duel .vs{color:var(--muted);font-size:.8rem}
 .scr{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .scr img{width:36px;height:36px;border-radius:8px}.scr .sn{min-width:7em}.scr .sr{color:var(--muted);font-size:.85rem;font-family:var(--mono);min-width:12em}
 .scr .tags{display:flex;gap:6px;flex-wrap:wrap}.scr .vd{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:6px}.scr .vd.good{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}.scr .vd.warn{background:color-mix(in srgb,var(--loss) 20%,transparent);color:var(--loss)}
@@ -1141,6 +1142,12 @@ const I18N = {
   "{x} gairebé no ha jugat mai aquest campió: castiga'l d'hora.": ["{x} casi no ha jugado nunca este campeón: castígalo pronto.", "{x} has barely played this champion: punish them early."],
   "Rivals.": ["Rivales.", "Opponents."],
   "Rivals analitzats: cap no destaca especialment.": ["Rivales analizados: ninguno destaca especialmente.", "Opponents scouted: none stands out."],
+  "Duels.": ["Duelos.", "Lane matchups."],
+  "{x} guanya el seu duel contra {y}: és el nostre costat fort.": ["{x} gana su duelo contra {y}: es nuestro lado fuerte.", "{x} wins their lane against {y}: that's our strong side."],
+  "{x} ho tindrà difícil contra {y}: és el nostre costat feble, no hi comptis gaire.": ["{x} lo tendrá difícil contra {y}: es nuestro lado débil, no cuentes mucho con él.", "{x} will struggle against {y}: that's our weak side, don't count on it much."],
+  "{x} guanyen el seu duel contra {y}: és el nostre costat fort.": ["{x} ganan su duelo contra {y}: es nuestro lado fuerte.", "{x} win their lane against {y}: that's our strong side."],
+  "{x} ho tindran difícil contra {y}: és el nostre costat feble, no hi comptis gaire.": ["{x} lo tendrán difícil contra {y}: es nuestro lado débil, no cuentes mucho con ellos.", "{x} will struggle against {y}: that's our weak side, don't count on it much."],
+  "Duels per línia": ["Duelos por línea", "Lane matchups"], "A favor": ["A favor", "Ahead"], "En contra": ["En contra", "Behind"], "Igualat": ["Igualado", "Even"],
   "{x} · {n}% ({m})": ["{x} · {n}% ({m})", "{x} · {n}% ({m})"],
   " · {n}V {m}D amb ell": [" · {n}V {m}D con él", " · {n}W {m}L on it"],
   "Bé": ["Bien", "Good"],
@@ -3705,8 +3712,8 @@ async function aiProactive(kind, question, extra){
 }
 function aiPlan(){
   if (!game || game.planSaid) return; game.planSaid = true;
-  aiProactive("pla", `Fes-me el pla d'aquesta partida en dues frases curtes. Jugo ${{TOP: "de top", JUNGLE: "de jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"}[game.role] || "la meva posició"}. La primera frase: com guanyar la meva línia contra el meu rival directe (habilitats i moments per pegar). La segona: de quin rival protegir-me o amb qui del meu equip jugar, i, si el meu historial recent mostra un error que es repeteix, recorda-me'l. No em diguis què comprar ni em parlis de la jungla si no soc el jungla.`, (() => { const mc = playerBy(lastData, game.me)?.championName, oc = playerBy(lastData, game.ids[game.oppIdx])?.championName, sv = mc && oc ? seasonVs(mc, oc) : {n: 0};
-    return [aiMemory(), benchText(mc), mc && oc ? benchVsText(mc, oc) : "", sv.n ? `Aquesta temporada el jugador va ${sv.w}V-${sv.l}D amb ${mc} contra ${oc}.` : ""].filter(Boolean).join("\n"); })());
+  aiProactive("pla", `Fes-me el pla d'aquesta partida en ${lastScout && duelText(lastScout) ? "tres" : "dues"} frases curtes. Jugo ${{TOP: "de top", JUNGLE: "de jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"}[game.role] || "la meva posició"}. La primera frase: com guanyar la meva línia contra el meu rival directe (habilitats i moments per pegar). La segona: de quin rival protegir-me o amb qui del meu equip jugar, i, si el meu historial recent mostra un error que es repeteix, recorda-me'l.${lastScout && duelText(lastScout) ? " La tercera: de les altres línies, quina guanyarà el seu duel i quina estarà fotuda (el nostre costat feble), mirant els campions de cada duel (qui fa counter a qui) i les dades dels jugadors que et passo; si cap no és clara, digues que els duels estan igualats." : ""} No em diguis què comprar ni em parlis de la jungla si no soc el jungla.`, (() => { const mc = playerBy(lastData, game.me)?.championName, oc = playerBy(lastData, game.ids[game.oppIdx])?.championName, sv = mc && oc ? seasonVs(mc, oc) : {n: 0};
+    return [aiMemory(), benchText(mc), mc && oc ? benchVsText(mc, oc) : "", sv.n ? `Aquesta temporada el jugador va ${sv.w}V-${sv.l}D amb ${mc} contra ${oc}.` : "", lastScout ? duelText(lastScout) : ""].filter(Boolean).join("\n"); })());
 }
 // a death read from the game itself, without the AI: levels, finished items and who was there
 function localDeath(killer, helpers, t){
@@ -5063,6 +5070,53 @@ function allyFacts(r){
   const verdict = score >= 3 ? {t: "Juga amb ell", c: "good"} : score <= -2 ? {t: "No hi comptis gaire", c: "warn"} : null;
   return {tags, say, bad, score, verdict};
 }
+// lane duels: each of our players against his direct rival, from the scouting (rank, experience with the champion,
+// form). The champions themselves (counters) are weighed by the AI in the game plan; your own lane is left to the plan.
+function duelPower(r){
+  if (!r || r.error) return null;
+  const games = r.games || [], mine = games.filter(x => x.c.toLowerCase() === (r.champ || "").toLowerCase()), g = mine.length, w = mine.filter(x => x.w).length;
+  let p = 0;
+  if (g >= 3) p += (w / g - 0.5) * 4 + Math.min(1, g / 7);          // a main who wins with it
+  if (r.masteryOk && r.mastery < 12000) p -= 2;                      // first times with it
+  else if (r.mastery >= 150000) p += 1;
+  let k = 0; for (const x of games) { if (x.w === games[0].w) k++; else break; }
+  if (games.length && k >= 3) p += games[0].w ? 1 : -1;
+  const tot = r.wins + r.losses; if (tot >= 30) p += Math.max(-1.5, Math.min(1.5, (r.wins / tot - 0.5) * 10));
+  return {p, abs: r.tier ? absRank(r.tier, r.rank, r.lp) : null};
+}
+const DUEL_LANES = [["Top", [0]], ["Jungla", [1]], ["Mid", [2]], ["Bot", [3, 4]]];
+function laneDuels(res){
+  if (!game?.ids || !res) return [];
+  const by = id => id && res.find(x => x.riotId && x.riotId === id.split("|")[0]);
+  const out = [];
+  for (const [name, idx] of DUEL_LANES) {
+    if (idx.some(i => game.ids[5 + i] === game.me)) continue;
+    const al = idx.map(i => by(game.ids[5 + i])), en = idx.map(i => by(game.ids[i]));
+    if (al.some(x => !x) || en.some(x => !x)) continue;
+    const pa = al.map(duelPower), pe = en.map(duelPower); if (pa.some(x => !x) || pe.some(x => !x)) continue;
+    const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    let d = mean(pa.map(x => x.p)) - mean(pe.map(x => x.p));
+    const ra = mean(pa.map(x => x.abs).filter(x => x != null)), re = mean(pe.map(x => x.abs).filter(x => x != null));
+    if (ra != null && re != null) d += Math.max(-3, Math.min(3, (ra - re) / 100));   // a division = a point
+    out.push({name, d, al, en, v: d >= 2 ? 1 : d <= -2 ? -1 : 0});
+  }
+  return out;
+}
+function duelNames(list){ const and = {es: " y ", en: " and "}[speechChoice().lang] || " i "; return list.map(x => displayChamp(x.champ)).join(and); }
+function duelLines(res){
+  const ds = laneDuels(res), best = ds.filter(x => x.v > 0).sort((a, b) => b.d - a.d)[0], worst = ds.filter(x => x.v < 0).sort((a, b) => a.d - b.d)[0];
+  const pl = x => x.al.length > 1;
+  return [best && `${duelNames(best.al)} ${pl(best) ? "guanyen" : "guanya"} el seu duel contra ${duelNames(best.en)}: és el nostre costat fort.`,
+          worst && `${duelNames(worst.al)} ${pl(worst) ? "ho tindran" : "ho tindrà"} difícil contra ${duelNames(worst.en)}: és el nostre costat feble, no hi comptis gaire.`].filter(Boolean);
+}
+// for the AI's plan: the duels with what each player brings
+function duelText(res){
+  const ds = laneDuels(res); if (!ds.length) return "";
+  const who = r => { const g = (r.games || []).filter(x => x.c.toLowerCase() === (r.champ || "").toLowerCase()), tot = r.wins + r.losses;
+    return `${displayChamp(r.champ)} (${r.tier ? `${r.tier} ${r.rank}` : "sense rang"}${tot ? `, ${Math.round(100 * r.wins / tot)}% en ${tot}` : ""}${g.length ? `, ${g.filter(x => x.w).length}V-${g.length - g.filter(x => x.w).length}D amb el campió a les últimes 7` : ""}${r.masteryOk && r.mastery < 12000 ? ", gairebé no l'ha jugat" : ""})`; };
+  return "Duels de les altres línies (els jugadors, sense comptar els campions; nota positiva = a favor nostre):\n" +
+    ds.map(x => `${x.name}: ${x.al.map(who).join(" + ")} contra ${x.en.map(who).join(" + ")}: ${x.d >= 0 ? "+" : ""}${x.d.toFixed(1)}`).join("\n");
+}
 function renderScout(res){
   const card = $("#scoutCard"), body = $("#scoutBody");
   card.hidden = false;
@@ -5075,7 +5129,9 @@ function renderScout(res){
       ${f.verdict ? `<span class="vd ${f.verdict.c}">${esc(f.verdict.t)}</span>` : ""}<span class="tags">${[...premadeTag(r), ...f.tags].map(x => `<span class="tg ${x.c}">${esc(x.t)}</span>`).join("")}</span></div>`;
   };
   const foes = res.filter(r => !r.ally), mates = res.filter(r => r.ally).sort((a, b) => allyFacts(b).score - allyFacts(a).score);
-  body.innerHTML = `<p class="scgrp">Rivals</p>` + foes.map(row).join("") + (mates.length ? `<p class="scgrp">El teu equip (del més fiable al que menys)</p>` + mates.map(row).join("") : "") +
+  const ds = laneDuels(res), ic = list => `<span class="dc" data-noi18n>${list.map(x => `<img src="${champImg(x.champ)}" alt="" onerror="this.style.display='none'">${esc(displayChamp(x.champ))}`).join(" ")}</span>`;
+  const duels = ds.length ? `<p class="scgrp">Duels per línia</p>` + ds.map(x => `<div class="scr duel"><b class="dl">${x.name}</b>${ic(x.al)}<span class="vs">vs</span>${ic(x.en)}<span class="tg ${x.v > 0 ? "good" : x.v < 0 ? "warn" : ""}">${x.v > 0 ? "A favor" : x.v < 0 ? "En contra" : "Igualat"}</span></div>`).join("") : "";
+  body.innerHTML = duels + `<p class="scgrp">Rivals</p>` + foes.map(row).join("") + (mates.length ? `<p class="scgrp">El teu equip (del més fiable al que menys)</p>` + mates.map(row).join("") : "") +
     `<p class="note">Dades públiques de Riot: rang de Solo/Duo, maestria amb el campió i les seves últimes 7 partides classificatòries (dos jugadors del mateix equip que hi coincideixen 2 cops o més són premade). Al teu equip, en verd el que suma i en vermell el que resta.</p>`;
 }
 async function pollScout(){
@@ -5098,6 +5154,10 @@ async function pollScout(){
   const best = mates.find(m => m.f.score >= 3 && m.f.say.length), worst = mates.slice().reverse().find(m => m.f.score <= -2 && m.f.bad.length);
   const team = [best && `Juga al voltant de ${displayChamp(best.x.champ)}. ${best.f.say[0]}`, worst && worst.f.bad[0]].filter(Boolean);
   if (team.length) { plog(`El teu equip: ${team.join(" ")}`); speak("El teu equip."); team.forEach(l => speak(l)); }
+  const dl = duelLines(r.results); if (dl.length) plog(`Duels: ${dl.join(" ")}`);
+  // with the AI the plan says it (it also weighs the champions); without it, the app's own reading
+  const aiWill = aiHasKey && $("#cAiAuto")?.checked && Date.now() >= aiLimitUntil && aiBudgetOk("pla");
+  if (dl.length && !aiWill) { speak("Duels."); dl.forEach(l => speak(l)); }
   aiPlan();
 }
 // premades: groups of the same team who played their last games together (the scouting compares their games)
