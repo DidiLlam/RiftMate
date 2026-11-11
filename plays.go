@@ -537,6 +537,24 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			http.ServeFile(w, req, filepath.Join(playsRoot(), g, f))
 			return
 		}
+		if req.Method == http.MethodPost && q.Get("delmort") != "" { // death clips of a game: one file, or "*" for all
+			g, f := q.Get("g"), q.Get("delmort")
+			n := 0
+			if playStampRe.MatchString(g) {
+				fs, _ := filepath.Glob(filepath.Join(playsRoot(), g, "mort_*.mp4"))
+				for _, x := range fs {
+					if f == "*" || filepath.Base(x) == f {
+						if os.Remove(x) == nil {
+							n++
+						}
+					}
+				}
+				os.Remove(filepath.Join(playsRoot(), g))
+			}
+			logf("Jugades: esborrats %d vídeos de morts a mà", n)
+			send(w, 200, "application/json", []byte(`{"ok":true}`))
+			return
+		}
 		if req.Method == http.MethodPost && (q.Get("del") != "" || q.Get("delall") == "1") {
 			n := playsDelete(q.Get("del"), q.Get("delall") == "1")
 			logf("Jugades: esborrades %d a mà", n)

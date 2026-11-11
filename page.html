@@ -2068,6 +2068,14 @@ async function playsRefresh(q){
 }
 $("#cPlays")?.addEventListener("change", e => playsRefresh(`?on=${e.target.checked ? 1 : 0}`));
 $("#cPlaysLow")?.addEventListener("change", e => playsRefresh(`?keeplow=${e.target.checked ? 0 : 1}`));
+// delete the videos of your deaths (one click: they're temporary anyway)
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-mdel]"); if (!b) return;
+  const f = b.dataset.mdel, g = b.dataset.g;
+  try { await fetch(`/api/plays?g=${encodeURIComponent(g)}&delmort=${encodeURIComponent(f)}`, {method: "POST"}); } catch (err) {}
+  if (f === "*") { document.querySelectorAll("#report .dclip").forEach(x => x.innerHTML = ""); b.parentElement.textContent = ""; }
+  else b.closest(".dclip").innerHTML = "";
+});
 // delete a clip (two clicks: no browser dialogs, which would block the app window)
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-pdel]"); if (!b) return;
@@ -2094,8 +2102,9 @@ async function fillDeathClips(r){
   if (!list?.length) return;
   let n = 0;
   slots.forEach(el => { const t = +el.dataset.t, c = list.find(x => Math.abs(x.t - t) <= 6); if (!c) return; n++;
-    el.innerHTML = `<details open><summary>Veure-ho</summary><video controls preload="metadata" src="/api/playfile?g=${encodeURIComponent(g)}&f=${encodeURIComponent(c.file)}"></video></details>`; });
-  if (n && $("#dclipNote")) $("#dclipNote").textContent = " Els vídeos de les morts s'esborren 30 minuts després de la partida.";
+    el.innerHTML = `<details open><summary>Veure-ho</summary><video controls preload="metadata" src="/api/playfile?g=${encodeURIComponent(g)}&f=${encodeURIComponent(c.file)}"></video>
+      <div><button class="b small" type="button" data-mdel="${esc(c.file)}" data-g="${esc(g)}">Esborrar el vídeo</button></div></details>`; });
+  if (n && $("#dclipNote")) $("#dclipNote").innerHTML = ` Els vídeos de les morts s'esborren sols 30 minuts després de la partida. <button class="b small" type="button" data-mdel="*" data-g="${esc(g)}">Esborrar-los tots ara</button>`;
 }
 // the report's top 3, and the ranking of all your plays
 async function renderPlays(r){
