@@ -1,7 +1,7 @@
 {
- "version": "2.1.28",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.28.exe",
- "size": 9992704,
- "sha256": "5ff14652dae03fc03cd7240e963f8c7a2db4f92c3f44c6882d35c529e160d02b",
- "notes": "- MMR: es torna a calcular sol quan acaba una partida i Riot actualitza els teus LP, encara que tinguis la pestanya oberta"
+ "version": "2.1.29",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.29.exe",
+ "size": 9997824,
+ "sha256": "3cca448b4a67a846ad757b5b830fc66cf17f6b17f726b369dd5078ad529e62bf",
+ "notes": "- Límit diari de la IA apujat a 200 crides (abans 60)\n- MMR: nova Previsió (LP de la propera partida i partides per pujar de divisió)\n- MMR: nova secció Quan plegar (victòries per partida del dia i després de guanyar o perdre)"
 }
