@@ -227,7 +227,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .cform{margin:0 0 8px;font-size:.92rem}.wrt .ch img{width:28px;height:28px;border-radius:6px}
 .wrbar{position:relative;height:8px;width:90px;border-radius:4px;background:var(--line);display:inline-block;vertical-align:middle;margin-right:8px;overflow:hidden}
 .wrbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}.wrbar.bad i{background:var(--loss)}
-.scr.duel img{width:28px;height:28px}.scr.duel .dl{min-width:52px}.scr.duel .dc{display:inline-flex;align-items:center;gap:6px;min-width:170px}.scr.duel .vs{color:var(--muted);font-size:.8rem}
+.scr.duel img{width:28px;height:28px}.scr.duel .dl{min-width:52px}.scr.duel .dc{display:inline-flex;align-items:center;gap:6px;min-width:170px}.scr.duel .dp{font:600 .8rem var(--mono,monospace);color:var(--muted)}.scr.duel .vs{color:var(--muted);font-size:.8rem}
 .scr{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .scr img{width:36px;height:36px;border-radius:8px}.scr .sn{min-width:7em}.scr .sr{color:var(--muted);font-size:.85rem;font-family:var(--mono);min-width:12em}
 .scr .tags{display:flex;gap:6px;flex-wrap:wrap}.scr .vd{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:6px}.scr .vd.good{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}.scr .vd.warn{background:color-mix(in srgb,var(--loss) 20%,transparent);color:var(--loss)}
@@ -5070,37 +5070,66 @@ function allyFacts(r){
   const verdict = score >= 3 ? {t: "Juga amb ell", c: "good"} : score <= -2 ? {t: "No hi comptis gaire", c: "warn"} : null;
   return {tags, say, bad, score, verdict};
 }
-// lane duels: each of our players against his direct rival, from the scouting (rank, experience with the champion,
-// form). The champions themselves (counters) are weighed by the AI in the game plan; your own lane is left to the plan.
-function duelPower(r){
-  if (!r || r.error) return null;
-  const games = r.games || [], mine = games.filter(x => x.c.toLowerCase() === (r.champ || "").toLowerCase()), g = mine.length, w = mine.filter(x => x.w).length;
-  let p = 0;
-  if (g >= 3) p += (w / g - 0.5) * 4 + Math.min(1, g / 7);          // a main who wins with it
-  if (r.masteryOk && r.mastery < 12000) p -= 2;                      // first times with it
-  else if (r.mastery >= 150000) p += 1;
-  let k = 0; for (const x of games) { if (x.w === games[0].w) k++; else break; }
-  if (games.length && k >= 3) p += games[0].w ? 1 : -1;
-  const tot = r.wins + r.losses; if (tot >= 30) p += Math.max(-1.5, Math.min(1.5, (r.wins / tot - 0.5) * 10));
-  return {p, abs: r.tier ? absRank(r.tier, r.rank, r.lp) : null};
+// lane duels: each of our players against his direct rival. Each player is worth the points of win rate (pp) that
+// public studies of real games give to what the scouting sees:
+// - mastery with the champion (iTero, 1M+ Gold games: under ~10k about 44% of wins, 12k already 50%, then barely
+//   moves: +1-2 points more for the big mains), the strongest sign;
+// - two or more losses in a row: 48.8% the next game (iTero, 100k games); win streaks: no proven effect, not counted;
+// - the season's win rate, pulled toward 50% (few games say little): more than 50% = better than his rank;
+// - rank against the lobby: a division is ~100 of MMR; in a 5-player team that's ~+3 points (Elo), halved because
+//   the rank you see isn't the MMR. The champions (counters) are weighed by the AI in the plan.
+// Then the app checks each prediction against the gold of that lane at minute 14 of your games and calibrates itself.
+const MASTERY_WR = [[0, 40], [2500, 41.5], [7500, 48.5], [12000, 50], [50000, 51.5], [175000, 52], [500000, 53]];
+function masteryPP(m){
+  for (let i = 1; i < MASTERY_WR.length; i++) { const [x0, y0] = MASTERY_WR[i - 1], [x1, y1] = MASTERY_WR[i]; if (m <= x1) return y0 + (y1 - y0) * (m - x0) / (x1 - x0) - 50; }
+  return MASTERY_WR[MASTERY_WR.length - 1][1] - 50;
 }
-const DUEL_LANES = [["Top", [0]], ["Jungla", [1]], ["Mid", [2]], ["Bot", [3, 4]]];
+function duelPower(r, lobbyAvg){
+  if (!r || r.error) return null;
+  const why = []; let p = 0;
+  if (r.masteryOk) { const m = masteryPP(r.mastery); p += m; if (m <= -3) why.push("gairebé no l'ha jugat"); else if (m >= 1.5) why.push("main"); }
+  const games = r.games || []; let k = 0; for (const x of games) { if (x.w === games[0].w) k++; else break; }
+  if (games.length && !games[0].w && k >= 2) { p -= 1.2; why.push(`${k} derrotes seguides`); }
+  const tot = r.wins + r.losses; if (tot) { const wr = (r.wins + 15) / (tot + 30); p += Math.max(-3, Math.min(3, (wr - 0.5) * 50)); }
+  if (r.tier && lobbyAvg != null) p += Math.max(-4.5, Math.min(4.5, (absRank(r.tier, r.rank, r.lp) - lobbyAvg) / 100 * 1.5));
+  return {p, why};
+}
+const DUEL_LANES = [["Top", "TOP", [0]], ["Jungla", "JUNGLE", [1]], ["Mid", "MIDDLE", [2]], ["Bot", "BOT", [3, 4]]];
 function laneDuels(res){
   if (!game?.ids || !res) return [];
   const by = id => id && res.find(x => x.riotId && x.riotId === id.split("|")[0]);
-  const out = [];
-  for (const [name, idx] of DUEL_LANES) {
-    if (idx.some(i => game.ids[5 + i] === game.me)) continue;
+  const ranks = res.filter(x => x.tier).map(x => absRank(x.tier, x.rank, x.lp)).concat(myRankAbs != null ? [myRankAbs] : []);
+  const lobbyAvg = ranks.length ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
+  const cal = duelCalib(), out = [];
+  for (const [name, key, idx] of DUEL_LANES) {
+    if (idx.some(i => game.ids[5 + i] === game.me)) continue;   // your own lane: the plan talks about it
     const al = idx.map(i => by(game.ids[5 + i])), en = idx.map(i => by(game.ids[i]));
     if (al.some(x => !x) || en.some(x => !x)) continue;
-    const pa = al.map(duelPower), pe = en.map(duelPower); if (pa.some(x => !x) || pe.some(x => !x)) continue;
-    const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
-    let d = mean(pa.map(x => x.p)) - mean(pe.map(x => x.p));
-    const ra = mean(pa.map(x => x.abs).filter(x => x != null)), re = mean(pe.map(x => x.abs).filter(x => x != null));
-    if (ra != null && re != null) d += Math.max(-3, Math.min(3, (ra - re) / 100));   // a division = a point
-    out.push({name, d, al, en, v: d >= 2 ? 1 : d <= -2 ? -1 : 0});
+    const pa = al.map(x => duelPower(x, lobbyAvg)), pe = en.map(x => duelPower(x, lobbyAvg)); if (pa.some(x => !x) || pe.some(x => !x)) continue;
+    const d = pa.reduce((a, x) => a + x.p, 0) - pe.reduce((a, x) => a + x.p, 0);
+    const prob = cal.k ? 1 / (1 + Math.exp(-cal.k * d)) : null;   // the chance to win the lane, once calibrated with your games
+    const v = prob != null ? (prob >= 0.6 ? 1 : prob <= 0.4 ? -1 : 0) : d >= 4 ? 1 : d <= -4 ? -1 : 0;
+    out.push({name, key, d, prob, al, en, v});
   }
   return out;
+}
+// how good the predictions were in your games: the lane's gold at minute 14 against what was said
+let duelCalCache = null;
+function duelCalib(){
+  if (duelCalCache && duelCalCache.n0 === histCache.length) return duelCalCache;
+  const pts = [];
+  for (const r of histCache) { const l = r.map?.lanes14; if (!l || !Array.isArray(r.duels)) continue;
+    for (const x of r.duels) if (typeof x.d === "number" && typeof l[x.lane] === "number" && l[x.lane] !== 0) pts.push({d: x.d, win: l[x.lane] > 0, said: x.v || 0}); }
+  const said = pts.filter(x => x.said), hit = said.filter(x => (x.said > 0) === x.win).length;
+  // one number fitted to your games: how much a point of difference moves the chance to win the lane (logistic, by Newton)
+  let k = null;
+  if (pts.length >= 40) { k = 0.05; for (let it = 0; it < 30; it++) { let g = 0, h = 0; for (const x of pts) { const q = 1 / (1 + Math.exp(-k * x.d)); g += (x.win - q) * x.d; h -= q * (1 - q) * x.d * x.d; } if (!h) break; k -= g / h; k = Math.max(0, Math.min(0.5, k)); } }
+  return duelCalCache = {n0: histCache.length, n: pts.length, said: said.length, hit, k};
+}
+function duelCalNote(){
+  const c = duelCalib();
+  const base = c.k ? "Percentatge de guanyar la línia (or al minut 14), calibrat amb les teves partides." : "Punts de % de victòria segons estudis de partides reals (maestria, ratxa, % de temporada, rang); no compta els counters, això ho fa la IA.";
+  return `<p class="note">${base} ${c.said ? `Fins ara ho ha encertat ${c.hit} de ${c.said} vegades (${Math.round(100 * c.hit / c.said)}%).` : "Encara no hi ha partides per comprovar-ho: ho mirarà a cada partida."}${!c.k && c.n ? ` Es calibra sola a partir de 40 línies (en porta ${c.n}).` : ""}</p>`;
 }
 function duelNames(list){ const and = {es: " y ", en: " and "}[speechChoice().lang] || " i "; return list.map(x => displayChamp(x.champ)).join(and); }
 function duelLines(res){
@@ -5114,8 +5143,9 @@ function duelText(res){
   const ds = laneDuels(res); if (!ds.length) return "";
   const who = r => { const g = (r.games || []).filter(x => x.c.toLowerCase() === (r.champ || "").toLowerCase()), tot = r.wins + r.losses;
     return `${displayChamp(r.champ)} (${r.tier ? `${r.tier} ${r.rank}` : "sense rang"}${tot ? `, ${Math.round(100 * r.wins / tot)}% en ${tot}` : ""}${g.length ? `, ${g.filter(x => x.w).length}V-${g.length - g.filter(x => x.w).length}D amb el campió a les últimes 7` : ""}${r.masteryOk && r.mastery < 12000 ? ", gairebé no l'ha jugat" : ""})`; };
-  return "Duels de les altres línies (els jugadors, sense comptar els campions; nota positiva = a favor nostre):\n" +
-    ds.map(x => `${x.name}: ${x.al.map(who).join(" + ")} contra ${x.en.map(who).join(" + ")}: ${x.d >= 0 ? "+" : ""}${x.d.toFixed(1)}`).join("\n");
+  return "Duels de les altres línies (només els jugadors, sense comptar els campions; en punts de percentatge de victòria segons estudis de partides reals: maestria, ratxa de derrotes, % de la temporada i rang; positiu = a favor nostre):\n" +
+    ds.map(x => `${x.name}: ${x.al.map(who).join(" + ")} contra ${x.en.map(who).join(" + ")}: ${x.d >= 0 ? "+" : ""}${x.d.toFixed(1)} punts${x.prob != null ? ` (${Math.round(100 * x.prob)}% de guanyar la línia, calibrat amb les partides del jugador)` : ""}`).join("\n") +
+    "\nUn counter clar de campions pesa més que una diferència de menys de 4 punts.";
 }
 function renderScout(res){
   const card = $("#scoutCard"), body = $("#scoutBody");
@@ -5130,7 +5160,7 @@ function renderScout(res){
   };
   const foes = res.filter(r => !r.ally), mates = res.filter(r => r.ally).sort((a, b) => allyFacts(b).score - allyFacts(a).score);
   const ds = laneDuels(res), ic = list => `<span class="dc" data-noi18n>${list.map(x => `<img src="${champImg(x.champ)}" alt="" onerror="this.style.display='none'">${esc(displayChamp(x.champ))}`).join(" ")}</span>`;
-  const duels = ds.length ? `<p class="scgrp">Duels per línia</p>` + ds.map(x => `<div class="scr duel"><b class="dl">${x.name}</b>${ic(x.al)}<span class="vs">vs</span>${ic(x.en)}<span class="tg ${x.v > 0 ? "good" : x.v < 0 ? "warn" : ""}">${x.v > 0 ? "A favor" : x.v < 0 ? "En contra" : "Igualat"}</span></div>`).join("") : "";
+  const duels = ds.length ? `<p class="scgrp">Duels per línia</p>` + ds.map(x => `<div class="scr duel"><b class="dl">${x.name}</b>${ic(x.al)}<span class="vs">vs</span>${ic(x.en)}<span class="tg ${x.v > 0 ? "good" : x.v < 0 ? "warn" : ""}">${x.v > 0 ? "A favor" : x.v < 0 ? "En contra" : "Igualat"}</span><span class="dp" data-noi18n>${x.prob != null ? `${Math.round(100 * x.prob)}%` : `${x.d >= 0 ? "+" : "−"}${Math.abs(x.d).toFixed(1).replace(".", ",")}`}</span></div>`).join("") + duelCalNote() : "";
   body.innerHTML = duels + `<p class="scgrp">Rivals</p>` + foes.map(row).join("") + (mates.length ? `<p class="scgrp">El teu equip (del més fiable al que menys)</p>` + mates.map(row).join("") : "") +
     `<p class="note">Dades públiques de Riot: rang de Solo/Duo, maestria amb el campió i les seves últimes 7 partides classificatòries (dos jugadors del mateix equip que hi coincideixen 2 cops o més són premade). Al teu equip, en verd el que suma i en vermell el que resta.</p>`;
 }
@@ -5155,6 +5185,7 @@ async function pollScout(){
   const team = [best && `Juga al voltant de ${displayChamp(best.x.champ)}. ${best.f.say[0]}`, worst && worst.f.bad[0]].filter(Boolean);
   if (team.length) { plog(`El teu equip: ${team.join(" ")}`); speak("El teu equip."); team.forEach(l => speak(l)); }
   const dl = duelLines(r.results); if (dl.length) plog(`Duels: ${dl.join(" ")}`);
+  { const ds = laneDuels(r.results); if (ds.length) fetch("/api/duels", {method: "POST", body: JSON.stringify(ds.map(x => ({lane: x.key, d: +x.d.toFixed(2), v: x.v, prob: x.prob, al: x.al.map(y => y.champ), en: x.en.map(y => y.champ)})))}).catch(() => {}); }
   // with the AI the plan says it (it also weighs the champions); without it, the app's own reading
   const aiWill = aiHasKey && $("#cAiAuto")?.checked && Date.now() >= aiLimitUntil && aiBudgetOk("pla");
   if (dl.length && !aiWill) { speak("Duels."); dl.forEach(l => speak(l)); }

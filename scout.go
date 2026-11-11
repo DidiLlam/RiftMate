@@ -321,6 +321,32 @@ func lobbySet(res []scoutOut) {
 	lobbyMu.Unlock()
 }
 
+// the lane duels the page predicted at the loading screen, kept for the report (to check them against minute 14)
+var (
+	duelsMu  sync.Mutex
+	duelsNow json.RawMessage
+)
+
+func duelsHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodPost {
+		b, err := io.ReadAll(io.LimitReader(req.Body, 16<<10))
+		if err == nil && json.Valid(b) {
+			duelsMu.Lock()
+			duelsNow = b
+			duelsMu.Unlock()
+		}
+	}
+	w.WriteHeader(204)
+}
+
+func duelsTake() json.RawMessage {
+	duelsMu.Lock()
+	defer duelsMu.Unlock()
+	d := duelsNow
+	duelsNow = nil
+	return d
+}
+
 func lobbyTake() *lobbyInfo {
 	lobbyMu.Lock()
 	defer lobbyMu.Unlock()

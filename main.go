@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.1.30"
+	version = "2.1.31"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -260,6 +260,9 @@ func (r *Recorder) finish(result string) {
 		}
 		if lb := lobbyTake(); lb != nil {
 			rm["lobby"] = lb // the average rank of the other players, and your duo (for the MMR estimate)
+		}
+		if d := duelsTake(); d != nil {
+			rm["duels"] = d // the lane duels predicted at the loading screen (checked against minute 14)
 		}
 	}
 	dir := dataDir()
@@ -502,6 +505,7 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/season", seasonHandler(send))
 	mux.HandleFunc("/api/season/games", seasonGamesHandler(send))
 	mux.HandleFunc("/api/scout", scoutHandler(send))
+	mux.HandleFunc("/api/duels", duelsHandler)
 	aiHandlers(mux, send)
 	mux.HandleFunc("/api/ult", func(w http.ResponseWriter, req *http.Request) {
 		q := req.URL.Query()

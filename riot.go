@@ -313,20 +313,21 @@ type MapFrame struct {
 	Pos map[string][2]int `json:"pos"` // participant id -> x, y
 }
 type MapData struct {
-	Side    string      `json:"side"`
-	MatchID string      `json:"match_id"`
-	Events  []MapEvent  `json:"events"`
-	Path    []MapEvent  `json:"path"`
-	Players []MapPlayer `json:"players"`
-	Frames  []MapFrame  `json:"frames"`
-	Stats   *MatchStats `json:"stats,omitempty"`
-	Win     *bool       `json:"win,omitempty"` // official result
-	Queue   int         `json:"queue,omitempty"`
-	Board   *Board      `json:"board,omitempty"`  // the scoreboard of the 10 players
-	Gold    [][3]int    `json:"gold,omitempty"`   // each minute: second, your team's gold, the enemy's
-	Fights  []MapFight  `json:"fights,omitempty"` // every champion kill of the game
-	Deaths  []DeathInfo `json:"death_info"`       // each of your deaths in detail (for the AI's explanation)
-	Kills   []KillInfo  `json:"kill_info"`        // your kills and assists (when there's no death to explain)
+	Side    string         `json:"side"`
+	MatchID string         `json:"match_id"`
+	Events  []MapEvent     `json:"events"`
+	Path    []MapEvent     `json:"path"`
+	Players []MapPlayer    `json:"players"`
+	Frames  []MapFrame     `json:"frames"`
+	Stats   *MatchStats    `json:"stats,omitempty"`
+	Win     *bool          `json:"win,omitempty"` // official result
+	Queue   int            `json:"queue,omitempty"`
+	Board   *Board         `json:"board,omitempty"`   // the scoreboard of the 10 players
+	Gold    [][3]int       `json:"gold,omitempty"`    // each minute: second, your team's gold, the enemy's
+	Lanes14 map[string]int `json:"lanes14,omitempty"` // at minute 14, each lane: your team's gold minus the enemy's (TOP, JUNGLE, MIDDLE, BOT)
+	Fights  []MapFight     `json:"fights,omitempty"`  // every champion kill of the game
+	Deaths  []DeathInfo    `json:"death_info"`        // each of your deaths in detail (for the AI's explanation)
+	Kills   []KillInfo     `json:"kill_info"`         // your kills and assists (when there's no death to explain)
 }
 
 // KillInfo: a kill you took part in
@@ -569,6 +570,21 @@ func fetchMap(rec *Record, endUnix int64) (*MapData, error) {
 				}
 			}
 			md.Gold = append(md.Gold, g)
+			if f.Timestamp/60000 == 14 && md.Lanes14 == nil {
+				md.Lanes14 = map[string]int{}
+				for _, p := range m.Info.Participants {
+					pf, ok := f.ParticipantFrames[strconv.Itoa(p.ParticipantID)]
+					lane := map[string]string{"TOP": "TOP", "JUNGLE": "JUNGLE", "MIDDLE": "MIDDLE", "BOTTOM": "BOT", "UTILITY": "BOT"}[p.TeamPosition]
+					if !ok || lane == "" {
+						continue
+					}
+					if p.TeamID == team {
+						md.Lanes14[lane] += pf.TotalGold
+					} else {
+						md.Lanes14[lane] -= pf.TotalGold
+					}
+				}
+			}
 			for _, e := range f.Events {
 				if e.Type == "CHAMPION_KILL" && e.Position != nil {
 					md.Fights = append(md.Fights, MapFight{float64(e.Timestamp) / 1000, e.Position.X, e.Position.Y, teams[e.KillerID] == team || (e.KillerID == 0 && teams[e.VictimID] != team), champs[e.VictimID], e.VictimID == me || e.KillerID == me})
