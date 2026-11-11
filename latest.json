@@ -1,7 +1,7 @@
 {
- "version": "2.1.22",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.22.exe",
- "size": 9974272,
- "sha256": "046c9bcb02d30defda62131dcca490ff0296536e75b784c9a3c1792836a1e709",
- "notes": "- Per què has mort: cada mort té el seu vídeo (els 12 segons d'abans), gravat mentre jugaves, igual que els clips de les jugades\n- Els vídeos de les morts s'esborren sols 30 minuts després de la partida"
+ "version": "2.1.23",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.23.exe",
+ "size": 9976320,
+ "sha256": "893c2154a686c51489708975b586504750b853ca73b8407bc6f55a02c0fdaba9",
+ "notes": "- Arreglat: la finestra es congelava cada vegada més. El gràfic 3D de LP es tornava a construir cada 2 minuts sense alliberar l'anterior (models, textures i el context gràfic); ara només es refà si canvia, i l'anterior s'allibera del tot\n- Farm: també t'ho recorda als minuts 20, 30 i 40\n- Farm: el joc només dona el farm de 10 en 10 durant la partida; ara diu 'entre 70 i 79' en lloc de '70'"
 }
