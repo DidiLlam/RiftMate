@@ -374,19 +374,8 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 		}
 		return left - age
 	}
-	head := ""
-	if st.T0 > 0 {
-		// each update's start time differs by a few milliseconds (how long the game data took to arrive): small
-		// differences are smoothed out instead of followed, so the clock never ticks back
-		if d := st.T0 - ovT0; d > 1500 || d < -1500 {
-			ovT0 = st.T0
-		} else {
-			ovT0 += d * 0.02
-		}
-		head = ovClock((nowMs - ovT0) / 1000)
-	} else if st.Time != nil {
-		head = ovClock(*st.Time + age)
-	}
+	// no game clock (the game shows it already): the header only appears for an objective that's about to spawn
+	var objs []string
 	for _, o := range st.Obj {
 		l := o.Left - age
 		if o.End > 0 {
@@ -394,14 +383,18 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 		}
 		if l > -45 && l <= 90 {
 			if l > 0 {
-				head += "  ·  " + o.Name + " " + ovFmt(l)
+				objs = append(objs, o.Name+" "+ovFmt(l))
 			} else {
-				head += "  ·  " + o.Name + " ja"
+				objs = append(objs, o.Name+" ja")
 			}
 		}
 	}
-	plates = append(plates, ovRect{0, 0, w, sc(20)})
-	y := sc(23)
+	head := strings.Join(objs, "  ·  ")
+	y := int32(0)
+	if head != "" {
+		plates = append(plates, ovRect{0, 0, w, sc(20)})
+		y = sc(23)
+	}
 	now := map[string]bool{}
 	cw, gap, pad := sc(ovChipSz), sc(ovGap), sc(3)
 	for _, r := range st.Rows {
@@ -512,7 +505,7 @@ func ovPaintAll(h uintptr) {
 	plate := rgb(15, 24, 21)
 	for i, p := range plates {
 		box(p, plate, sc(10))
-		if i == 0 {
+		if i == 0 && header != "" {
 			text(header, ovRect{p.L + sc(8), p.T, p.R - sc(6), p.B}, fHead, rgb(205, 220, 214), dtVCenter|dtSingle|dtEllipsis|dtNoPrefix)
 		}
 	}
