@@ -1,7 +1,7 @@
 {
- "version": "2.1.24",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.24.exe",
- "size": 9975296,
- "sha256": "0c3b6081707285a4ec069d33c4c53d3d3a3983f950e852bd4776b3e35edc2935",
- "notes": "- Overlay: fora el rellotge de la partida; la barra de dalt només surt quan falta poc per un objectiu (drac, baró...)"
+ "version": "2.1.25",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.25.exe",
+ "size": 9979904,
+ "sha256": "0ab52c562b4d68d6b15613cea6c7da6946e0038e3730f4aa78ea26d2db1ab902",
+ "notes": "- Per què has mort: botó 'Esborrar el vídeo' a cada mort i 'Esborrar-los tots ara' (si no, s'esborren sols als 30 minuts)"
 }
