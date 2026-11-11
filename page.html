@@ -1491,6 +1491,10 @@ const I18N = {
   // coach (spoken)
   "Mira el minimapa.": ["Mira el minimapa.", "Check the minimap."],
   "On és el jungla rival?": ["¿Dónde está el jungla rival?", "Where is the enemy jungler?"],
+  "Minut {n}: portes entre {m} i {x} de farm. Bon ritme.": ["Minuto {n}: llevas entre {m} y {x} de farmeo. Buen ritmo.", "Minute {n}: between {m} and {x} CS. Good pace."],
+  "Minut {n}: portes entre {m} i {x} de farm. L'objectiu era {y}.": ["Minuto {n}: llevas entre {m} y {x} de farmeo. El objetivo era {y}.", "Minute {n}: between {m} and {x} CS. The goal was {y}."],
+  "Minut {n}: portes {m} de farm. Bon ritme.": ["Minuto {n}: llevas {m} de farmeo. Buen ritmo.", "Minute {n}: {m} CS. Good pace."],
+  "Minut {n}: portes {m} de farm. L'objectiu era {x}.": ["Minuto {n}: llevas {m} de farmeo. El objetivo era {x}.", "Minute {n}: {m} CS. The goal was {x}."],
   "Minut deu: portes {n} de farm. Bon ritme.": ["Minuto diez: llevas {n} de farmeo. Buen ritmo.", "Minute ten: {n} CS. Good pace."],
   "Minut deu: portes {n} de farm. L'objectiu era 80.": ["Minuto diez: llevas {n} de farmeo. El objetivo era 80.", "Minute ten: {n} CS. The goal was 80."],
   "Minut deu: portes {n} de puntuació de visió.": ["Minuto diez: llevas {n} de puntuación de visión.", "Minute ten: vision score {n}."],
@@ -2077,7 +2081,7 @@ if (location.protocol.startsWith("http")) { playsRefresh(); setInterval(() => { 
 const playStamp = d => String(d || "").replace(":", "").replace(" ", "_");
 const playVideo = p => `/api/playfile?g=${encodeURIComponent(p.stamp)}&f=${encodeURIComponent(p.file)}`;
 function playItem(p, rank){
-  return `<div class="play"><video controls preload="metadata" src="${playVideo(p)}"></video>
+  return `<div class="play"><video controls preload="${!rank || rank <= 6 ? "metadata" : "none"}" src="${playVideo(p)}"></video>
     <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b></div>
     <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}
     <div><button class="b small" type="button" data-pdel="${esc(p.stamp)}:${p.n}">Esborrar</button></div></div></div>`;
@@ -2129,6 +2133,13 @@ function repTab(r){
   if ($("#viewR").hidden) showTab("R");
 }
 $("#repTabs")?.addEventListener("click", e => { const r = e.target.closest("button")?.dataset.r; if (r) repTab(r); });
+// The game only tells your farm in steps of ten while you play (78 arrives as 70): so it says "between 70 and 79"
+// instead of a number that's lower than what you have
+function csLine(min, cs){
+  const goal = min * 8, ok = cs >= goal, exact = cs % 10 !== 0 || cs === 0;
+  const amount = exact ? `${cs}` : `entre ${cs} i ${cs + 9}`;
+  return `Minut ${min}: portes ${amount} de farm. ${ok ? "Bon ritme." : `L'objectiu era ${goal}.`}`;
+}
 // ---------- Duo: shared timers ----------
 let duoCode = "", duoSince = -1, duoApplying = false, duoActive = false;
 function gtNow(){ const g = lastData?.gameData?.gameTime; return typeof g === "number" ? g + (Date.now() - (lastDataAt || Date.now())) / 1000 : null; }
@@ -2956,8 +2967,10 @@ function coachTick(data){
   if (t >= 600 && myCs != null && useData) {
     if (game.role === "UTILITY") once("t600", `Minut deu: portes ${Math.round(me?.scores?.wardScore ?? 0)} de puntuació de visió.`);
     else if (game.role === "JUNGLE") once("t600", `Minut deu: portes ${myCs} de farm i ${coach.ganks} ganks amb èxit.`);
-    else once("t600", `Minut deu: portes ${myCs} de farm${myCs >= 80 ? ". Bon ritme." : ". L'objectiu era 80."}`);
+    else once("t600", csLine(10, myCs));
   }
+  // and at 20, 30 and 40 minutes (8 a minute is the goal, as the 80 at ten)
+  for (const m of [20, 30, 40]) if (t >= m * 60 && t < m * 60 + 90 && myCs != null && useData && game.role !== "UTILITY") once("t" + m * 60, csLine(m, myCs));
   if (t >= 840) once("t840", "Minut catorze. Comença la mitja partida: pensa en cicles d'onades.");
   if (t >= 1500) once("t1500", "Minut vint-i-cinc. Fase final: una mort pot costar la partida.");
 
@@ -3836,7 +3849,7 @@ async function loadRank(force){
   badge.innerHTML = `${emblemImg(solo.tier, "")}<div class="rbt"><b data-noi18n>${tierTxt(solo)}</b><span>${solo.lp} LP · ${queueTxt(solo.queue)}</span></div>
     <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${g.steps.map(x => `<span class="rbstep">${emblemImg(x.tier, "rbemb")}<span><b data-noi18n>${esc(x.name)}</b> ${esc(x.text.slice(x.name.length + 2))}</span></span>`).join("")}</div>` : ""; })()}`;
   { const h = $("#rankBadgeH"); if (h) { h.innerHTML = badge.innerHTML; h.hidden = false; } }
-  lpSeason = null;   // the rank changed (a game ended): read the list of games again
+  { const sig = solo ? `${solo.tier}${solo.rank}${solo.lp}|${solo.wins}|${solo.losses}` : ""; if (sig !== lpRankSig) { if (lpRankSig) lpSeason = null; lpRankSig = sig; } }   // a game ended: read the list of games again
   renderLpChart();
 }
 loadRank(false);
@@ -4519,7 +4532,7 @@ let lpChartData = null;
 // the range of the LP history: the last 15 games (the app's own, with their real LP), or a week, a month, six months
 // or a year from the season's games (Riot). Riot doesn't give past LP: the games the app recorded keep their real
 // LP and the rest count your usual LP per win and loss (marked as approximate).
-let lpRange = store.get("lpRange", "15"), lpSeason = null, lpSeasonAsked = "";
+let lpRange = store.get("lpRange", "15"), lpSeason = null, lpSeasonAsked = "", lpRankSig = "";
 const LP_RANGES = [["15", "Últimes 15"], ["7", "Setmana"], ["30", "Mes"], ["182", "6 mesos"], ["365", "Any"]];
 function lpSeries(){
   const real = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number");
@@ -4602,7 +4615,11 @@ function renderLpChart(){ const el = $("#lpChart"); if (!el) return;
   const want = lpRange === "15" ? "60" : lpRange;
   if (lpSeason?.days !== want && lpSeasonAsked !== want) { lpSeasonAsked = want;
     fetch(`/api/season/games?days=${want}`, {cache: "no-store"}).then(x => x.json()).then(j => { lpSeasonAsked = ""; if ((lpRange === "15" ? "60" : lpRange) === want) { lpSeason = {days: want, games: j.games || []}; renderLpChart(); } }).catch(() => { lpSeasonAsked = ""; }); }
-  const h = lpChart(); el.innerHTML = h; el.hidden = !h; if (h) lp3d(); }
+  const h = lpChart();
+  // the same chart as on screen: nothing to do (rebuilding the 3D scene and its models costs a few seconds)
+  if (h && h === lpLastHtml && lp3dState && document.body.contains(lp3dState.r.domElement)) return;
+  lpLastHtml = h; lp3dFree(); el.innerHTML = h; el.hidden = !h; if (h) lp3d(); }
+let lpLastHtml = "";
 document.addEventListener("click", e => { const b = e.target.closest?.(".lprange button"); if (!b) return; lpRange = b.dataset.r; store.set("lpRange", lpRange); renderLpChart(); });
 
 // ---------- the LP history in 3D: the games as a ridge (blue won, orange lost) and, at the end, the column of
@@ -4614,11 +4631,18 @@ function loadThree(){
   return threeP ??= new Promise(res => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
     s.onload = () => res(!!window.THREE); s.onerror = () => { threeP = null; res(false); }; document.head.appendChild(s); setTimeout(() => res(!!window.THREE), 15000); });
 }
+// the previous 3D chart is freed completely: its models, textures and the WebGL context itself (a browser keeps
+// only a few; rebuilt over and over without this, the window grew slower and slower until it froze)
+function lp3dFree(){
+  const st = lp3dState; lp3dState = null; if (!st) return;
+  try { st.sc?.traverse(o => { o.geometry?.dispose?.(); for (const m of [].concat(o.material || [])) { for (const k in m) if (m[k]?.isTexture) m[k].dispose(); m.dispose?.(); } }); } catch (e) {}
+  try { st.r.dispose(); st.r.forceContextLoss(); st.r.domElement.remove(); } catch (e) {}
+}
 async function lp3d(){
   const box = $("#lp3d"), data = lpChartData; if (!box || !data) return;
   if (!(await loadThree())) return;   // no internet for the library: the 2D chart stays
   if (!document.body.contains(box)) return;
-  if (lp3dState) { try { lp3dState.r.dispose(); } catch (e) {} lp3dState = null; }
+  lp3dFree();
   const T = window.THREE, cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim();
   const BLUE = tok("--lpblue") || "#4b93ff", ORANGE = tok("--lporange") || "#ff8f3a", col = c => new T.Color(c).convertSRGBToLinear();
   // the last 15 games, each with the champion you played standing on the ridge
@@ -4773,7 +4797,7 @@ async function lp3d(){
   });
   r.domElement.addEventListener("pointerup", e => { const d = drag; drag = null; if (d && !d.moved) { const p = pick(e)?.userData; if (p?.r) openLpGame(p.r.date); } });
   r.domElement.addEventListener("pointerleave", () => { tip.hidden = true; hoverFig = null; });
-  lp3dState = {r};
+  lp3dState = {r, sc};
   lp3dModels(T, sc, figs, draw, r);
 }
 // the champions as they look in the game: their 3D model (from a fan collection of the game's models), standing on
