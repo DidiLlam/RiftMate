@@ -487,6 +487,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="cPlays"><input type="checkbox" id="cPlays"><span>Gravar les jugades: quan mates algú, fas una doble o robes un objectiu, l'app en guarda un clip de pocs segons. Després de la partida la IA els puntua i a l'informe hi surt el teu top 3. També grava les teves morts, per veure-les a "Per què has mort" (s'esborren 30 minuts després de la partida).</span></label>
     <p class="note">Grava amb la targeta gràfica (NVIDIA, AMD o Intel), com Outplayed o Medal; el primer cop descarrega ffmpeg (uns 80 MB). Pot costar una mica d'FPS: compara-ho amb el comptador del joc. Necessita el LoL en "Sense vores". Porten només el so del joc (ni el Discord ni la veu del coach); també hi surt l'overlay.</p>
     <label class="ph-item" for="cPlaysLow"><input type="checkbox" id="cPlaysLow" checked><span>Esborrar sols, al cap de 3 hores, les de menys de 60 punts</span></label>
+    <label class="ph-item" for="cPlaysDrive"><input type="checkbox" id="cPlaysDrive"><span>Guardar els vídeos a Google Drive (a la carpeta "RiftMate clips"), en lloc de l'ordinador</span></label>
+    <p class="note" id="playsDir"></p>
     <p class="note" id="playsState"></p></section>
   <section class="card" data-g="partida" id="csHelpCard"><h2>Selecció de campions i xat</h2>
     <label class="ph-item" for="cClip"><input type="checkbox" id="cClip" checked><span>Xat: en partida, tenir sempre copiats els temporitzadors dels rivals, per enviar-los al xat amb Enter, Ctrl+V i Enter sense sortir del joc</span></label>
@@ -2079,12 +2081,19 @@ async function playsRefresh(q){
   const cb = $("#cPlays"), el = $("#playsState"); if (!cb) return st;
   if (!st.supported) { $("#playsCard").hidden = true; return st; }
   cb.checked = !!st.on; if ($("#cPlaysLow")) $("#cPlaysLow").checked = !st.keep_low;
+  { const d = $("#cPlaysDrive"), n = $("#playsDir");
+    if (d) { d.checked = !!st.dir; d.disabled = !st.dir && !st.gdrive; }
+    if (n) n.innerHTML = st.dir_error ? esc(st.dir_error)
+      : st.dir ? (st.dir_now === st.dir ? `Van a <code data-noi18n>${esc(st.dir)}</code>. Per no ocupar espai a l'ordinador: a l'Explorador, clic dret a la carpeta › Google Drive › <b>Només en línia</b> (o Drive en mode "Streaming").`
+                 : `Google Drive no està obert: mentrestant es guarden a l'ordinador.`)
+      : st.gdrive ? "" : `No trobo Google Drive per a escriptori en aquest ordinador: instal·la'l i inicia la sessió, i torna a obrir els ajustos.`; }
   const stTxt = {downloading: "Descarregant ffmpeg…", probing: "Provant la targeta gràfica…", recording: "Gravant.", ready: "Llest: gravarà a la propera partida.", error: "No pot gravar: " + (st.error || "")}[st.state] || (st.on ? "S'activarà a la propera partida." : "");
   el.textContent = st.on ? `${stTxt}${st.encoder ? ` (${({h264_nvenc: "NVIDIA", h264_amf: "AMD", h264_qsv: "Intel"})[st.encoder] || st.encoder})` : ""} · ${(st.plays || []).length} clips guardats, ${st.mb || 0} MB.` : "";
   return st;
 }
 $("#cPlays")?.addEventListener("change", e => playsRefresh(`?on=${e.target.checked ? 1 : 0}`));
 $("#cPlaysLow")?.addEventListener("change", e => playsRefresh(`?keeplow=${e.target.checked ? 0 : 1}`));
+$("#cPlaysDrive")?.addEventListener("change", e => playsRefresh(`?dir=${e.target.checked ? "gdrive" : ""}`));
 // delete the videos of your deaths (one click: they're temporary anyway)
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-mdel]"); if (!b) return;

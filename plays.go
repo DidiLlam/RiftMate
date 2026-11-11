@@ -26,6 +26,7 @@ type playCfg struct {
 	On      bool   `json:"on"`
 	Encoder string `json:"encoder,omitempty"`  // the one that worked on this PC
 	KeepLow bool   `json:"keep_low,omitempty"` // don't delete the ones under 60 after 3 hours
+	Dir     string `json:"dir,omitempty"`      // where the videos go (e.g. a Google Drive folder); "" = the app's own folder
 }
 
 // deathClip: the seconds before one of your deaths
@@ -73,8 +74,106 @@ var (
 	plErr     string
 )
 
-func playsRoot() string    { return filepath.Join(filepath.Dir(dataDir()), "jugades") }
-func playsIndex() string   { return filepath.Join(playsRoot(), "jugades.json") }
+// the videos live in playsRoot (the app's folder, or the one chosen, e.g. on Google Drive); the list of plays always
+// stays in the app's folder. If the chosen folder isn't there (Google Drive closed), the app's folder is used.
+func playsLocalRoot() string { return filepath.Join(filepath.Dir(dataDir()), "jugades") }
+func playsIndex() string     { return filepath.Join(playsLocalRoot(), "jugades.json") }
+
+var (
+	plDirMu       sync.Mutex
+	plDir         string
+	plDirOK       bool
+	plDirSeen     time.Time
+	plDirSeenOnce bool
+)
+
+var plDirOnce sync.Once
+
+func playsRoot() string {
+	plDirMu.Lock()
+	defer plDirMu.Unlock()
+	plDirOnce.Do(func() { // the setting, read here without plMu (playsRoot is called with it held)
+		var c playCfg
+		if b, err := os.ReadFile(playsCfgFile()); err == nil && json.Unmarshal(b, &c) == nil && plDir == "" {
+			plDir = c.Dir
+		}
+	})
+	if plDir == "" {
+		return playsLocalRoot()
+	}
+	if time.Since(plDirSeen) > 30*time.Second {
+		plDirSeen = time.Now()
+		_, err := os.Stat(filepath.Dir(plDir)) // the drive or the folder that holds ours
+		ok := err == nil
+		if ok && !plDirOK { // back (or first look): what was saved meanwhile in the app's folder goes there too
+			go playsMove(playsLocalRoot(), plDir)
+		}
+		if ok != plDirOK && !(ok && plDirSeenOnce == false) {
+			logf("Jugades: la carpeta %s %s", plDir, map[bool]string{true: "torna a estar disponible", false: "no hi és (Google Drive tancat?): faig servir la de l'app"}[ok])
+		}
+		plDirOK, plDirSeenOnce = ok, true
+	}
+	if !plDirOK {
+		return playsLocalRoot()
+	}
+	return plDir
+}
+
+func playsSetDir(d string) {
+	plDirMu.Lock()
+	plDir, plDirSeen = d, time.Time{}
+	plDirMu.Unlock()
+}
+
+// playsMove: the videos of every game folder from one root to the other (copying when they're on different drives)
+var plMoving sync.Mutex
+
+func playsMove(from, to string) {
+	if from == to {
+		return
+	}
+	plMoving.Lock()
+	defer plMoving.Unlock()
+	ents, err := os.ReadDir(from)
+	if err != nil {
+		return
+	}
+	n := 0
+	for _, e := range ents {
+		if !e.IsDir() || !playStampRe.MatchString(e.Name()) {
+			continue
+		}
+		src, dst := filepath.Join(from, e.Name()), filepath.Join(to, e.Name())
+		os.MkdirAll(dst, 0o755)
+		fs, _ := os.ReadDir(src)
+		for _, f := range fs {
+			a, b := filepath.Join(src, f.Name()), filepath.Join(dst, f.Name())
+			if os.Rename(a, b) == nil || (fileCopy(a, b) == nil && os.Remove(a) == nil) {
+				n++
+			}
+		}
+		os.Remove(src)
+	}
+	logf("Jugades: %d vídeos moguts de %s a %s", n, from, to)
+}
+
+func fileCopy(a, b string) error {
+	in, err := os.Open(a)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(b)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		out.Close()
+		os.Remove(b)
+		return err
+	}
+	return out.Close()
+}
 func playsCfgFile() string { return profileFile("jugades.json") }
 
 func playsLoadCfg() playCfg {
@@ -491,7 +590,7 @@ func playsAdd(ps []*Play) {
 		}
 	}
 	if b, err := json.MarshalIndent(out, "", " "); err == nil {
-		os.MkdirAll(playsRoot(), 0o755)
+		os.MkdirAll(playsLocalRoot(), 0o755)
 		os.WriteFile(playsIndex(), b, 0o644)
 	}
 }
@@ -511,6 +610,7 @@ var playStampRe = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}$`)
 func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		q := req.URL.Query()
+		dirErr := ""
 		if strings.HasSuffix(req.URL.Path, "/deathclips") { // the death clips of a game still on disk: [{t, file}]
 			g := q.Get("g")
 			out := []map[string]any{}
@@ -566,6 +666,28 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			if v := q.Get("keeplow"); v != "" {
 				c.KeepLow = v == "1"
 			}
+			if q.Has("dir") {
+				d := strings.TrimSpace(q.Get("dir"))
+				if d == "gdrive" {
+					d = gdriveFolder()
+				}
+				if d != "" {
+					d = filepath.Clean(d)
+					if err := os.MkdirAll(d, 0o755); err != nil {
+						dirErr = "No puc crear la carpeta a Google Drive: " + err.Error()
+						d = c.Dir
+					}
+				} else if q.Get("dir") == "gdrive" {
+					dirErr = "No trobo Google Drive per a escriptori en aquest ordinador."
+					d = c.Dir
+				}
+				old := playsRoot()
+				c.Dir = d
+				playsSaveCfg(c)
+				playsSetDir(d)
+				logf("Jugades: els vídeos van a %s", map[bool]string{true: "la carpeta de l'app", false: d}[d == ""])
+				go playsMove(old, playsRoot())
+			}
 			playsSaveCfg(c)
 			logf("Jugades: %s", map[bool]string{true: "activat", false: "desactivat"}[c.On])
 			if c.On && c.Encoder == "" {
@@ -600,7 +722,7 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			return nil
 		})
 		c := playsLoadCfg()
-		b, _ := json.Marshal(map[string]any{"keep_low": c.KeepLow, "on": c.On, "supported": playsSupported, "encoder": c.Encoder, "state": st, "error": e, "plays": all, "mb": size >> 20})
+		b, _ := json.Marshal(map[string]any{"dir_error": dirErr, "dir": c.Dir, "dir_now": playsRoot(), "gdrive": gdriveFolder(), "keep_low": c.KeepLow, "on": c.On, "supported": playsSupported, "encoder": c.Encoder, "state": st, "error": e, "plays": all, "mb": size >> 20})
 		send(w, 200, "application/json", b)
 	}
 }
