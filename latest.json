@@ -1,7 +1,7 @@
 {
- "version": "2.1.29",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.29.exe",
- "size": 9997824,
- "sha256": "3cca448b4a67a846ad757b5b830fc66cf17f6b17f726b369dd5078ad529e62bf",
- "notes": "- Límit diari de la IA apujat a 200 crides (abans 60)\n- MMR: nova Previsió (LP de la propera partida i partides per pujar de divisió)\n- MMR: nova secció Quan plegar (victòries per partida del dia i després de guanyar o perdre)"
+ "version": "2.1.30",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.30.exe",
+ "size": 10003968,
+ "sha256": "b7e5f46eef531207de078c7c874167849433da7d00f648fe47ad03f9f0a685ff",
+ "notes": "- Duels per línia: a la pantalla de càrrega diu quina línia nostra és el costat fort i quina el feble\n- La IA del pla de partida també valora els counters de campions de cada línia"
 }
