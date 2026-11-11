@@ -191,6 +191,7 @@ func runScout(key string, players []scoutIn) {
 	}
 	wg.Wait()
 	markPremades(res, c.PUUIDs[c.MyRiotID])
+	lobbySet(res)
 	scoutMu.Lock()
 	if scoutKey == key {
 		scoutRes, scoutBusy = res, false
@@ -267,4 +268,63 @@ func markPremades(res []scoutOut, me string) {
 	if len(found) > 0 {
 		logf("Premades: %s", strings.Join(found, ", "))
 	}
+}
+
+// The lobby of this game: the average rank of the other nine (for the MMR estimate) and whether you queued with
+// someone, and his rank. It goes into the game's report at the end.
+type lobbyInfo struct {
+	Avg     float64 `json:"avg"` // in "absolute LP": Iron IV 0 LP = 0, each division 100, Master+ from 2800
+	N       int     `json:"n"`
+	Duo     string  `json:"duo,omitempty"`      // the champion of a teammate who played his last games with you
+	DuoTier string  `json:"duo_tier,omitempty"` // and his rank ("EMERALD I")
+	DuoAbs  float64 `json:"duo_abs,omitempty"`
+}
+
+var (
+	lobbyMu  sync.Mutex
+	lobbyNow *lobbyInfo
+)
+
+func absRankGo(tier, div string, lp int) (float64, bool) {
+	tiers := []string{"IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND"}
+	for i, t := range tiers {
+		if t == tier {
+			d := map[string]int{"IV": 0, "III": 1, "II": 2, "I": 3}[div]
+			return float64(i*400 + d*100 + lp), true
+		}
+	}
+	switch tier {
+	case "MASTER", "GRANDMASTER", "CHALLENGER":
+		return float64(2800 + lp), true
+	}
+	return 0, false
+}
+
+func lobbySet(res []scoutOut) {
+	li := &lobbyInfo{}
+	sum := 0.0
+	for _, p := range res {
+		if v, ok := absRankGo(p.Tier, p.Rank, p.LP); ok {
+			sum += v
+			li.N++
+			if p.Ally && p.WithMe >= 2 && li.Duo == "" {
+				li.Duo, li.DuoTier, li.DuoAbs = p.Champ, p.Tier+" "+p.Rank, v
+			}
+		}
+	}
+	if li.N == 0 {
+		return
+	}
+	li.Avg = sum / float64(li.N)
+	lobbyMu.Lock()
+	lobbyNow = li
+	lobbyMu.Unlock()
+}
+
+func lobbyTake() *lobbyInfo {
+	lobbyMu.Lock()
+	defer lobbyMu.Unlock()
+	l := lobbyNow
+	lobbyNow = nil
+	return l
 }

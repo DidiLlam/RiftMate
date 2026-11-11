@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.1.25"
+	version = "2.1.26"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -257,6 +257,9 @@ func (r *Recorder) finish(result string) {
 	if rm, ok := report.(map[string]any); ok {
 		if mk := marksTake(); len(mk) > 0 {
 			rm["marks"] = mk // the enemy spells you marked in this game ("Champ|Spell": times)
+		}
+		if lb := lobbyTake(); lb != nil {
+			rm["lobby"] = lb // the average rank of the other players, and your duo (for the MMR estimate)
 		}
 	}
 	dir := dataDir()

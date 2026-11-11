@@ -328,6 +328,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 #status:empty{display:none}
 .b.small{padding:3px 10px;font-size:.78rem;margin-top:4px}
 .dclip video,.vcd video{width:100%;max-width:560px;border-radius:8px;background:#000;margin-top:6px}
+.mmrbig{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:4px 0 8px}.mmrbig b{font-size:1.6rem}.mmrv{font-weight:700;color:var(--muted)}.mmrv.bad{color:var(--lporange,#ff8f3a)}.mmrv.good{color:var(--lpblue,#4b93ff)}
+.mmrwhy{margin:8px 0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.mmrsvg{width:100%;height:auto}.mmrsvg .mg{stroke:var(--line);stroke-width:1}.mmrsvg .ml{fill:var(--muted);font-size:11px}.mmrsvg .mrank{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4}.mmrsvg .mmmr{fill:none;stroke:var(--lpblue,#4b93ff);stroke-width:2.5}
+.lgd{display:inline-block;width:18px;height:0;border-top:2px solid var(--muted);vertical-align:middle}.lgd.lr{border-top-style:dashed}.lgd.lm{border-top:2.5px solid var(--lpblue,#4b93ff)}
 .newslist{margin:6px 0 10px;padding-left:1.2em;display:flex;flex-direction:column;gap:7px}
 .spi2{width:18px;height:18px;border-radius:4px;vertical-align:-4px}
 .t select{font-size:.75rem;font-weight:500;color:var(--muted)}
@@ -397,7 +401,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span></div></div>
   </header>
   <div class="whero topbanner" aria-hidden="true"><div><p class="wtitle" data-noi18n>RiftMate</p><p class="wsub">El teu coach de veu</p></div></div>
-  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
+  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabM" aria-selected="false">MMR</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
   <div class="updbar" id="updBar" hidden></div>
   <div class="session" id="session" hidden></div>
   <div class="view" id="viewT">
@@ -604,6 +608,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div class="keyrow"><input type="text" id="coachQ" placeholder="p. ex. com jugo LeBlanc contra Syndra? per què em maten tant al minut 8?"><button class="b" id="coachSend" type="button">Preguntar</button></div>
     </section>
   </div>
+  <div class="view" id="viewM" hidden><div id="mmrBody"></div></div>
   <div class="view" id="viewS" hidden>
     <section class="card rankcard" id="rankCard" hidden></section>
     <section class="card" id="seasonCard"><h2>Win rate per campió · temporada</h2>
@@ -2148,6 +2153,63 @@ function csLine(min, cs){
   const goal = min * 8, ok = cs >= goal, exact = cs % 10 !== 0 || cs === 0;
   const amount = exact ? `${cs}` : `entre ${cs} i ${cs + 9}`;
   return `Minut ${min}: portes ${amount} de farm. ${ok ? "Bon ritme." : `L'objectiu era ${goal}.`}`;
+}
+// ---------- MMR: an estimate (Riot never shows it) ----------
+// Two clues: (1) the LP you win against what you lose: Riot gives more than it takes when your hidden MMR is above
+// your rank, and less when it's below (each LP of difference counted as about 12 LP of MMR, the usual rule of
+// thumb); (2) the average rank of the other nine in your games: that's who the system thinks you are (games with
+// a duo left out: they put you in your partner's level).
+const MMR_K = 12;
+function mmrRank(v){ const n = absName(Math.max(0, Math.round(v))); return `${tierTxt({tier: n.tier, rank: n.rank})} · ${n.lp} LP`; }
+function mmrData(){
+  const solo = histCache.filter(r => !r.error && r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number");
+  const last = solo.slice(0, 20), w = last.filter(r => r.lp.delta > 0).map(r => r.lp.delta), l = last.filter(r => r.lp.delta < 0).map(r => -r.lp.delta);
+  const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  const W = avg(w), L = avg(l);
+  const off = W != null && L != null ? Math.max(-300, Math.min(300, (W - L) * MMR_K)) : null;
+  const lob = solo.filter(r => r.lobby?.n >= 5 && !r.lobby.duo).slice(0, 10), lobAvg = avg(lob.map(r => r.lobby.avg));
+  const duoG = solo.filter(r => r.lobby?.duo), soloG = solo.filter(r => r.lobby && !r.lobby.duo);
+  let est = null;
+  if (myRankAbs != null && off != null) est = myRankAbs + off;
+  if (lobAvg != null && lob.length >= 3) est = est == null ? lobAvg : (est + lobAvg) / 2;
+  // over time: each game, the rank then and the LP rule over the 10 games up to it
+  const hist = []; let abs = myRankAbs;
+  if (abs != null) for (let i = 0; i < Math.min(solo.length, 40); i++) {
+    const win = solo.slice(i, i + 10), ww = avg(win.filter(r => r.lp.delta > 0).map(r => r.lp.delta)), ll = avg(win.filter(r => r.lp.delta < 0).map(r => -r.lp.delta));
+    hist.push({date: solo[i].date, rank: abs, mmr: ww != null && ll != null ? abs + Math.max(-300, Math.min(300, (ww - ll) * MMR_K)) : null});
+    abs -= solo[i].lp.delta;
+  }
+  return {W, L, off, n: last.length, lobAvg, lobN: lob.length, est, duoG, soloG, hist: hist.reverse()};
+}
+function mmrChart(h){
+  const pts = h.filter(x => x.mmr != null); if (pts.length < 4) return "";
+  const vs = pts.flatMap(x => [x.rank, x.mmr]), lo = Math.min(...vs) - 20, hi = Math.max(...vs) + 20, W = 640, H = 180;
+  const X = i => 30 + i * (W - 50) / (pts.length - 1), Y = v => H - 22 - (v - lo) * (H - 40) / Math.max(1, hi - lo);
+  const line = k => pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p[k]).toFixed(1)}`).join("");
+  const grid = []; for (let v = Math.ceil(lo / 100) * 100; v <= hi; v += 100) { const n = absName(v); grid.push(`<line x1="30" x2="${W - 20}" y1="${Y(v)}" y2="${Y(v)}" class="mg"/><text x="${W - 18}" y="${Y(v) + 4}" class="ml">${esc(tierTxt({tier: n.tier, rank: n.rank}))}</text>`); }
+  return `<svg class="mmrsvg" viewBox="0 0 ${W + 70} ${H}" role="img" aria-label="Evolució del MMR estimat i del rang">${grid.join("")}
+    <path d="${line("rank")}" class="mrank"/><path d="${line("mmr")}" class="mmmr"/></svg>
+    <p class="note"><span class="lgd lr"></span> el teu rang &nbsp; <span class="lgd lm"></span> MMR estimat · les últimes ${pts.length} partides de Solo/Duo</p>`;
+}
+function renderMmr(){
+  const el = $("#mmrBody"); if (!el) return;
+  const d = mmrData();
+  if (d.est == null) { el.innerHTML = `<section class="card"><h2>El teu MMR</h2><p class="note">Encara no hi ha prou partides de Solo/Duo amb els LP apuntats per estimar-lo.</p></section>`; return; }
+  const diff = Math.round(d.est - (myRankAbs ?? d.est)), f = n => n.toFixed(1).replace(".", ",");
+  const verdict = Math.abs(diff) < 25 ? "Està al nivell del teu rang." : diff > 0 ? `Està uns ${diff} LP per sobre del teu rang: pujaràs més ràpid del que baixes.` : `Està uns ${-diff} LP per sota del teu rang: per això guanyes menys del que perds.`;
+  const needWins = diff < -25 ? Math.ceil(-diff / 25) : 0;
+  const rate = g => { const n = g.length, w = g.filter(r => r.lp.delta > 0).length, lp = g.reduce((a, r) => a + r.lp.delta, 0); return n ? `${n} partides · ${Math.round(100 * w / n)}% victòries · ${lp >= 0 ? "+" : ""}${lp} LP` : "cap partida"; };
+  el.innerHTML = `<section class="card"><h2>El teu MMR estimat</h2>
+    <div class="mmrbig"><b data-noi18n>~${esc(mmrRank(d.est))}</b><span class="mmrv ${diff < -25 ? "bad" : diff > 25 ? "good" : ""}">${diff > 0 ? "▲" : diff < 0 ? "▼" : "="} ${Math.abs(diff)} LP</span></div>
+    <p>${verdict}${needWins ? ` Si encadenes unes <b>${needWins} victòries netes</b> (victòries menys derrotes), els LP et tornaran a ser favorables.` : ""}</p>
+    <ul class="mmrwhy">
+      ${d.off != null ? `<li><b>LP:</b> guanyes <b>+${f(d.W)}</b> i perds <b>−${f(d.L)}</b> de mitjana (últimes ${d.n} partides) → ${d.off >= 0 ? "+" : ""}${Math.round(d.off)} LP respecte del rang.</li>` : ""}
+      ${d.lobN ? `<li><b>Amb qui jugues:</b> la mitjana dels altres 9 jugadors de les teves últimes ${d.lobN} partides en solitari és <b data-noi18n>${esc(mmrRank(d.lobAvg))}</b>.</li>` : `<li class="note">A partir d'ara l'app també apunta el rang de la gent de cada partida: com més en tingui, més fina serà l'estimació.</li>`}
+    </ul>
+    <p class="note">És una estimació: Riot no ensenya el MMR enlloc.</p></section>
+    <section class="card"><h2>Evolució</h2>${mmrChart(d.hist) || `<p class="note">Calen més partides amb LP apuntats.</p>`}</section>
+    ${d.duoG.length ? `<section class="card"><h2>Amb duo i en solitari</h2><ul class="mmrwhy"><li><b>Amb duo:</b> ${rate(d.duoG)}</li><li><b>En solitari:</b> ${rate(d.soloG)}</li></ul>
+      <p class="note">Amb un company de més rang, el sistema us busca rivals del nivell dels dos junts (més a prop del seu): partides més difícils per a tu, i cada derrota et baixa el MMR igual.</p></section>` : ""}`;
 }
 // ---------- Duo: shared timers ----------
 let duoCode = "", duoSince = -1, duoApplying = false, duoActive = false;
@@ -5724,15 +5786,16 @@ setInterval(() => { if (!$("#viewA").hidden) loadStatus(); }, 5000);
 // tabs: false/"T" timer, true/"R" reports, "S" season
 function showTab(r){
   const v = r === true ? "R" : r === false ? "T" : r;
-  for (const k of ["T", "R", "H", "C", "S", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
+  for (const k of ["T", "R", "H", "C", "S", "M", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
   if (v === "R") loadHistory();
   if (v === "S") { loadRank(false); loadSeason(false); loadHistory(); }
   if (v === "H" && !mhLoaded) loadMatches(true);
+  if (v === "M") { renderMmr(); Promise.all([loadRank(false), loadHistory()]).then(renderMmr); }
   if (v === "H") loadRank(false);
   if (v === "A") { const g = $("#setTabs button[aria-selected=true]")?.dataset.g; if (g === "app") loadStatus(); }
   if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
 }
-$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C"));
+$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C")); $("#tabM").addEventListener("click", () => showTab("M"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const mm = t => fmtClock(t);
 const dash = v => v === null || v === undefined ? "—" : v;
