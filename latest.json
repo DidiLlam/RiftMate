@@ -1,7 +1,7 @@
 {
- "version": "2.1.27",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.27.exe",
+ "version": "2.1.28",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.28.exe",
  "size": 9992704,
- "sha256": "fee6b51caff304e792a3c29bf26e53b0fac141a6364309ddfe62a24abce15984",
- "notes": "- MMR: nova targeta 'Resultat' a dalt, amb el teu MMR i el del teu rang en números, els escuts oficials de cada lliga i la diferència (salut)"
+ "sha256": "5ff14652dae03fc03cd7240e963f8c7a2db4f92c3f44c6882d35c529e160d02b",
+ "notes": "- MMR: es torna a calcular sol quan acaba una partida i Riot actualitza els teus LP, encara que tinguis la pestanya oberta"
 }
