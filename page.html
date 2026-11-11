@@ -328,6 +328,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 #status:empty{display:none}
 .b.small{padding:3px 10px;font-size:.78rem;margin-top:4px}
 .dclip video,.vcd video{width:100%;max-width:560px;border-radius:8px;background:#000;margin-top:6px}
+td.n.neg{color:var(--lporange,#ff8f3a)}td.n.pos{color:var(--lpblue,#4b93ff)}
 .mmrbox{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0}.mmrcell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 10px;text-align:center}.mmrcell+.mmrcell{border-left:1px solid var(--line)}
 .mmrnum{font-size:1.7rem;color:var(--lporange,#ff8f3a);font-variant-numeric:tabular-nums}.mmrrank{display:flex;align-items:center;gap:10px;font-size:1.25rem}.mmremb{width:54px;height:54px;object-fit:contain}
 .mmrh{margin:14px 0 4px;font-size:1rem}.mmrhealth{border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center}.mmrhealth p{margin:6px 0 0}
@@ -536,7 +537,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <label class="ph-item" for="cAiAuto"><input type="checkbox" id="cAiAuto" checked><span>La IA parla sola: pla de partida a la pantalla de càrrega, consell quan mors, macro als minuts 14, 25 i 35, i tres lliçons a l'informe</span></label>
     <p class="note">Durant la partida, digues "coach" (o "entrenador") i, quan soni el to, fes la pregunta: "què em compro ara?", "com jugo contra Ahri?", "val la pena anar al drac?". Respon una IA que veu l'estat de la partida: campions, nivells, objectes, KDA, or, els temps que porta l'app i els objectius.</p>
     <p class="note">És gratis amb Gemini, de Google: entra a aistudio.google.com amb el teu compte de Google, prem "Get API key" i "Create API key", i enganxa-la aquí. No cal targeta. El pla gratuït té un límit de peticions per dia, que torna a les 9 del matí (mitjanit a Califòrnia).</p>
-    <div class="keyrow"><label for="aiBudget">Peticions al dia per a la IA</label><input type="number" id="aiBudget" min="10" max="1500" step="10" value="60" style="flex:0 0 6em;min-width:0"><span class="note" id="aiUsedNote"></span></div>
+    <div class="keyrow"><label for="aiBudget">Peticions al dia per a la IA</label><input type="number" id="aiBudget" min="10" max="1500" step="10" value="200" style="flex:0 0 6em;min-width:0"><span class="note" id="aiUsedNote"></span></div>
     <p class="note">Les teves preguntes i les lliçons de l'informe van sempre. El pla de partida es fa fins que has gastat el 70% d'aquest pressupost, i els consells de macro i de quan mors, fins al 40%; després, quan mors, el coach et diu per què amb les dades de la partida, sense IA.</p>
     <div class="keyrow"><input type="password" id="aiKey" placeholder="Clau de Google AI Studio" autocomplete="off"><button class="b" id="aiSave" type="button">Desar</button><button class="b" id="aiTest" type="button">Provar</button></div>
     <p class="note" id="aiState"></p>
@@ -2195,6 +2196,49 @@ function mmrChart(h){
     <path d="${line("rank")}" class="mrank"/><path d="${line("mmr")}" class="mmmr"/></svg>
     <p class="note"><span class="lgd lr"></span> el teu rang &nbsp; <span class="lgd lm"></span> MMR estimat · les últimes ${pts.length} partides de Solo/Duo</p>`;
 }
+// what comes next: LP for the next win or loss, and games to the next division at your current rate
+function mmrForecast(d){
+  if (d.W == null || d.L == null || myRankAbs == null) return "";
+  const solo = histCache.filter(r => !r.error && r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number").slice(0, 20);
+  const p = solo.filter(r => r.lp.delta > 0).length / Math.max(1, solo.length), per = p * d.W - (1 - p) * d.L, even = d.L / (d.W + d.L);
+  const n = absName(myRankAbs), need = myRankAbs >= 2800 ? 0 : 100 - n.lp, next = absName(Math.min(2800, myRankAbs - n.lp + 100));
+  const f = x => x.toFixed(1).replace(".", ",");
+  const games = per > 0.5 && need > 0 ? Math.ceil(need / per) : 0;
+  return `<section class="card"><h2>Previsió</h2><ul class="mmrwhy">
+    <li><b>Propera partida:</b> si guanyes, uns <b>+${Math.round(d.W)}</b> LP; si perds, uns <b>−${Math.round(d.L)}</b>.</li>
+    <li><b>Ara guanyes el ${Math.round(100 * p)}%</b> de les últimes ${solo.length} partides: de mitjana ${per >= 0 ? "+" : "−"}${f(Math.abs(per))} LP per partida.</li>
+    <li>${games ? `Al ritme actual, <b data-noi18n>${esc(tierTxt({tier: next.tier, rank: next.rank}))}</b> en unes <b>${games} partides</b> (et falten ${need} LP).`
+      : `Amb aquests LP, per no perdre'n cal guanyar el <b>${Math.round(100 * even)}%</b> de les partides; per pujar, més que això.`}</li>
+  </ul><p class="note">Amb les teves últimes partides de Solo/Duo; canvia a cada partida.</p></section>`;
+}
+// when to stop: your win rate by the game's place in the day's session and after a win or a loss (season games)
+let stopGames = null;
+async function renderStop(){
+  const el = $("#stopCard"); if (!el) return;
+  if (!stopGames) { try { stopGames = (await (await fetch("/api/season/games?days=365", {cache: "no-store"})).json()).games || []; } catch (e) { stopGames = []; } }
+  const g = stopGames.filter(x => x.e).slice().sort((a, b) => a.e - b.e);
+  if (g.length < 30) { el.innerHTML = `<h2>Quan plegar</h2><p class="note">Calen més partides de la temporada per calcular-ho.</p>`; return; }
+  // sessions: games less than 90 minutes apart
+  const pos = [], prev = [];
+  g.forEach((x, i) => { pos.push(i && x.e - g[i - 1].e < 90 * 60 + 2400 ? pos[i - 1] + 1 : 1); prev.push(i && pos[i] > 1 ? g[i - 1].w : null); });
+  const all = g.filter(x => x.w).length / g.length;
+  const row = (label, list) => { const n = list.length, w = list.filter(x => x.w).length, p = n ? w / n : 0, diff = Math.round(100 * (p - all));
+    return n < 8 ? "" : `<tr><td>${label}</td><td class="n">${n}</td><td class="n"><b>${Math.round(100 * p)}%</b></td><td class="n ${diff <= -5 ? "neg" : diff >= 5 ? "pos" : ""}">${diff > 0 ? "+" : ""}${diff}</td></tr>`; };
+  const byPos = [1, 2, 3, 4].map(k => [k === 4 ? "4a o més" : `${k}a`, g.filter((x, i) => k === 4 ? pos[i] >= 4 : pos[i] === k)]);
+  const afterW = g.filter((x, i) => prev[i] === true), afterL = g.filter((x, i) => prev[i] === false);
+  // the advice: the first place in the session from which you win clearly less
+  let stop = 0;
+  for (const k of [2, 3, 4]) { const list = g.filter((x, i) => k === 4 ? pos[i] >= 4 : pos[i] === k); if (list.length >= 15 && list.filter(x => x.w).length / list.length <= all - 0.06) { stop = k; break; } }
+  const lossL = afterL.length >= 15 ? afterL.filter(x => x.w).length / afterL.length : null;
+  const tips = [];
+  if (stop) tips.push(`A partir de la <b>${stop}a partida</b> del dia guanyes clarament menys: plega després de ${stop === 2 ? "la primera" : `la ${stop - 1}a`}.`);
+  if (lossL != null && lossL <= all - 0.06) tips.push(`Després d'una derrota guanyes el <b>${Math.round(100 * lossL)}%</b>: si en perds una, fes una pausa abans de la següent.`);
+  if (!tips.length) tips.push("No hi ha cap moment en què et vagi clarament pitjor: el cansament no et pesa gaire.");
+  el.innerHTML = `<h2>Quan plegar</h2><p>${tips.join(" ")}</p>
+    <div class="tbl"><table class="bench"><tr><th>Partida del dia</th><th>Partides</th><th>Victòries</th><th>vs mitjana</th></tr>${byPos.map(([l, x]) => row(l, x)).join("")}</table></div>
+    <div class="tbl"><table class="bench"><tr><th>Després de…</th><th>Partides</th><th>Victòries</th><th>vs mitjana</th></tr>${row("una victòria", afterW)}${row("una derrota", afterL)}</table></div>
+    <p class="note">Les ${g.length} partides de Solo/Duo de la temporada; mitjana: ${Math.round(100 * all)}% de victòries. Una sessió són partides amb menys d'una hora i mitja entre elles. Per hores i dies, mira <i>Quan jugues millor</i> a Temporada.</p>`;
+}
 function renderMmr(){
   const el = $("#mmrBody"); if (!el) return;
   const d = mmrData();
@@ -2222,8 +2266,11 @@ function renderMmr(){
     </ul>
     <p class="note">És una estimació: Riot no ensenya el MMR enlloc.</p></section>
     <section class="card"><h2>Evolució</h2>${mmrChart(d.hist) || `<p class="note">Calen més partides amb LP apuntats.</p>`}</section>
+    ${mmrForecast(d)}
+    <section class="card" id="stopCard"><h2>Quan plegar</h2><p class="note">Calculant…</p></section>
     ${d.duoG.length ? `<section class="card"><h2>Amb duo i en solitari</h2><ul class="mmrwhy"><li><b>Amb duo:</b> ${rate(d.duoG)}</li><li><b>En solitari:</b> ${rate(d.soloG)}</li></ul>
       <p class="note">Amb un company de més rang, el sistema us busca rivals del nivell dels dos junts (més a prop del seu): partides més difícils per a tu, i cada derrota et baixa el MMR igual.</p></section>` : ""}`;
+  renderStop();
 }
 // ---------- Duo: shared timers ----------
 let duoCode = "", duoSince = -1, duoApplying = false, duoActive = false;
@@ -3622,7 +3669,7 @@ let aiAutoAt = 0, aiAutoBusy = false;
 let aiUsed = 0;
 function aiNoteUsed(r){ if (r && typeof r.used === "number") { aiUsed = r.used; aiUsedShow(); } }
 function aiUsedShow(){ const el = $("#aiUsedNote"); if (el) el.textContent = `Avui: ${aiUsed} de ${aiBudget()}`; }
-function aiBudget(){ return Math.max(10, +($("#aiBudget")?.value || 60)); }
+function aiBudget(){ return Math.max(10, +($("#aiBudget")?.value || 200)); }
 function aiBudgetOk(kind){ const b = aiBudget(); return kind === "pla" ? aiUsed < b * 0.7 : kind === "mort" || kind === "macro" ? aiUsed < b * 0.4 : true; }
 // the free Gemini limit used up: no more automatic questions until it comes back, and it's said only once
 let aiLimitUntil = 0, aiLimitSaid = false;
@@ -3875,7 +3922,9 @@ async function aiRefresh(){
   try { const st = await (await fetch("/api/status", {cache: "no-store"})).json(); if (typeof st.ai_used === "number") aiUsed = st.ai_used; } catch (e) {}
   aiUsedShow();
 }
-{ const el = $("#aiBudget"), v = store.get("aiBudget", null); if (el) { if (v !== null) el.value = v; el.addEventListener("change", () => { el.value = Math.min(1500, Math.max(10, +el.value || 60)); store.set("aiBudget", +el.value); aiUsedShow(); }); } }
+// 60 was the old default: Google's free tier gives each model far more a day (and when one runs out the app moves to
+// the next), so 200 leaves room for the plan, the deaths and the clips every game
+{ const el = $("#aiBudget"); let v = store.get("aiBudget", null); if (v === 60) { v = 200; store.set("aiBudget", 200); } if (el) { if (v !== null) el.value = v; el.addEventListener("change", () => { el.value = Math.min(1500, Math.max(10, +el.value || 200)); store.set("aiBudget", +el.value); aiUsedShow(); }); } }
 async function aiSaveKey(){
   const v = $("#aiKey").value.trim().replace(/^["'\s]+|["'\s]+$/g, "");
   const st = $("#aiState");
@@ -6692,6 +6741,7 @@ async function loadHistory(){
     lpBackfill(h);
     if (fresh) [120, 300, 600].forEach(sec => setTimeout(() => loadRank(true).then(() => renderSession(histCache, false)), sec * 1000));
     histCount = h.length; histCache = h; renderLpChart(); maybeReview(h[0]); renderTrends(); renderReport((pendingReport && h.find(x => x.date === pendingReport)) || h[0]); if (pendingReport) { pendingReport = ""; window.scrollTo({top: 0}); } if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
+    if (fresh) stopGames = null;
     if (!$("#viewM").hidden) renderMmr();
   } catch(e) { $("#report").innerHTML = `<section class="card"><p class="note warn">Els informes només funcionen obrint la pàgina des del programa RiftMate.</p></section>`; }
 }

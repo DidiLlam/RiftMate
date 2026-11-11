@@ -675,7 +675,7 @@ func geminiJSON(key, system, user string, maxTok int) (string, string, error) {
 
 var _ = math.Abs
 
-func aiBudgetLeft() bool { return aiUsedToday(0) < 55 } // the page shares out 60 a day
+func aiBudgetLeft() bool { return aiUsedToday(0) < 190 } // the page shares out 200 a day by default
 
 // playsDelete: one play ("stamp:n") or all of them, from the list and from the disk
 func playsDelete(id string, all bool) int {
