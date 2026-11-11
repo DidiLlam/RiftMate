@@ -328,6 +328,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 #status:empty{display:none}
 .b.small{padding:3px 10px;font-size:.78rem;margin-top:4px}
 .dclip video,.vcd video{width:100%;max-width:560px;border-radius:8px;background:#000;margin-top:6px}
+.mmrbox{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0}.mmrcell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 10px;text-align:center}.mmrcell+.mmrcell{border-left:1px solid var(--line)}
+.mmrnum{font-size:1.7rem;color:var(--lporange,#ff8f3a);font-variant-numeric:tabular-nums}.mmrrank{display:flex;align-items:center;gap:10px;font-size:1.25rem}.mmremb{width:54px;height:54px;object-fit:contain}
+.mmrh{margin:14px 0 4px;font-size:1rem}.mmrhealth{border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center}.mmrhealth p{margin:6px 0 0}
+@media (max-width:560px){.mmrbox{grid-template-columns:1fr}.mmrcell+.mmrcell{border-left:0;border-top:1px solid var(--line)}}
 .mmrbig{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:4px 0 8px}.mmrbig b{font-size:1.6rem}.mmrv{font-weight:700;color:var(--muted)}.mmrv.bad{color:var(--lporange,#ff8f3a)}.mmrv.good{color:var(--lpblue,#4b93ff)}
 .mmrwhy{margin:8px 0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
 .mmrsvg{width:100%;height:auto}.mmrsvg .mg{stroke:var(--line);stroke-width:1}.mmrsvg .ml{fill:var(--muted);font-size:11px}.mmrsvg .mrank{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4}.mmrsvg .mmmr{fill:none;stroke:var(--lpblue,#4b93ff);stroke-width:2.5}
@@ -2199,7 +2203,17 @@ function renderMmr(){
   const verdict = Math.abs(diff) < 25 ? "Està al nivell del teu rang." : diff > 0 ? `Està uns ${diff} LP per sobre del teu rang: pujaràs més ràpid del que baixes.` : `Està uns ${-diff} LP per sota del teu rang: per això guanyes menys del que perds.`;
   const needWins = diff < -25 ? Math.ceil(-diff / 25) : 0;
   const rate = g => { const n = g.length, w = g.filter(r => r.lp.delta > 0).length, lp = g.reduce((a, r) => a + r.lp.delta, 0); return n ? `${n} partides · ${Math.round(100 * w / n)}% victòries · ${lp >= 0 ? "+" : ""}${lp} LP` : "cap partida"; };
-  el.innerHTML = `<section class="card"><h2>El teu MMR estimat</h2>
+  // the comparison at a glance: the estimate and your rank as points on one scale (Iron IV 0 LP = 0, each division
+  // 100), each with its emblem, and the difference
+  const box = (lbl, num, v, emb) => { const n = absName(Math.max(0, Math.round(v))); return `<div class="mmrbox"><div class="mmrcell"><span class="note">${lbl}</span><b class="mmrnum">${Math.round(num)}</b></div>
+    <div class="mmrcell"><span class="note">${emb}</span><div class="mmrrank">${emblemImg(n.tier, "mmremb")}<b data-noi18n>${esc(tierTxt({tier: n.tier, rank: n.rank}))} (${n.lp} LP)</b></div></div></div>`; };
+  const rk = myRankAbs ?? d.est, dd = Math.round(d.est) - Math.round(rk);
+  const health = Math.abs(dd) < 100 ? "Res de què preocupar-se: el teu MMR està dins del marge normal." : dd < 0 ? "Per sota del marge normal: guanyaràs menys LP dels que perds fins que el recuperis." : "Per sobre del marge normal: guanyaràs més LP dels que perds i pujaràs ràpid.";
+  const top = `<section class="card"><h2>Resultat</h2>${box("El teu MMR", d.est, d.est, "Rang que li correspon")}
+    <h3 class="mmrh">El teu rang</h3>${box("MMR del teu rang", rk, rk, "Rang")}
+    <h3 class="mmrh">Salut</h3><div class="mmrhealth"><b class="mmrnum">${Math.round(d.est)} − ${Math.round(rk)} = ${dd > 0 ? "+" : ""}${dd}</b><p>${health}</p></div>
+    <p class="note">Escala de l'app: Ferro IV amb 0 LP = 0, cada divisió 100 punts. És una estimació.</p></section>`;
+  el.innerHTML = top + `<section class="card"><h2>El teu MMR estimat</h2>
     <div class="mmrbig"><b data-noi18n>~${esc(mmrRank(d.est))}</b><span class="mmrv ${diff < -25 ? "bad" : diff > 25 ? "good" : ""}">${diff > 0 ? "▲" : diff < 0 ? "▼" : "="} ${Math.abs(diff)} LP</span></div>
     <p>${verdict}${needWins ? ` Si encadenes unes <b>${needWins} victòries netes</b> (victòries menys derrotes), els LP et tornaran a ser favorables.` : ""}</p>
     <ul class="mmrwhy">
