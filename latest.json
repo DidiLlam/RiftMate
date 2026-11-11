@@ -1,7 +1,7 @@
 {
- "version": "2.1.30",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.30.exe",
- "size": 10003968,
- "sha256": "b7e5f46eef531207de078c7c874167849433da7d00f648fe47ad03f9f0a685ff",
- "notes": "- Duels per línia: a la pantalla de càrrega diu quina línia nostra és el costat fort i quina el feble\n- La IA del pla de partida també valora els counters de campions de cada línia"
+ "version": "2.1.31",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.31.exe",
+ "size": 10012672,
+ "sha256": "e82bb93872662801ab8b62890a8bc68347ae0a73a5ae4bdcb9dc9f98455bcbe0",
+ "notes": "- Duels per línia: pesos tretes d'estudis amb milions de partides reals (maestria, ratxa de derrotes, % de temporada, rang)\n- Cada predicció es comprova amb l'or de la línia al minut 14 i l'app es calibra sola amb les teves partides"
 }
