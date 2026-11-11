@@ -3934,7 +3934,7 @@ async function loadRank(force){
   badge.innerHTML = `${emblemImg(solo.tier, "")}<div class="rbt"><b data-noi18n>${tierTxt(solo)}</b><span>${solo.lp} LP · ${queueTxt(solo.queue)}</span></div>
     <div class="rbr"><b>${solo.wins}V ${solo.losses}D</b><br>Win rate ${solo.wr}%</div>${(() => { const g = lpGoal(); return g ? `<div class="rbgoal">${g.steps.map(x => `<span class="rbstep">${emblemImg(x.tier, "rbemb")}<span><b data-noi18n>${esc(x.name)}</b> ${esc(x.text.slice(x.name.length + 2))}</span></span>`).join("")}</div>` : ""; })()}`;
   { const h = $("#rankBadgeH"); if (h) { h.innerHTML = badge.innerHTML; h.hidden = false; } }
-  { const sig = solo ? `${solo.tier}${solo.rank}${solo.lp}|${solo.wins}|${solo.losses}` : ""; if (sig !== lpRankSig) { if (lpRankSig) lpSeason = null; lpRankSig = sig; } }   // a game ended: read the list of games again
+  { const sig = solo ? `${solo.tier}${solo.rank}${solo.lp}|${solo.wins}|${solo.losses}` : ""; if (sig !== lpRankSig) { if (lpRankSig) { lpSeason = null; loadHistory(); } lpRankSig = sig; } }   // a game ended: read the list of games (and the LP noted) again
   renderLpChart();
 }
 loadRank(false);
@@ -6692,6 +6692,7 @@ async function loadHistory(){
     lpBackfill(h);
     if (fresh) [120, 300, 600].forEach(sec => setTimeout(() => loadRank(true).then(() => renderSession(histCache, false)), sec * 1000));
     histCount = h.length; histCache = h; renderLpChart(); maybeReview(h[0]); renderTrends(); renderReport((pendingReport && h.find(x => x.date === pendingReport)) || h[0]); if (pendingReport) { pendingReport = ""; window.scrollTo({top: 0}); } if (h[0] && !h[0].error) renderMapCard(h[0]); renderHistory(h); renderSession(h, fresh);
+    if (!$("#viewM").hidden) renderMmr();
   } catch(e) { $("#report").innerHTML = `<section class="card"><p class="note warn">Els informes només funcionen obrint la pàgina des del programa RiftMate.</p></section>`; }
 }
 
