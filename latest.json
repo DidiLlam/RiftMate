@@ -1,7 +1,7 @@
 {
- "version": "2.1.25",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.25.exe",
- "size": 9979904,
- "sha256": "0ab52c562b4d68d6b15613cea6c7da6946e0038e3730f4aa78ea26d2db1ab902",
- "notes": "- Per què has mort: botó 'Esborrar el vídeo' a cada mort i 'Esborrar-los tots ara' (si no, s'esborren sols als 30 minuts)"
+ "version": "2.1.26",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.26.exe",
+ "size": 9990144,
+ "sha256": "1c663b53e2e8c0bdce060610aedbba0b4e759cf4d28501b52272df2705790b14",
+ "notes": "- Nova pestanya MMR: estimació del teu MMR (pels LP que guanyes i perds i pel rang de la gent amb qui jugues), si està per sobre o per sota del teu rang, l'evolució i com et va amb duo i en solitari\n- A partir d'ara cada informe guarda el rang mitjà dels altres jugadors i si jugaves amb duo"
 }
