@@ -1,7 +1,7 @@
 {
- "version": "2.1.31",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.31.exe",
- "size": 10012672,
- "sha256": "e82bb93872662801ab8b62890a8bc68347ae0a73a5ae4bdcb9dc9f98455bcbe0",
- "notes": "- Duels per línia: pesos tretes d'estudis amb milions de partides reals (maestria, ratxa de derrotes, % de temporada, rang)\n- Cada predicció es comprova amb l'or de la línia al minut 14 i l'app es calibra sola amb les teves partides"
+ "version": "2.1.32",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.32.exe",
+ "size": 10032128,
+ "sha256": "6c099065755e2b8e3990508189583bc881c483c80808b6ab27dbe8244e848903",
+ "notes": "- Clips: opció per guardar els vídeos a Google Drive (Ajustos › Clips)\n- Si Google Drive està tancat es guarden a l'ordinador i s'hi passen quan torna"
 }
