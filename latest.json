@@ -1,7 +1,7 @@
 {
- "version": "2.1.32",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.32.exe",
- "size": 10032128,
- "sha256": "6c099065755e2b8e3990508189583bc881c483c80808b6ab27dbe8244e848903",
- "notes": "- Clips: opció per guardar els vídeos a Google Drive (Ajustos › Clips)\n- Si Google Drive està tancat es guarden a l'ordinador i s'hi passen quan torna"
+ "version": "2.1.33",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.33.exe",
+ "size": 10036224,
+ "sha256": "fad98105525a71b618d5e5ba7eafc99ff743da984a92172c9b0c17ea70867ce5",
+ "notes": "- La veu diu 'al minut 2' en lloc de llegir 2:05 com una hora del dia\n- La IA només compta les respostes que arriben (abans comptava també els intents rebutjats) i la macro i les morts tornen a funcionar\n- Els sorolls fluixos que Windows no entén ja no van a Whisper (s'inventava '¡Adiós!')\n- Whisper no desfà una ordre quan només repeteix la llista de paraules de la pista\n- Si la pàgina es torna a obrir a mitja partida no repeteix els rivals ni gasta un altre pla de la IA\n- Duels: la veu sempre diu la lectura de les dades; la IA només afegeix un counter clar\n- 'TP' i 'tepe' valen per Teleport"
 }
