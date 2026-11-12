@@ -307,7 +307,6 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 	}
 	var last error
 	for _, model := range order {
-		aiUsedToday(1)
 		t0 := time.Now()
 		req, _ := http.NewRequest("POST", gemBase()+"/v1beta/models/"+model+":generateContent", bytes.NewReader(body))
 		req.Header.Set("x-goog-api-key", c.AIKey)
@@ -334,6 +333,7 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 			last = fmt.Errorf("IA HTTP %d: %s", r.StatusCode, strings.TrimSpace(string(raw[:min(len(raw), 200)])))
 			continue
 		}
+		aiUsedToday(1)
 		var out struct {
 			Candidates []struct {
 				Content struct {

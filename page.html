@@ -2419,7 +2419,15 @@ function speechChoice(){
 const sayQ = []; let sayCur = null, sayStuck = 0, sayHold = 0;
 // "minut 10: 50" would be read as ten fifty in the morning: a number, colon and number becomes "10, 50"
 // and "8/2/11" (a KDA) as the 8th of February: the slashes become pauses
-const speechText = t => String(t).replace(/(\d)\s*:\s+(\d)/g, "$1, $2").replace(/\b(\d+)\s*\/\s*(\d+)\s*\/\s*(\d+)\b/g, "$1, $2, $3");
+// "2:05" is a minute of the game, not a time of day: said as minutes (and seconds) so the voice doesn't read "2:05 a. m."
+function clockWords(t){
+  const L = speechChoice().lang, w = {es: ["al", "minuto", "minutos", "y", "segundo", "segundos"], en: ["at", "minute", "minutes", "and", "second", "seconds"]}[L] || ["al", "minut", "minuts", "i", "segon", "segons"];
+  return String(t)
+    .replace(/\b(?:a las|a la|sobre las|a les|a la|at)\s+(\d{1,2}):([0-5]\d)\b/gi, (_, m) => `${w[0]} ${w[1]} ${+m}`)
+    .replace(/\b(minut[oe]?s?|minuts)\s+(\d{1,2}):([0-5]\d)\b/gi, (_, x, m) => `${x} ${+m}`)
+    .replace(/\b(\d{1,2}):([0-5]\d)\b/g, (_, m, sec) => `${+m} ${+m === 1 ? w[1] : w[2]}${+sec ? ` ${w[3]} ${+sec} ${+sec === 1 ? w[4] : w[5]}` : ""}`);
+}
+const speechText = t => clockWords(t).replace(/(\d)\s*:\s+(\d)/g, "$1, $2").replace(/\b(\d+)\s*\/\s*(\d+)\s*\/\s*(\d+)\b/g, "$1, $2, $3");
 function speak(text, cb){
   $("#status").textContent = text;
   if (!synth) { cb?.("no"); return; }
@@ -2491,7 +2499,7 @@ const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replac
 const SPELL_WORDS = {
   Flash:["flash","flas","flax","flesh","flach","flush","flass","flaix","destello","destelo","desteyo"],
   Ignite:["ignite","ignait","ignit","ignaite","ignayt","iñait","ignaid","ignicion","ignicio","prender","prende"],
-  Teleport:["teleport","teleporte","teletransporte","teleportacion","teleportacio","tp","teleportar"],
+  Teleport:["teleport","teleporte","teletransporte","teleportacion","teleportacio","tp","tepe","tipi","telepor","teleportar"],
   Heal:["heal","jil","jeal","jiel","hil","heel","jill","curacion","curacio","curar"],
   Exhaust:["exhaust","exhaus","exaust","egsaust","exost","extenuacio","extenuacion","agotamiento","agotar"],
   Barrier:["barrier","barrera","barier","barriel","barreira"],
@@ -3501,7 +3509,7 @@ function aiState(){
   const pos = p => ({TOP: "top", JUNGLE: "jungla", MIDDLE: "mid", BOTTOM: "ADC", UTILITY: "suport"})[(p.position || "").toUpperCase()] || "?";
   const line = p => `${p.championName} (${pos(p)}), nivell ${p.level}, KDA ${kda(p)}, farm ${p.scores?.creepScore ?? 0}, objectes: ${its(p)}${p.isDead ? `, MORT (reapareix en ${Math.ceil(p.respawnTimer || 0)} s)` : ""}`;
   const opp = playerBy(d, game.ids[game.oppIdx]);
-  const out = [`Minut de joc: ${fmtClock(t)}.`, `Jo: ${line(me)}. Or disponible: ${Math.floor(d.activePlayer?.currentGold ?? 0)}. Rol: ${ROLE_TXT[game.role] || game.role}.`];
+  const out = [`Minut de joc: ${fmtClock(t)} (minuts:segons des que ha començat la partida; no és l'hora del dia, digues "al minut ${Math.floor(t / 60)}").`, `Jo: ${line(me)}. Or disponible: ${Math.floor(d.activePlayer?.currentGold ?? 0)}. Rol: ${ROLE_TXT[game.role] || game.role}.`];
   if (opp) out.push(`Rival directe: ${opp.championName}.`);
   out.push("Equip rival: " + d.allPlayers.filter(p => p.team !== me.team).map(line).join(" | "));
   out.push("El meu equip: " + d.allPlayers.filter(p => p.team === me.team && pid(p) !== game.me).map(line).join(" | "));
@@ -3686,7 +3694,7 @@ let aiUsed = 0;
 function aiNoteUsed(r){ if (r && typeof r.used === "number") { aiUsed = r.used; aiUsedShow(); } }
 function aiUsedShow(){ const el = $("#aiUsedNote"); if (el) el.textContent = `Avui: ${aiUsed} de ${aiBudget()}`; }
 function aiBudget(){ return Math.max(10, +($("#aiBudget")?.value || 200)); }
-function aiBudgetOk(kind){ const b = aiBudget(); return kind === "pla" ? aiUsed < b * 0.7 : kind === "mort" || kind === "macro" ? aiUsed < b * 0.4 : true; }
+function aiBudgetOk(kind){ const b = aiBudget(); return kind === "pla" ? aiUsed < b * 0.85 : kind === "mort" || kind === "macro" ? aiUsed < b * 0.6 : true; }
 // the free Gemini limit used up: no more automatic questions until it comes back, and it's said only once
 let aiLimitUntil = 0, aiLimitSaid = false;
 function aiLimitNote(err){
@@ -3721,7 +3729,7 @@ async function aiProactive(kind, question, extra){
 }
 function aiPlan(){
   if (!game || game.planSaid) return; game.planSaid = true;
-  aiProactive("pla", `Fes-me el pla d'aquesta partida en ${lastScout && duelText(lastScout) ? "tres" : "dues"} frases curtes. Jugo ${{TOP: "de top", JUNGLE: "de jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"}[game.role] || "la meva posició"}. La primera frase: com guanyar la meva línia contra el meu rival directe (habilitats i moments per pegar). La segona: de quin rival protegir-me o amb qui del meu equip jugar, i, si el meu historial recent mostra un error que es repeteix, recorda-me'l.${lastScout && duelText(lastScout) ? " La tercera: de les altres línies, quina guanyarà el seu duel i quina estarà fotuda (el nostre costat feble), mirant els campions de cada duel (qui fa counter a qui) i les dades dels jugadors que et passo; si cap no és clara, digues que els duels estan igualats." : ""} No em diguis què comprar ni em parlis de la jungla si no soc el jungla.`, (() => { const mc = playerBy(lastData, game.me)?.championName, oc = playerBy(lastData, game.ids[game.oppIdx])?.championName, sv = mc && oc ? seasonVs(mc, oc) : {n: 0};
+  aiProactive("pla", `Fes-me el pla d'aquesta partida en ${lastScout && duelText(lastScout) ? "dues o tres" : "dues"} frases curtes. Jugo ${{TOP: "de top", JUNGLE: "de jungla", MIDDLE: "al mig", BOTTOM: "d'ADC", UTILITY: "de suport"}[game.role] || "la meva posició"}. La primera frase: com guanyar la meva línia contra el meu rival directe (habilitats i moments per pegar). La segona: de quin rival protegir-me o amb qui del meu equip jugar, i, si el meu historial recent mostra un error que es repeteix, recorda-me'l.${lastScout && duelText(lastScout) ? " La tercera, només si a alguna de les altres línies un campió fa un counter clar al rival (mira només els campions: el nivell dels jugadors ja l'he dit jo), digues quina línia i per què en poques paraules; si no n'hi ha cap de clar, no facis la tercera frase." : ""} No em diguis què comprar ni em parlis de la jungla si no soc el jungla.`, (() => { const mc = playerBy(lastData, game.me)?.championName, oc = playerBy(lastData, game.ids[game.oppIdx])?.championName, sv = mc && oc ? seasonVs(mc, oc) : {n: 0};
     return [aiMemory(), benchText(mc), mc && oc ? benchVsText(mc, oc) : "", sv.n ? `Aquesta temporada el jugador va ${sv.w}V-${sv.l}D amb ${mc} contra ${oc}.` : "", lastScout ? duelText(lastScout) : ""].filter(Boolean).join("\n"); })());
 }
 // a death read from the game itself, without the AI: levels, finished items and who was there
@@ -5179,6 +5187,10 @@ async function pollScout(){
   renderScout(r.results); lastScout = r.results; scoutRows(r.results);
   if (scoutSaid || !$("#cScout").checked) return;
   scoutSaid = true;
+  // the page reopened in the middle of the same game: it was already said (and the AI plan already asked)
+  const gk = game?.ids?.join(",") || "";
+  if (gk) { let prev = ""; try { prev = localStorage.getItem("scoutSaidFor") || ""; localStorage.setItem("scoutSaidFor", gk); } catch (e) {}
+    if (prev === gk) { plog("Rivals: ja dits en aquesta partida (la pàgina s'ha tornat a obrir)"); return; } }
   const opp = game && game.ids[game.oppIdx];
   const lines = [];
   // lane opponent first, then the most dangerous; two facts per rival, five sentences at most
@@ -5195,9 +5207,8 @@ async function pollScout(){
   if (team.length) { plog(`El teu equip: ${team.join(" ")}`); speak("El teu equip."); team.forEach(l => speak(l)); }
   const dl = duelLines(r.results); if (dl.length) plog(`Duels: ${dl.join(" ")}`);
   { const ds = laneDuels(r.results); if (ds.length) fetch("/api/duels", {method: "POST", body: JSON.stringify(ds.map(x => ({lane: x.key, d: +x.d.toFixed(2), v: x.v, prob: x.prob, al: x.al.map(y => y.champ), en: x.en.map(y => y.champ)})))}).catch(() => {}); }
-  // with the AI the plan says it (it also weighs the champions); without it, the app's own reading
-  const aiWill = aiHasKey && $("#cAiAuto")?.checked && Date.now() >= aiLimitUntil && aiBudgetOk("pla");
-  if (dl.length && !aiWill) { speak("Duels."); dl.forEach(l => speak(l)); }
+  // the players' reading, from the data; the AI's plan only adds a clear champion counter, if there is one
+  if (dl.length) { speak("Duels."); dl.forEach(l => speak(l)); }
   aiPlan();
 }
 // premades: groups of the same team who played their last games together (the scouting compares their games)

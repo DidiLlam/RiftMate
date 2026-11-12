@@ -228,6 +228,11 @@ func geminiAsk(key, system string, msgs []map[string]string) (string, error) {
 		logf("IA: %s no respon (%v), provo el següent", r.m, r.err)
 		// a model that doesn't even answer before the client timeout (gemini-3.8-flash on the free key, every time):
 		// don't make the next questions wait for it, leave it out for half an hour
+		if strings.Contains(r.err.Error(), "HTTP 404") || strings.Contains(r.err.Error(), "no longer available") { // a retired model
+			gemMu.Lock()
+			gemBlocked[r.m] = time.Now().Add(7 * 24 * time.Hour)
+			gemMu.Unlock()
+		}
 		if strings.Contains(r.err.Error(), "Client.Timeout") || strings.Contains(r.err.Error(), "deadline exceeded") {
 			gemMu.Lock()
 			if b := gemBlocked[r.m]; time.Now().After(b) {
@@ -298,7 +303,6 @@ func aiUsedToday(add int) int {
 }
 
 func geminiOnce(key, model, system string, msgs []map[string]string) (string, error) {
-	aiUsedToday(1)
 	contents := []map[string]any{}
 	for _, m := range msgs {
 		role := "user"
@@ -336,6 +340,7 @@ func geminiOnce(key, model, system string, msgs []map[string]string) (string, er
 	// Google's newer Interactions API: used when generateContent refuses the key type ("AQ." auth keys) or is gone
 	if code == 401 || code == 403 || code == 404 {
 		if ans, ierr := geminiInteractions(key, model, system, msgs); ierr == nil {
+			aiUsedToday(1)
 			logf("IA (%s, Interactions, %.1f s)", model, time.Since(t0).Seconds())
 			return ans, nil
 		} else {
@@ -360,6 +365,9 @@ func geminiOnce(key, model, system string, msgs []map[string]string) (string, er
 		} `json:"error"`
 	}
 	json.Unmarshal(raw, &out)
+	if code == 200 {
+		aiUsedToday(1) // only the answers count: a refusal (limit, error) doesn't spend Google's quota
+	}
 	if code != 200 {
 		if code == 429 {
 			// which limit: per minute (wait the seconds Google says) or per day (until midnight in California)

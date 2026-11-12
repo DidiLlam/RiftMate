@@ -13,7 +13,9 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unicode"
 )
 
 // Whisper: a modern speech recogniser (OpenAI's open model, run by whisper.cpp) on this PC, free and offline.
@@ -316,6 +318,10 @@ func whisperTranscribe(path string) (string, time.Duration, error) {
 		return "", 0, fmt.Errorf("%s", out.Error)
 	}
 	t := whisperClean(out.Text)
+	if whisperEcho(t, wPrompt) {
+		logf("Whisper: ha repetit les paraules de la pista (\"%s\"), no compta", t)
+		t = ""
+	}
 	if t == "" && strings.TrimSpace(out.Text) != "" {
 		logf("Whisper: ha escrit %q (soroll, no compta)", strings.TrimSpace(out.Text))
 	}
@@ -350,6 +356,28 @@ func wavSeconds(b []byte) float64 {
 var wJunk = regexp.MustCompile(`[\[\(][^\]\)]*[\]\)]`)
 
 // whisperClean: one line, without what Whisper writes for silence or noise ("[RÍE]", "(música)")
+// whisperEcho: on a noise Whisper sometimes "hears" its own hint (the list of spells and champions it's given):
+// five or more words, all of them from the hint.
+func whisperEcho(t, prompt string) bool {
+	norm := func(x string) []string {
+		return strings.FieldsFunc(strings.ToLower(x), func(r rune) bool { return !unicode.IsLetter(r) && r != '\'' })
+	}
+	ws := norm(t)
+	if len(ws) < 5 {
+		return false
+	}
+	in := map[string]bool{}
+	for _, w := range norm(prompt) {
+		in[w] = true
+	}
+	for _, w := range ws {
+		if !in[w] {
+			return false
+		}
+	}
+	return true
+}
+
 func whisperClean(s string) string {
 	s = wJunk.ReplaceAllString(s, " ")
 	s = strings.Join(strings.Fields(s), " ")
@@ -477,6 +505,8 @@ func (v *voiceStats) add(c wClip, text string, d time.Duration) {
 	}
 }
 
+var voiceQuietSkipped atomic.Int64 // per game: quiet phrases Windows didn't understand, not sent to Whisper
+
 // voiceStatsFlush: one line at the end of the game, then start again
 func voiceStatsFlush() {
 	v := &vStat
@@ -485,8 +515,8 @@ func voiceStatsFlush() {
 	if v.n == 0 {
 		return
 	}
-	logf("Veu (resum de la partida): %d frases a Whisper, %.2f s de mitjana, %.2f s la més lenta; %d marcades a l'instant per Windows, %d sense text a Whisper",
-		v.n, (v.total / time.Duration(v.n)).Seconds(), v.max.Seconds(), v.fast, v.fastFix)
+	logf("Veu (resum de la partida): %d frases a Whisper, %.2f s de mitjana, %.2f s la més lenta; %d marcades a l'instant per Windows, %d sense text a Whisper, %d sorolls fluixos no enviats",
+		v.n, (v.total / time.Duration(v.n)).Seconds(), v.max.Seconds(), v.fast, v.fastFix, voiceQuietSkipped.Swap(0))
 	// reset the numbers only (overwriting the whole struct would also wipe its lock while it's held: a crash)
 	v.n, v.cmds, v.fast, v.fastOK, v.fastFix, v.total, v.max, v.dbs = 0, 0, 0, 0, 0, 0, 0, nil
 }

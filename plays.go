@@ -753,7 +753,6 @@ func geminiJSON(key, system, user string, maxTok int) (string, string, error) {
 	gemMu.Unlock()
 	last := errors.New("la IA ha arribat al límit gratuït d'avui")
 	for _, model := range order {
-		aiUsedToday(1)
 		req, _ := http.NewRequest("POST", gemBase()+"/v1beta/models/"+model+":generateContent", bytes.NewReader(body))
 		req.Header.Set("x-goog-api-key", key)
 		req.Header.Set("content-type", "application/json")
@@ -768,6 +767,7 @@ func geminiJSON(key, system, user string, maxTok int) (string, string, error) {
 			last = fmt.Errorf("IA HTTP %d", r.StatusCode)
 			continue
 		}
+		aiUsedToday(1)
 		var out struct {
 			Candidates []struct {
 				Content struct {

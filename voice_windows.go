@@ -286,6 +286,13 @@ func voiceClip(line string) {
 			logf("Veu de Windows: \"%s\" (%.2f, %.0f dB) ignorat: massa fluix, no sembla la teva veu (tu: uns %.0f dB)", text, conf, db, ref)
 			return
 		}
+		// something Windows didn't even half understand and quieter than you usually speak (the game, a friend in the
+		// room): in the logs that never was an order of yours, and Whisper only invents "¡Adiós!" for it. Not sent.
+		if kind != "HEARD" && ref != 0 && db < ref-8 {
+			os.Remove(path)
+			voiceQuietSkipped.Add(1)
+			return
+		}
 		lvs = fmt.Sprintf(", %.0f dB", db)
 	}
 	// Windows sure enough: the page acts on it now (no waiting), and Whisper confirms it or undoes it a moment later
