@@ -1,7 +1,7 @@
 {
- "version": "2.2.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.1.exe",
- "size": 10099200,
- "sha256": "e0c78af38fbaa3a4ca77c48b258f5def15d27c4946b5c67fdd5b1353f9694326",
- "notes": "- Guies: cadascú tria els seus campions (qualsevol campió del joc) i els pot treure\n- Per als campions sense guia escrita, la IA en fa una a partir de les habilitats del pedaç (un cop per campió i pedaç), amb combos per a l'entrenador"
+ "version": "2.2.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.2.exe",
+ "size": 10133504,
+ "sha256": "97ae356c6d961e24eaf6fd9218fc8edf41ad3508f1b2c6ce107d2a1ec4134998",
+ "notes": "- Nou: Estudia al mòbil (Coach): curs de macro per al mòbil amb preguntes fetes a partir dels errors de les teves partides\n- Cada jugador té el seu codi; l'app envia els errors nous després de cada partida"
 }
