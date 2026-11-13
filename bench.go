@@ -83,6 +83,8 @@ type benchCache struct {
 	Games   map[string][]benchGame `json:"games"`   // champion -> games
 	Mine    map[string][]benchGame `json:"mine"`    // champion -> the player's own games, measured the same way
 	Plat    map[string]string      `json:"plat"`    // puuid -> platform (kr, euw1...)
+	Dia     map[string][]benchGame `json:"dia"`     // champion -> Diamond games on your server (the rank you aim for)
+	DiaScan map[string]bool        `json:"dia_scan"`
 }
 
 // the regional host of a platform, and of a match id ("KR_123" -> asia)
@@ -142,6 +144,12 @@ func loadBench() benchCache {
 	if b.Games == nil {
 		b.Games = map[string][]benchGame{}
 	}
+	if b.Dia == nil {
+		b.Dia = map[string][]benchGame{}
+	}
+	if b.DiaScan == nil {
+		b.DiaScan = map[string]bool{}
+	}
 	return b
 }
 
@@ -176,6 +184,7 @@ func benchTargets() (champs []string, pos map[string]string) {
 	if len(champs) > 3 {
 		champs = champs[:3]
 	}
+	champs = append(champs, learnExtra(champs)...) // the ones you're learning (Guides tab)
 	pos = map[string]string{}
 	for _, c := range champs {
 		best := 0
@@ -183,6 +192,9 @@ func benchTargets() (champs []string, pos map[string]string) {
 			if k > best {
 				best, pos[c] = k, p
 			}
+		}
+		if pos[c] == "" {
+			pos[c] = "MIDDLE" // a champion you're only learning: you play mid
 		}
 	}
 	return
@@ -493,6 +505,8 @@ func benchRun() {
 		}
 	}
 	saveBench(b)
+	benchDiamond(c, &b, champs, pos, keys, items)
+	saveBench(b)
 	done := count()
 	for _, ch := range champs {
 		logf("Challenger: %d jugadors juguen %s ara mateix", len(b.Players[ch]), ch)
@@ -751,8 +765,9 @@ type benchSummary struct {
 	JSide    string              `json:"jside,omitempty"`
 	Drakes   *float64            `json:"drakes,omitempty"`
 	Grubs    *float64            `json:"grubs,omitempty"`
-	Me       *benchSummary       `json:"me,omitempty"` // the player's own games, measured the same way
-	Share    map[string]int      `json:"share"`        // how often the most common choice was taken, in %
+	Me       *benchSummary       `json:"me,omitempty"`  // the player's own games, measured the same way
+	Dia      *benchSummary       `json:"dia,omitempty"` // Diamond players on your server, measured the same way
+	Share    map[string]int      `json:"share"`         // how often the most common choice was taken, in %
 }
 
 type benchVs struct {
@@ -1002,6 +1017,10 @@ func benchJSON() []byte {
 			me := summarize(ch, b.Mine[ch])
 			sm.Me = &me
 		}
+		if len(b.Dia[ch]) > 0 {
+			d := summarize(ch, b.Dia[ch])
+			sm.Dia = &d
+		}
 		list = append(list, sm)
 	}
 	benchMu.Lock()
@@ -1057,6 +1076,121 @@ func benchStale(b benchCache) bool {
 		if len(b.Games[ch]) < 10 && age > 24*time.Hour {
 			return true
 		}
+		if len(b.Dia[ch]) < 10 && age > 24*time.Hour { // Diamond games still short (or a champion just added)
+			return true
+		}
+		if len(b.Games[ch]) == 0 { // a champion you started learning
+			return true
+		}
 	}
 	return false
+}
+
+// benchDiamond: the rank you're aiming for. Diamond players on your server (all four divisions) who play your
+// champions now, their latest Solo/Duo games with them, measured exactly like the Challenger ones. Up to 20 a champion.
+const benchDiaPer = 20
+
+func benchDiamond(c Config, b *benchCache, champs []string, pos map[string]string, keys map[int]string, items map[int]bool) {
+	need := func(ch string) bool { return len(b.Dia[ch]) < benchDiaPer }
+	missing := false
+	for _, ch := range champs {
+		missing = missing || need(ch)
+	}
+	if !missing {
+		return
+	}
+	home := platformHost(c)
+	type entry struct {
+		PUUID string `json:"puuid"`
+	}
+	ladder := []string{}
+	for _, div := range []string{"IV", "III", "II", "I"} {
+		for page := 1; page <= 2; page++ {
+			var list []entry
+			if err := benchGet(c, home, fmt.Sprintf("/lol/league-exp/v4/entries/RANKED_SOLO_5x5/DIAMOND/%s?page=%d", div, page), &list); err != nil {
+				break
+			}
+			for _, e := range list {
+				if e.PUUID != "" {
+					ladder = append(ladder, e.PUUID)
+				}
+			}
+		}
+	}
+	logf("Diamant: %d jugadors de %s per mirar", len(ladder), home)
+	seen := map[string]bool{}
+	for _, gs := range b.Dia {
+		for _, g := range gs {
+			seen[g.Match+":"+g.Champ] = true
+		}
+	}
+	add := func(m *matchDTO, mid, pu, ch string) bool {
+		if seen[mid+":"+ch] {
+			return false
+		}
+		g, ok := benchFromMatch(c, m, mid, pu, ch, pos[ch], items)
+		if !ok {
+			return false
+		}
+		seen[mid+":"+ch] = true
+		g.Tier, g.Player = strings.ToUpper(home)+":DIAMOND", pu[:min(12, len(pu))]
+		b.Dia[ch] = append(b.Dia[ch], g)
+		saveBench(*b)
+		return true
+	}
+	scanned := 0
+	for _, pu := range ladder {
+		done := true
+		for _, ch := range champs {
+			done = done && !need(ch)
+		}
+		if done || scanned >= 600 || liveNow.Load() {
+			break
+		}
+		if b.DiaScan[pu] {
+			continue
+		}
+		scanned++
+		b.DiaScan[pu] = true
+		benchSet("diamond", scanned, 600)
+		var top []struct {
+			ChampionID int   `json:"championId"`
+			Points     int   `json:"championPoints"`
+			LastPlay   int64 `json:"lastPlayTime"`
+		}
+		if err := benchGet(c, home, "/lol/champion-mastery/v4/champion-masteries/by-puuid/"+pu+"/top?count=10", &top); err != nil {
+			continue
+		}
+		for _, t := range top {
+			ch, ok := keys[t.ChampionID]
+			if !ok || !need(ch) || t.Points < 30000 || time.Since(time.UnixMilli(t.LastPlay)) > 14*24*time.Hour {
+				continue
+			}
+			var ids []string
+			if benchGet(c, platRegion(c, home), "/lol/match/v5/matches/by-puuid/"+pu+"/ids?queue=420&start=0&count=15", &ids) != nil {
+				continue
+			}
+			got, miss := 0, 0
+			for _, mid := range ids {
+				if got >= 4 || !need(ch) || (got == 0 && miss >= 5) {
+					break
+				}
+				var m matchDTO
+				if benchGet(c, matchRegion(c, mid), "/lol/match/v5/matches/"+mid, &m) != nil {
+					continue
+				}
+				if add(&m, mid, pu, ch) {
+					got++
+				} else {
+					miss++
+				}
+			}
+		}
+		if scanned%25 == 0 {
+			saveBench(*b)
+		}
+	}
+	for _, ch := range champs {
+		logf("Diamant: %s, %d partides", ch, len(b.Dia[ch]))
+	}
 }

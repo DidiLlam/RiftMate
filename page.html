@@ -221,7 +221,13 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend .tv span{font-size:12px}.trend .tv .good{color:var(--good)}.trend .tv .bad{color:var(--loss)}.trend .tv .flat{color:var(--muted)}
 .trend svg{width:100%;height:auto;display:block}.trend .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.trend .ref{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.8}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
-.trend .lab{font-size:11px;fill:var(--muted)}.focusbox{border-left:4px solid var(--accent);padding:6px 12px;margin:0}.focusbox.good{border-color:var(--good)}.focusbox.mid{border-color:var(--soon)}.focusbox.bad{border-color:var(--loss)}
+.trend .lab{font-size:11px;fill:var(--muted)}.gpicks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.gpick{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color:inherit;cursor:pointer;min-width:74px}.gpick img{width:40px;height:40px;border-radius:8px}.gpick.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.gpick small{font-size:.7rem}
+.ghead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.ghead img{width:56px;height:56px;border-radius:10px}.ghead>div{flex:1;min-width:180px}.ghead h2{margin:0}
+.gk{display:inline-block;min-width:26px;padding:2px 7px;border:1px solid var(--line);border-radius:6px;font:600 .85rem var(--mono,monospace);text-align:center;background:rgba(127,127,127,.12)}.gk.now{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}.gk.done{opacity:.45}
+.gseq{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:6px 0}.gseq i{color:var(--muted);font-style:normal}.gseq.big .gk{font-size:1.1rem;padding:6px 10px}
+.gcombos{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.gcombo{border:1px solid var(--line);border-radius:10px;padding:10px}.gtrain{border:2px dashed var(--accent);border-radius:12px;padding:12px;margin-top:10px;user-select:none}
+.gabil{list-style:none;padding:0;margin:0;display:grid;gap:10px}.gabil li{display:flex;gap:10px}.gabil img{width:40px;height:40px;border-radius:6px;flex:none}.gabil p{margin:2px 0 0}
+.focusbox{border-left:4px solid var(--accent);padding:6px 12px;margin:0}.focusbox.good{border-color:var(--good)}.focusbox.mid{border-color:var(--soon)}.focusbox.bad{border-color:var(--loss)}
 .wrt .ch{display:flex;align-items:center;gap:8px}
 .fdots{display:inline-flex;gap:3px;vertical-align:middle}.fdots i{width:9px;height:9px;border-radius:50%;background:var(--loss);opacity:.85}.fdots i.w{background:var(--good)}.fdots i.last{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px currentColor;margin-left:3px}
 .cform{margin:0 0 8px;font-size:.92rem}.wrt .ch img{width:28px;height:28px;border-radius:6px}
@@ -408,7 +414,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span></div></div>
   </header>
   <div class="whero topbanner" aria-hidden="true"><div><p class="wtitle" data-noi18n>RiftMate</p><p class="wsub">El teu coach de veu</p></div></div>
-  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabM" aria-selected="false">MMR</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
+  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabG" aria-selected="false">Guies</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabM" aria-selected="false">MMR</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
   <div class="updbar" id="updBar" hidden></div>
   <div class="session" id="session" hidden></div>
   <div class="view" id="viewT">
@@ -601,6 +607,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div id="coachAnaBody"></div>
       <div class="bar"><button class="b primary" type="button" id="coachAnaBtn">Analitza les meves partides</button><button class="b" type="button" id="coachAnaVoice" hidden>▶ Escolta-ho</button></div>
     </section>
+    <section class="card" id="wfCard"><h2>Objectiu de la setmana</h2><div id="wfBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="goalCard"><h2>Els teus objectius</h2><div id="goalBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="weekCard"><h2>La teva setmana</h2><div id="weekBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="friendsCard"><h2>Tu i els teus amics</h2>
@@ -611,13 +618,14 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <section class="card" id="whenCard"><h2>Quan jugues millor</h2><div id="whenBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="patchCard" hidden><h2>Canvis del pedaç</h2><div id="patchBody"></div></section>
     <section class="card" id="progCard"><h2>Com evolucionen els teus números</h2><div id="progBody"></div></section>
-    <section class="card" id="benchCard"><h2>Tu contra Challenger</h2><div id="benchBody"><p class="note">Carregant…</p></div></section>
+    <section class="card" id="benchCard"><h2>Tu contra Diamant i Challenger</h2><div id="benchBody"><p class="note">Carregant…</p></div></section>
     <section class="card"><h2>Pregunta-li al coach</h2>
       <div id="coachChat"></div>
       <div class="keyrow"><input type="text" id="coachQ" placeholder="p. ex. com jugo LeBlanc contra Syndra? per què em maten tant al minut 8?"><button class="b" id="coachSend" type="button">Preguntar</button></div>
     </section>
   </div>
   <div class="view" id="viewM" hidden><div id="mmrBody"></div></div>
+  <div class="view" id="viewG" hidden><div id="guideBody"><p class="note">Carregant…</p></div></div>
   <div class="view" id="viewS" hidden>
     <section class="card rankcard" id="rankCard" hidden></section>
     <section class="card" id="seasonCard"><h2>Win rate per campió · temporada</h2>
@@ -1426,6 +1434,20 @@ const I18N = {
   "Runes i objectes dels Challenger: en acabar la selecció, crear al client la pàgina de runes i el conjunt d'objectes que fan servir amb el teu campió (només es substitueixen els que ha fet RiftMate)": ["Runas y objetos de los Challenger: al acabar la selección, crear en el cliente la página de runas y el set de objetos que usan con tu campeón (solo se sustituyen los que ha hecho RiftMate)", "Challenger runes and items: when champion select ends, create in the client the rune page and item set they use with your champion (only the ones RiftMate made are replaced)"],
   "Runes i objectes dels Challenger amb {x}, posats.": ["Runas y objetos de los Challenger con {x}, puestos.", "Challenger runes and items for {x}, set."], "Objectes dels Challenger amb {x}, posats.": ["Objetos de los Challenger con {x}, puestos.", "Challenger items for {x}, set."],
   "Quant parla el coach": ["Cuánto habla el coach", "How much the coach talks"], "Poc: només el més important": ["Poco: solo lo más importante", "Little: only what matters most"], "Molt: tot": ["Mucho: todo", "A lot: everything"],
+  "El jungla rival ja pot arribar: si no saps on és, no passis de la meitat del carril.": ["El jungla rival ya puede llegar: si no sabes dónde está, no pases de la mitad de la línea.", "The enemy jungler can arrive now: if you don't know where he is, don't go past the middle of the lane."],
+  "Recorda l'objectiu: cap mort abans del quinze. Mira el mapa abans de fer un intercanvi.": ["Recuerda el objetivo: ninguna muerte antes del quince. Mira el mapa antes de tradear.", "Remember the goal: no deaths before fifteen. Check the map before you trade."],
+  "Recorda: cap mort abans del quinze. Si no veus el jungla, juga a prop de la torre.": ["Recuerda: ninguna muerte antes del quince. Si no ves al jungla, juega cerca de la torre.", "Remember: no deaths before fifteen. If you can't see the jungler, play near your tower."],
+  "El jungla rival ja pot arribar: empeny només si saps on és.": ["El jungla rival ya puede llegar: empuja solo si sabes dónde está.", "The enemy jungler can arrive now: only push if you know where he is."],
+  "Recorda l'objectiu: no entris al riu ni a la jungla rival sense ward.": ["Recuerda el objetivo: no entres al río ni a la jungla rival sin ward.", "Remember the goal: don't enter the river or the enemy jungle without a ward."],
+  "Recorda: sense ward, no t'endinsis.": ["Recuerda: sin ward, no te metas.", "Remember: no ward, don't go deep."],
+  "Recorda l'objectiu: no perdis cap canó, i fes l'últim cop abans de pegar al rival.": ["Recuerda el objetivo: no pierdas ningún cañón, y asegura el último golpe antes de pegar al rival.", "Remember the goal: don't miss any cannon, and take the last hit before you hit your opponent."],
+  "Recorda l'objectiu: posa el ward groc ara al riu.": ["Recuerda el objetivo: pon ahora el ward amarillo en el río.", "Remember the goal: place your yellow ward in the river now."],
+  "Recorda: un ward de control a cada tornada.": ["Recuerda: un ward de control en cada vuelta a base.", "Remember: a control ward every time you go back."],
+  "Recorda l'objectiu: quan estavellis l'onada, mou-te al riu o a la línia del costat.": ["Recuerda el objetivo: cuando estampes la oleada, muévete al río o a la línea de al lado.", "Remember the goal: when you crash the wave, move to the river or the next lane."],
+  "Recorda: després de l'onada, ajuda al drac o a la línia del costat.": ["Recuerda: después de la oleada, ayuda en el dragón o en la línea de al lado.", "Remember: after the wave, help at dragon or the next lane."],
+  "Recorda l'objectiu: intercanvia només quan el rival hagi gastat les habilitats.": ["Recuerda el objetivo: tradea solo cuando el rival haya gastado sus habilidades.", "Remember the goal: only trade when your opponent has used his abilities."],
+  "Contra {x}, et va millor {y}: uns {n} de cada 100 contra {m} amb {z}.": ["Contra {x}, te va mejor {y}: unas {n} de cada 100 contra {m} con {z}.", "Against {x}, {y} is your best pick: about {n} wins in 100 against {m} with {z}."],
+  "Amb {x} tens {n} punts de maestria: amb tan poca, en partides reals es guanya al voltant del {m}%, uns {k} punts menys. Per aprendre'l, millor a normals (pestanya Guies).": ["Con {x} tienes {n} puntos de maestría: con tan poca, en partidas reales se gana alrededor del {m}%, unos {k} puntos menos. Para aprenderlo, mejor en normales (pestaña Guías).", "You have {n} mastery points with {x}: with that little, real games are won about {m}% of the time, {k} points less. To learn it, play normals (Guides tab)."],
   "Contra {x}, et va millor {y}: aquesta temporada hi vas {n} a {m}.": ["Contra {x}, te va mejor {y}: esta temporada vas {n} a {m}.", "Against {x}, {y} is your best pick: you're {n}-{m} this season."],
   "Contra {x}, et va millor {y}: hi vas {n} a {m}.": ["Contra {x}, te va mejor {y}: vas {n} a {m}.", "Against {x}, {y} is your best pick: you're {n}-{m}."],
   "Contra {x}, et va millor {y}: és un matchup favorable.": ["Contra {x}, te va mejor {y}: es un matchup favorable.", "Against {x}, {y} is your best pick: it's a favourable matchup."],
@@ -4393,10 +4415,74 @@ function focusStart(t){
   coach.focusDone = false;
   if (histCount < 0) loadHistory();
 }
+// ---------- The goal of the week: one habit for 7 days (not a different tip every game), measured ----------
+// Picked from your last 10 reports (the area that fails most), kept a week, compared with Diamond (or Challenger)
+// players of your champion, and with how you did in the 10 games before it.
+const FOCUS_METRIC = {
+  "Farm": {f: r => r.role === "UTILITY" ? null : r.cs_rate?.total, ref: "csmin", up: true, d: 1, u: "de farm per minut"},
+  "Supervivència": {f: r => r.deaths15, ref: "d14", up: false, d: 1, u: "morts abans del minut 15"},
+  "Control d'onada": {f: r => { const di = r.map?.death_info; return di ? di.filter(d => d.t < 840 && /jungla rival|riu/.test(d.zone) && !d.wards).length : null; }, up: false, d: 1, u: "morts al riu o a la jungla rival sense wards abans del 14"},
+  "Participació": {f: r => kpOf(r), ref: "kp", up: true, d: 0, u: "% de participació"},
+  "Visió": {f: r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); }, ref: "vismin", up: true, d: 1, u: "de visió per minut"},
+  "Línia": {f: () => null, up: true, d: 0, u: ""}
+};
+// the moments of the game when each habit is at stake, said once each
+const FOCUS_REMIND = {
+  "Supervivència": [[170, "El jungla rival ja pot arribar: si no saps on és, no passis de la meitat del carril."], [390, "Recorda l'objectiu: cap mort abans del quinze. Mira el mapa abans de fer un intercanvi."], [630, "Recorda: cap mort abans del quinze. Si no veus el jungla, juga a prop de la torre."]],
+  "Control d'onada": [[170, "El jungla rival ja pot arribar: empeny només si saps on és."], [420, "Recorda l'objectiu: no entris al riu ni a la jungla rival sense ward."], [660, "Recorda: sense ward, no t'endinsis."]],
+  "Farm": [[300, "Recorda l'objectiu: no perdis cap canó, i fes l'últim cop abans de pegar al rival."]],
+  "Visió": [[180, "Recorda l'objectiu: posa el ward groc ara al riu."], [480, "Recorda: un ward de control a cada tornada."]],
+  "Participació": [[420, "Recorda l'objectiu: quan estavellis l'onada, mou-te al riu o a la línia del costat."], [720, "Recorda: després de l'onada, ajuda al drac o a la línia del costat."]],
+  "Línia": [[240, "Recorda l'objectiu: intercanvia només quan el rival hagi gastat les habilitats."]]
+};
+function weekFocus(role){
+  let wf = store.get("weekFocus", null);
+  if (wf && Date.now() - wf.at < 7 * 864e5 && FOCUS[wf.area]) return wf;
+  const area = pickFocus(role || mainRole()); if (!area) return null;
+  const mt = FOCUS_METRIC[area], prev = histCache.filter(r => !r.error).slice(0, 10).map(r => mt.f(r)).filter(v => v != null && !isNaN(v));
+  wf = {area, at: Date.now(), base: prev.length ? prev.reduce((a, b) => a + b, 0) / prev.length : null, baseN: prev.length};
+  store.set("weekFocus", wf); plog(`Objectiu de la setmana: ${FOCUS[area].name}`);
+  return wf;
+}
+function mainRole(){ const n = {}; for (const r of histCache.slice(0, 20)) if (r.role) n[r.role] = (n[r.role] || 0) + 1; return Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] || "MIDDLE"; }
+// a reference of the rank you're aiming for: Diamond players with your most played champion (else Challenger)
+function focusRef(area){
+  const k = FOCUS_METRIC[area]?.ref; if (!k) return null;
+  const c = (benchData?.champs || []).filter(x => x.games > 0)[0]; if (!c) return null;
+  const src = c.dia?.games >= 5 ? c.dia : c, v = src[k]; if (v == null) return null;
+  return {v, who: src === c.dia ? "Diamant" : "Challenger", champ: c.name, n: src.games};
+}
+function renderWeekFocus(){
+  const el = $("#wfBody"); if (!el) return;
+  const wf = weekFocus(); if (!wf) { el.innerHTML = `<p class="note">Calen almenys 3 informes de partida per triar-lo.</p>`; return; }
+  const F = FOCUS[wf.area], mt = FOCUS_METRIC[wf.area], ref = focusRef(wf.area);
+  const since = histCache.filter(r => !r.error && new Date((r.date || "").replace(" ", "T")).getTime() > wf.at);
+  const vals = since.map(r => mt.f(r)).filter(v => v != null && !isNaN(v)), now = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  const lv = since.map(r => reportGrades(r).find(g => focusKey(g.area) === wf.area)?.level).filter(Boolean), ok = lv.filter(x => x === "good").length;
+  const f = v => v == null ? "–" : (Math.round(v * 10 ** mt.d) / 10 ** mt.d).toFixed(mt.d).replace(".", ",");
+  const better = now != null && wf.base != null ? (mt.up ? now - wf.base : wf.base - now) : null;
+  const days = Math.max(0, 7 - Math.floor((Date.now() - wf.at) / 864e5));
+  el.innerHTML = `<p class="focusbox"><b>${esc(F.name[0].toUpperCase() + F.name.slice(1))}</b> · <span>${esc(F.goal)}</span></p>
+    <p>${esc(F.say.replace(/^Objectiu d'aquesta partida: [^.]*\. ?/, ""))}</p>
+    ${mt.u ? `<div class="tbl"><table class="bench"><tr><th></th><th>${esc(mt.u[0].toUpperCase() + mt.u.slice(1))}</th></tr>
+      <tr><td>Les 10 partides d'abans</td><td>${f(wf.base)}</td></tr>
+      <tr><td>Aquesta setmana (${vals.length} partides)</td><td class="${better == null || Math.abs(better) < 10 ** -mt.d ? "" : better > 0 ? "good" : "bad"}">${f(now)}</td></tr>
+      ${ref ? `<tr><td>Un ${ref.who} amb <span data-noi18n>${esc(ref.champ)}</span></td><td>${f(ref.v)}</td></tr>` : ""}</table></div>` : ""}
+    ${lv.length ? `<p class="note">Complert en ${ok} de ${lv.length} partides d'aquesta setmana.</p>` : `<p class="note">Encara no has jugat cap partida amb aquest objectiu.</p>`}
+    <p class="note">Te'l recordo a la pantalla de càrrega i en els moments de la partida en què es juga. Canvia sol d'aquí a ${days} ${days === 1 ? "dia" : "dies"}, triat amb les teves últimes 10 partides.</p>
+    <div class="bar"><button class="b" type="button" id="wfNew">Triar-ne un altre ara</button></div>`;
+  $("#wfNew")?.addEventListener("click", () => { const cur = wf.area; store.set("weekFocus", null); let n = weekFocus(); if (n && n.area === cur) { const alt = Object.keys(FOCUS).filter(a => a !== cur && FOCUS_METRIC[a]?.u)[0]; n = {...n, area: alt}; store.set("weekFocus", n); } renderWeekFocus(); });
+}
+function focusRemindTick(t){
+  if (!$("#cFocus")?.checked) return;
+  const wf = store.get("weekFocus", null); if (!wf || !FOCUS_REMIND[wf.area]) return;
+  for (const [at, line] of FOCUS_REMIND[wf.area]) if (t >= at && t < at + 40 && !coach.said.has("wf" + at)) { coach.said.add("wf" + at); coachSay(line); coach.lastSaidAt = t; break; }
+}
 function focusTick(t){
+  focusRemindTick(t);
   if (coach.focusDone || t < coach.focusAt || !$("#cFocus").checked) return;
   coach.focusDone = true;
-  const area = pickFocus(game.role);
+  const area = weekFocus(game.role)?.area;
   if (!area) { plog("Objectiu de la partida: encara no hi ha prou informes"); return; }
   const log = store.get("focusLog", []).filter(x => Date.now() - x.at < 30 * 86400000);
   log.unshift({at: Date.now(), area, champ: game.champ || ""}); store.set("focusLog", log.slice(0, 60));
@@ -5747,17 +5833,41 @@ let csSelAuto = false, csSaid = "";
 function pickAdvice(role, enemyLaner){
   const rows = pickRows(role, enemyLaner);
   if (!rows) return `<p class="note">Escriu els teus campions habituals als ajustos ("Els meus campions") per rebre consells de pick.</p>`;
-  return (enemyLaner ? `<p class="note">${csSelAuto ? `Rival de línia deduït: <b data-noi18n>${esc(enemyLaner)}</b> (toca'n un altre si no és ell).` : `Contra <b data-noi18n>${esc(enemyLaner)}</b>:`}</p>` : "") + `<ul class="cslist">${rows.map(r => r.html).join("")}</ul>`;
+  return `<p class="note">% estimat de guanyar: la teva maestria (amb 1M de partides reals de referència), la teva temporada amb el campió i, si hi ha rival, el matchup (el teu i el dels Challenger).</p>` + (enemyLaner ? `<p class="note">${csSelAuto ? `Rival de línia deduït: <b data-noi18n>${esc(enemyLaner)}</b> (toca'n un altre si no és ell).` : `Contra <b data-noi18n>${esc(enemyLaner)}</b>:`}</p>` : "") + `<ul class="cslist">${rows.map(r => r.html).join("")}</ul>`;
 }
 // once per champion select: the best of your champions against your lane opponent, said out loud
 function pickSay(role, laner, locked){
   if (!laner || locked || csSaid === laner) return;
   const rows = pickRows(role, laner); if (!rows || rows.length < 2) return;
   csSaid = laner;
-  const b = rows[0], sv = seasonVs(b.c, laner), vs = recordVs(b.c, laner);
-  const why = sv.n ? `aquesta temporada hi vas ${sv.w} a ${sv.l}` : vs.n ? `hi vas ${vs.w} a ${vs.l}` : b.c === "LeBlanc" && LB_EASY.includes(laner) ? "és un matchup favorable" : "és el que et va millor ara";
-  const line = `Contra ${laner}, et va millor ${b.c}: ${why}.`;
+  const b = rows[0], b2 = rows[1];
+  if (b.est - b2.est < 2) { plog(`Selecció: contra ${laner}, ${b.c} ~${Math.round(b.est)}% i ${b2.c} ~${Math.round(b2.est)}%: igualats`); return; }
+  const line = `Contra ${laner}, et va millor ${b.c}: uns ${Math.round(b.est)} de cada 100 contra ${Math.round(b2.est)} amb ${b2.c}.`;
   plog(`Selecció: ${line}`); speak(line);
+}
+// ---------- Pick: your chance of winning with each of your champions, estimated from data ----------
+// Start: what a player with your mastery usually wins (iTero, 1M games); then your season with the champion pulls
+// it (15 games weigh as much as that start); then the matchup: your season against that champion (25 games of
+// weight toward your average) and, at half weight, how the Challenger do in it; the matchup moves it 8 points at most.
+let myMastery = null;
+async function loadMyMastery(){ if (myMastery || !location.protocol.startsWith("http")) return; try { myMastery = await (await fetch("/api/mastery", {cache: "no-store"})).json() || {}; } catch (e) {} }
+function mastOf(c){ if (!myMastery) return null; const id = champId(c) || c; const k = Object.keys(myMastery).find(x => norm(x) === norm(id)); return k ? myMastery[k] : 0; }
+function seasonChamp(c){
+  const list = seasonData?.queues?.RANKED_SOLO_5x5?.champions || [], x = list.find(y => norm(y.name) === norm(c) || norm(y.champ) === norm(champId(c) || c));
+  return x ? {w: x.wins ?? Math.round(x.games * x.wr / 100), n: x.games} : {w: 0, n: 0};
+}
+function pickEst(c, opp){
+  const m = mastOf(c), prior = 50 + (m != null ? masteryPP(m) : 0), sc = seasonChamp(c);
+  const base = (sc.w * 100 + prior * 15) / (sc.n + 15);
+  let adj = 0;
+  if (opp) {
+    // a matchup rarely moves the win rate more than ~8 points: few games are pulled hard toward your average
+    const sv = seasonVs(c, opp); if (sv.n) adj += (sv.w * 100 + base * 25) / (sv.n + 25) - base;
+    const bc = (benchData?.champs || []).find(x => norm(x.champ) === norm(champId(c) || c)), bv = bc?.vs && Object.entries(bc.vs).find(([k, x]) => norm(k) === norm(champId(opp) || opp) || norm(x.name) === norm(opp))?.[1];
+    if (bv?.n) adj += 0.5 * ((bv.w * 100 + bc.wr * 10) / (bv.n + 10) - bc.wr);
+    adj = Math.max(-8, Math.min(8, adj));
+  }
+  return {est: Math.max(30, Math.min(70, base + adj)), m, n: sc.n};
 }
 function pickRows(role, enemyLaner){
   const fromHist = Object.entries(histCache.filter(r => !r.error && r.role === role).reduce((a, r) => (a[r.champion] = (a[r.champion] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1]).map(x => x[0]);
@@ -5771,9 +5881,11 @@ function pickRows(role, enemyLaner){
     if (enemyLaner && MATCHUP[`${c}|${enemyLaner}`]) tags.push(`<span class="tag">té consell</span>`);
     if (sv.n >= 3 && sv.w / sv.n >= 0.6) tags.push(`<span class="tag good">li guanyes aquesta temporada</span>`);
     if (sv.n >= 3 && sv.w / sv.n <= 0.4) tags.push(`<span class="tag bad">et costa aquesta temporada</span>`);
-    const score = (sv.n ? (sv.w - sv.l) * 1.5 : 0) + (vs.n && !sv.n ? (vs.w - vs.l) * 2 : 0) + (all.n ? (all.w / all.n - .5) * 4 : 0) + (tags.join("").includes("bad") ? -5 : 0) + (tags.join("").includes("good") ? 2 : 0);
-    const stats = [all.n ? `${all.w}V – ${all.l}D en total` : "sense partides guardades", sv.n ? `temporada: ${sv.w}V – ${sv.l}D contra ${enemyLaner}` : enemyLaner && vs.n ? `${vs.w}V – ${vs.l}D contra ${enemyLaner}` : ""].filter(Boolean).join(" · ");
-    return {c, score, html: `<li><b data-noi18n>${esc(c)}</b> <span class="note">${stats}</span>${tags.join("")}</li>`};
+    const pe = pickEst(c, enemyLaner), score = pe.est;
+    if (pe.m != null && pe.m < 12000) tags.push(`<span class="tag bad">poca maestria</span>`);
+    const sc = seasonChamp(c);
+    const stats = [sc.n ? `temporada: ${sc.w}V – ${sc.n - sc.w}D` : all.n ? `${all.w}V – ${all.l}D amb l'app` : "sense partides", sv.n ? `${sv.w}V – ${sv.l}D contra ${enemyLaner}` : enemyLaner && vs.n ? `${vs.w}V – ${vs.l}D contra ${enemyLaner}` : "", pe.m != null ? `${Math.round(pe.m / 1000)}k de maestria` : ""].filter(Boolean).join(" · ");
+    return {c, score, est: pe.est, html: `<li><b data-noi18n>${esc(c)}</b> <b class="pest">~${Math.round(pe.est)}%</b> <span class="note">${stats}</span>${tags.join("")}</li>`};
   }).sort((a, b) => b.score - a.score);
   return rows;
 }
@@ -5793,6 +5905,14 @@ function tiltLine(){
   const tc = tiltCost();
   return `Portes ${k} derrotes seguides avui.` + (tc && tc.avg < 0 ? ` Quan has seguit jugant així, les partides de després t'han costat ${-tc.avg} LP de mitjana.` : " Pensa-t'ho abans de jugar la següent.");
 }
+// a ranked pick you barely know: what it costs, from real games (iTero: the win rate by mastery points)
+let csOffSaid = "";
+function offPoolLine(me){
+  if (!me?.name) return "";
+  const m = mastOf(me.name), sc = seasonChamp(me.name); if (m == null || m >= 12000 || sc.n >= 10) return "";
+  const pp = masteryPP(m);
+  return `Amb ${displayChamp(me.champ || me.name)} tens ${m.toLocaleString("ca")} punts de maestria: amb tan poca, en partides reals es guanya al voltant del ${Math.round(50 + pp)}%, uns ${Math.round(-pp)} punts menys. Per aprendre'l, millor a normals (pestanya Guies).`;
+}
 function csExtra(cs){
   const opps = seasonOpps(), fmt = (n, r) => `<b data-noi18n>${esc(n)}</b> ${r.w}V – ${r.l}D`;
   const ban = Object.entries(opps).filter(([, r]) => r.w + r.l >= 3 && r.l > r.w).sort((a, b) => (b[1].l - b[1].w) - (a[1].l - a[1].w) || b[1].l - a[1].l)
@@ -5807,6 +5927,7 @@ function csExtra(cs){
     goal = `<p class="csban goal">Estàs a ${close.need} LP de ${esc(close.name)}${best ? `: el teu campió més segur és <b data-noi18n>${esc(best.name)}</b> (${best.wr}% en ${best.games} partides)` : ""}.</p>`;
     if (me?.locked && mine && mine.games >= 5 && mine.wr < 40) goal += `<p class="csban bad">Amb ${esc(mine.name)} vas ${mine.wins}V – ${mine.losses}D aquesta temporada. Tan a prop de pujar, si no et ve de gust, valora el dodge: costa menys LP que una derrota.</p>`;
   }
+  { const w = offPoolLine(me); if (w) { goal = `<p class="csban bad">${esc(w)}</p>` + goal; if (me?.locked && csOffSaid !== (me.champ || me.name)) { csOffSaid = me.champ || me.name; setTimeout(() => speak(w), 2500); } } }
   { const tl = tiltLine(); if (tl) { goal = `<p class="csban bad">${esc(tl)}</p>` + goal; if (csTiltSaid !== today() + tl.length && on("vTilt")) { csTiltSaid = today() + tl.length; setTimeout(() => speak(tl), 1500); } } }
   return goal + (ban.length && !cs.their_team.length ? `<p class="csban">Ban suggerit: ${ban.map(([n, r]) => fmt(n, r)).join(" · ")} <span class="note">(els rivals de línia que més et guanyen aquesta temporada)</span></p>` : "")
     + (vs.length ? `<p class="csban">Contra els que han triat: ${vs.map(([n, r]) => `<span class="${r.w >= r.l ? "good" : "bad"}">${fmt(n, r)}</span>`).join(" · ")}</p>` : "");
@@ -5856,7 +5977,7 @@ async function pollCS(){
   if (game || !location.protocol.startsWith("http")) { $("#csCard").hidden = true; return; }
   let cs; try { cs = await (await fetch("/api/champselect", {cache: "no-store"})).json(); } catch (e) { return; }
   if (!cs.active) { if (!$("#csCard").hidden) plog("Selecció de campions acabada"); $("#csCard").hidden = true; csLast = ""; csSaid = ""; csSel = ""; csSelAuto = false; runesDone.clear(); $("#csRunes").hidden = true; return; }
-  if ($("#csCard").hidden) { plog(`Selecció de campions detectada (rol ${cs.my_position || "-"})`); if (histCount < 0) await loadHistory();
+  if ($("#csCard").hidden) { plog(`Selecció de campions detectada (rol ${cs.my_position || "-"})`); if (histCount < 0) await loadHistory(); await loadMyMastery(); if (!benchData) loadBench();
     showTab("T"); toFront("selecció"); setTimeout(() => $("#csCard")?.scrollIntoView({behavior: "smooth", block: "start"}), 200); }
   const key = JSON.stringify(cs);
   if (key !== csLast) { csLast = key; renderCS(cs); }
@@ -5972,16 +6093,18 @@ setInterval(() => { if (!$("#viewA").hidden) loadStatus(); }, 5000);
 // tabs: false/"T" timer, true/"R" reports, "S" season
 function showTab(r){
   const v = r === true ? "R" : r === false ? "T" : r;
-  for (const k of ["T", "R", "H", "C", "S", "M", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
+  if (v !== "G") comboStop();
+  for (const k of ["T", "R", "H", "C", "G", "S", "M", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
   if (v === "R") loadHistory();
   if (v === "S") { loadRank(false); loadSeason(false); loadHistory(); }
   if (v === "H" && !mhLoaded) loadMatches(true);
+  if (v === "G") { (benchData ? Promise.resolve() : loadBench()).then(renderGuides); renderGuides(); }
   if (v === "M") { renderMmr(); Promise.all([loadRank(false), loadHistory()]).then(renderMmr); }
   if (v === "H") loadRank(false);
   if (v === "A") { const g = $("#setTabs button[aria-selected=true]")?.dataset.g; if (g === "app") loadStatus(); }
-  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
+  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); renderWeekFocus(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
 }
-$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C")); $("#tabM").addEventListener("click", () => showTab("M"));
+$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C")); $("#tabM").addEventListener("click", () => showTab("M")); $("#tabG").addEventListener("click", () => showTab("G"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const mm = t => fmtClock(t);
 const dash = v => v === null || v === undefined ? "—" : v;
@@ -6238,11 +6361,11 @@ const benchFmt = (v, d) => v == null ? "—" : (Math.round(v * 10 ** d) / 10 ** 
 function benchGaps(c, me){
   const out = [], good = [];
   for (const [label, k, up, d, tip] of BENCH_ROWS) {
-    const pro = c[k], mine = me?.[k]; if (pro == null || mine == null || up == null) continue;
+    const dia = c.dia?.games >= 3 ? c.dia : null, pro = dia?.[k] ?? c[k], mine = me?.[k], who = dia?.[k] != null ? "els Diamant" : "ells"; if (pro == null || mine == null || up == null) continue;
     // how far, relative to what's normal for that number (a difference at minute 10 against their farm or gold then)
     const scale = k === "cs10d" ? Math.max(40, c.cs10 || 0) : k === "g10d" ? 3000 : ["d14", "d", "deepd", "gankd", "roam", "plates", "solo"].includes(k) ? Math.max(1, Math.abs(pro)) : Math.max(0.5, Math.abs(pro));
     const gap = (up ? pro - mine : mine - pro) / scale;
-    if (gap > 0.12) out.push({label, k, gap, tip, text: `${label}: tu ${benchFmt(mine, d)}, ells ${benchFmt(pro, d)}.`});
+    if (gap > 0.12) out.push({label, k, gap, tip, text: `${label}: tu ${benchFmt(mine, d)}, ${who} ${benchFmt(pro, d)}.`});
     else if (gap <= 0 && pro !== 0) good.push(label);
   }
   out.sort((a, b) => b.gap - a.gap);
@@ -6265,17 +6388,20 @@ function renderBench(){
   const el = $("#benchBody"), b = benchData; if (!el || !b) return;
   if (b.msg === "no_key") { el.innerHTML = `<p class="note warn">Posa la clau de Riot als ajustos.</p>`; return; }
   if (b.msg === "no_champs") { el.innerHTML = `<p class="note">Encara no hi ha cap campió amb 8 partides o més aquesta temporada.</p>`; return; }
-  const step = {mine: "Llegint les teves partides", players: "Buscant jugadors Challenger i Grandmaster que juguin ara els teus campions", games: "Llegint les seves partides"}[b.msg] || "Llegint partides de Riot";
+  const step = {mine: "Llegint les teves partides", players: "Buscant jugadors Challenger i Grandmaster que juguin ara els teus campions", games: "Llegint les seves partides", diamond: "Buscant jugadors Diamant del teu servidor que juguin els teus campions"}[b.msg] || "Llegint partides de Riot";
   const prog = b.busy ? `<p class="note">${step}${b.goal ? `: ${b.done} de ${b.goal}` : "…"}. Va a poc a poc per no gastar la clau, i s'atura a la selecció de campions i durant les partides.</p>` : "";
   const champs = (b.champs || []).filter(c => c.games > 0);
   if (!champs.length) { el.innerHTML = prog || `<p class="note">Encara no hi ha partides de Challenger.</p><div class="bar"><button class="b" type="button" id="benchRun">Llegir-les ara</button></div>`; $("#benchRun")?.addEventListener("click", () => loadBench(true)); return; }
   const f = benchFmt;
   el.innerHTML = prog + `<div class="bgrid">` + champs.map(c => {
     const me = benchMe(c), gp = benchGaps(c, me);
+    const dia = c.dia?.games >= 3 ? c.dia : null;
     const rows = BENCH_ROWS.filter(([, k]) => c[k] != null || me?.[k] != null).map(([label, k, up, d]) => {
-      const pro = c[k], mine = me?.[k];
-      let cls = ""; if (pro != null && mine != null && up != null) { const better = up ? mine >= pro * 0.95 : mine <= pro * 1.05 + 0.1; cls = better ? "good" : "bad"; }
-      return `<tr><td>${label}</td><td class="${cls}">${f(mine, d)}</td><td>${f(pro, d)}</td></tr>`;
+      const pro = c[k], mine = me?.[k], dv = dia?.[k];
+      // green/red against the rank you're aiming for (Diamond) when there's data, else against Challenger
+      const goal = dv ?? pro;
+      let cls = ""; if (goal != null && mine != null && up != null) { const better = up ? mine >= goal * 0.95 : mine <= goal * 1.05 + 0.1; cls = better ? "good" : "bad"; }
+      return `<tr><td>${label}</td><td class="${cls}">${f(mine, d)}</td>${dia ? `<td>${f(dv, d)}</td>` : ""}<td>${f(pro, d)}</td></tr>`;
     }).join("");
     const icons = ids => (ids || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
     const [s1, s2] = (c.spells || "").split("+");
@@ -6284,7 +6410,8 @@ function renderBench(){
       ${gp.good.length ? `<p class="note">Ja estàs al seu nivell en: ${gp.good.map(x => esc(x.toLowerCase())).join(", ")}.</p>` : ""}</div>` : (me ? "" : `<p class="note">Encara no hi ha partides teves per comparar.</p>`);
     return `<div class="bch"><div class="bchamp"><img src="${ddChampImg(c.champ)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(c.name)}</b><span class="note">${c.games} partides (${benchTiers(c)}) de ${c.players} jugadors · guanyen el ${c.wr}%${me ? ` · tu: ${me.n} partides, ${me.wr}%` : ""}</span></div>
       ${few}${gaps}
-      <div class="tbl"><table class="bench"><tr><th></th><th>Tu</th><th>Challenger</th></tr>${rows}</table></div>
+      <div class="tbl"><table class="bench"><tr><th></th><th>Tu</th>${dia ? `<th title="${dia.games} partides de ${dia.players} jugadors Diamant del teu servidor">Diamant</th>` : ""}<th>Challenger</th></tr>${rows}</table></div>
+      ${dia ? `<p class="note">Diamant: ${dia.games} partides de ${dia.players} jugadors del teu servidor amb ${esc(c.name)} (guanyen el ${dia.wr}%). El verd i el vermell són respecte a ells: és el rang on vols arribar.</p>` : `<p class="note">Encara no hi ha prou partides de jugadors Diamant amb ${esc(c.name)}: les busca a la propera lectura.</p>`}
       <div class="bhow"><span>Runes: <img class="sbrn" data-rune="${c.ks}" alt=""><img class="sbrn" data-rune="${c.sub}" alt=""> <small class="note">${c.share?.ks ?? 0}%</small></span>
         ${s1 ? `<span>Encanteris: <img src="${spellIcon(s1)}" alt="" title="${esc(NAMES[s1] || s1)}"><img src="${spellIcon(s2)}" alt="" title="${esc(NAMES[s2] || s2)}"> <small class="note">${c.share?.spells ?? 0}%</small></span>` : ""}
         ${c.build?.length ? `<span>Build d'ells: ${icons(c.build)} <small class="note">${c.share?.build ?? 0}%</small></span>` : ""}
@@ -6295,6 +6422,182 @@ function renderBench(){
     <div class="bar"><button class="b" type="button" id="benchRun" ${b.busy ? "disabled" : ""}>Tornar-ho a llegir</button></div>`;
   $("#benchRun")?.addEventListener("click", () => loadBench(true));
   loadRunes(); fillRunes(); renderProgress(); i18nAll();
+}
+// ---------- Guides: the champions you want to learn, their combos and a combo trainer ----------
+// The abilities (names, descriptions, cooldowns) come live from Riot's Data Dragon for the current patch; the build,
+// runes and skill order from real Challenger games (when you mark the champion as "learning"); the combos are the
+// community lists of Mobalytics, written here in short.
+const CHAMP_GUIDES = {
+  Yasuo: {role: "Mid o top. Lluitador de cops crítics: guanya les baralles llargues amb el tornado i la ulti.",
+    tips: ["La Q es carrega amb 2 encerts (també sobre minions): la tercera llança un tornado que aixeca. Carrega-la abans d'anar a intercanviar.",
+      "La E et porta a través d'un minion o rival (no el mateix durant uns segons). Si fas la Q durant la E, surt en cercle al teu voltant: amb el tornado carregat, aixeca tothom del voltant.",
+      "El passiu et dona un escut quan camines: arriba als intercanvis amb la barra plena. També dobla la probabilitat de crític dels objectes.",
+      "El mur de vent (W) atura projectils: guarda'l per a l'habilitat clau del rival, no per a cops normals.",
+      "La R només va sobre rivals aixecats, pel teu tornado o pel d'un company."],
+    spikes: "Quan tens el tornado (Q3) a punt, i amb 2 objectes de crític.",
+    combos: [{n: "Intercanvi curt", l: 1, s: ["E", "AA", "Q", "E"], how: "E al rival, un cop, Q, i surt amb la E per un minion."},
+      {n: "Tornado i ulti", l: 2, s: ["Q", "Q", "E", "Q3", "AA", "R", "AA"], how: "Carrega la Q als minions, E cap al rival i Q durant la E (aixeca en cercle), cop, R i cop."},
+      {n: "Beyblade", l: 3, s: ["Q", "Q", "E", "Q3", "F", "R"], how: "Amb el tornado carregat, E i Q i Flash durant l'animació de la Q: aixeca des de més lluny. Després, R."},
+      {n: "Airblade", l: 3, s: ["Q3", "E", "R"], how: "Llança el tornado, E cap al rival i R mentre encara fas la E: la ulti surt sense perdre temps."}],
+    practice: "Eina de pràctica: 20 Beyblades sobre el ninot (carrega la Q als minions abans) i 10 Airblades."},
+  Yone: {role: "Mid o top. Lluitador d'atacs: entra amb la E i torna al lloc d'on has sortit.",
+    tips: ["La Q es carrega amb 2 encerts: la tercera et fa avançar i aixeca. Tenir-la a punt és la teva amenaça a la línia.",
+      "Amb la E surts del cos; quan s'acaba, tornes al punt d'inici i repeteix part del mal que has fet. Pots tornar abans prement E un altre cop.",
+      "La W fa mal en con i et dona un escut més gran com més campions toques: fes-la dins de l'intercanvi.",
+      "El passiu: cada segon cop fa mal màgic, i dobla la probabilitat de crític dels objectes.",
+      "La R travessa en línia, aixeca i arrossega cap al final: entra-hi quan la E ja et deixa tornar."],
+    spikes: "Nivell 6 (R) i 2 objectes de crític.",
+    combos: [{n: "Intercanvi amb la E", l: 1, s: ["Q", "Q", "E", "Q3", "AA", "W", "AA", "E"], how: "Carrega la Q, entra amb la E i la Q3, cops i W, i torna amb la E abans que respongui."},
+      {n: "All-in amb ulti", l: 2, s: ["E", "R", "Q", "AA", "W", "AA", "AA", "Q", "E"], how: "E per tenir sortida, R, i tot el mal mentre estan aixecats; torna amb la E."},
+      {n: "Entrada amb Flash", l: 3, s: ["E", "F", "R", "Q", "W", "AA", "AA", "Q", "E"], how: "A les baralles d'equip: E, Flash i R just després per agafar-ne més d'un."}],
+    practice: "Eina de pràctica: 15 intercanvis amb la E tornant abans que s'acabi, i 10 vegades E, Flash i R."},
+  Katarina: {role: "Mid. Assassina de reinicis: cada kill o assistència li baixa les habilitats.",
+    tips: ["Les dagues són el teu mal: la Q en deixa una darrere del rival i la W una al teu lloc. Recollir-ne una fa mal al voltant.",
+      "La E et porta a qualsevol unitat o daga: salta a la daga que és al costat del rival, no al rival, i faràs més mal.",
+      "Cada kill o assistència et baixa molt les habilitats: a les baralles, entra quan algú ja estigui baix de vida.",
+      "La R es talla amb qualsevol control (stun, silenci): no la facis fins que el rival hagi gastat el seu."],
+    spikes: "Nivell 6 i el primer objecte.",
+    combos: [{n: "Intercanvi simple", l: 1, s: ["Q", "E", "AA", "AA", "E"], how: "Q al rival, E a ell, cops, recull la daga i surt amb la E per un minion."},
+      {n: "Ulti senzilla", l: 2, s: ["E", "W", "Q", "R", "E", "AA"], how: "E al rival, W i Q seguides, R, i quan acabi, E a la daga de la Q per rematar."},
+      {n: "Kat Life", l: 3, s: ["Q", "E", "W", "E", "R"], how: "Q i E, W en arribar; recull la primera daga, E al rival quan recullis la segona, i R."}],
+    practice: "Eina de pràctica: 20 vegades la ulti senzilla sense perdre cap daga; fixa't on cauen."},
+  Akali: {role: "Mid o top. Assassina d'energia (sense manà) que s'amaga al fum.",
+    tips: ["El passiu: quan toques un rival amb una habilitat surt un cercle; surt-ne i el pròxim cop fa molt de mal i et dona velocitat.",
+      "La Q gasta energia: no la facis servir per farmejar si vols intercanviar.",
+      "La W et fa invisible i et torna energia: fes-la quan el rival tiri la seva habilitat important.",
+      "La E va en dos temps: la primera t'aparta i marca qui toca; la segona et porta fins a ell.",
+      "La R també: la segona fa més mal com menys vida li queda. Guarda-la per rematar."],
+    spikes: "Nivell 6 (R) i el primer objecte.",
+    combos: [{n: "Intercanvi ràpid", l: 1, s: ["Q", "AA", "E", "E2", "AA"], how: "Q, cop amb el passiu, E per marcar-lo i E2 per tornar-hi amb un altre cop."},
+      {n: "All-in de nivell 6", l: 2, s: ["R", "E", "AA", "Q", "E2", "AA", "Q", "R2"], how: "R per entrar, E, cop i Q; E2 per tornar-hi, cop, Q i R2 quan ja estigui baix."},
+      {n: "Dive a la torre", l: 3, s: ["R", "E", "E2", "AA", "Q", "R2"], how: "R per entrar, E i E2, cop i Q, i R2 per rematar i sortir de l'abast de la torre."}],
+    practice: "Eina de pràctica: 20 intercanvis ràpids, sortint del cercle del passiu abans de cada cop."},
+  Orianna: {role: "Mid. Maga de control: tot passa on és la bola.",
+    tips: ["La Q mou la bola fins on apuntes i fa mal pel camí; la bola es queda allà.",
+      "La W fa mal al voltant de la bola, alenteix els rivals i accelera els aliats.",
+      "La E envia la bola a un aliat o a tu: escut i mal pel camí. Posa-la a qui entra a la baralla i després fes la R.",
+      "La R fa mal al voltant de la bola i arrossega els rivals cap al centre: és la jugada que guanya baralles.",
+      "Si t'allunyes massa de la bola, torna sola: vigila la distància."],
+    spikes: "Nivell 6 i el primer objecte; com més avança la partida, més forta.",
+    combos: [{n: "Intercanvi bàsic", l: 1, s: ["Q", "W"], how: "Q al rival i W abans que la bola arribi: el mal surt just quan hi arriba."},
+      {n: "Intercanvi llarg", l: 1, s: ["Q", "AA", "W", "E"], how: "Q, cop, W quan la Q arribi i E cap a tu perquè la bola torni fent mal."},
+      {n: "All-in", l: 2, s: ["Q", "R", "W", "E", "AA"], how: "Q davant del rival, R i W, i E perquè la bola torni fent mal."},
+      {n: "Ulti amb Flash", l: 3, s: ["E", "R", "F", "Q", "W", "AA"], how: "Bola a sobre teu (E), R i Flash just abans que esclati: arrossega des d'on arribes."}],
+    practice: "Eina de pràctica: 20 vegades Q i W perquè el mal surti en arribar la bola, i 10 vegades E, R i Flash."},
+  Leblanc: {role: "Mid. Assassina d'esclat: entra amb la W, fa tot el mal i torna.",
+    tips: ["La Q marca: si la toques amb una altra habilitat, esclata i fa mal extra.",
+      "La W et porta a un punt i, si la tornes a prémer, tornes on eres: entra, fes el combo i torna.",
+      "La E lliga el rival: si no surt de l'abast en 1,5 segons, queda immobilitzat.",
+      "La R copia l'última habilitat que has fet: és el teu segon combo."],
+    spikes: "Nivell 6 i el primer objecte; llavors, a buscar kills a les línies del costat.",
+    combos: [{n: "Intercanvi clàssic", l: 1, s: ["Q", "W", "AA", "W↩"], how: "Q, W a sobre seu (esclata la marca), cop i torna amb la W al final del cop."},
+      {n: "Gank amb la E", l: 2, s: ["W", "E", "Q", "AA"], how: "Entra amb la W, E per lligar-lo, Q i cops mentre està immobilitzat."},
+      {n: "Kill a l'ADC", l: 3, s: ["W", "RW", "Q", "E", "W↩"], how: "W i R (copia la W) per arribar, Q i E, i torna amb la W."}],
+    practice: "Eina de pràctica: 20 intercanvis clàssics; el cop ha d'estar fet abans de tornar."},
+  Diana: {role: "Mid o jungla. Lluitadora de salts: la Q marca i la E et porta al marcat.",
+    tips: ["La Q marca els rivals que toca; si fas la E a un rival marcat, la E es recarrega al moment.",
+      "El passiu: cada tercer cop fa mal en àrea, i després d'una habilitat ataques més ràpid.",
+      "La W et dona un escut amb boles que fan mal al voltant.",
+      "La R atrau els rivals del voltant i fa més mal com més n'atrau."],
+    spikes: "Nivell 6 i el primer objecte.",
+    combos: [{n: "Intercanvi amb el passiu", l: 1, s: ["AA", "AA", "Q", "E", "AA", "W", "E"], how: "Dos cops, Q i E al rival marcat (es recarrega), cop i W, i E per sortir."},
+      {n: "All-in de nivell 6", l: 2, s: ["Q", "E", "W", "AA", "R", "AA", "E", "AA"], how: "Q i E al marcat, W a l'aire, cop, R en arribar, cop, E i cop."},
+      {n: "Rematar", l: 3, s: ["W", "E", "R", "Q", "AA"], how: "W, E i R a l'aire perquè l'atracció arribi amb tu, Q i cop."}],
+    practice: "Eina de pràctica: 20 vegades Q i E encertant la Q (si no la toca, la E no es recarrega)."}
+};
+const GLVL = {1: ["Fàcil", "good"], 2: ["Mitjà", ""], 3: ["Difícil", "bad"]};
+let guideSel = null, guideLearn = null; const guideDD = {};
+async function loadLearn(){ if (guideLearn) return; try { guideLearn = await (await fetch("/api/learn", {cache: "no-store"})).json() || []; } catch (e) { guideLearn = []; } }
+async function guideData(id){
+  if (guideDD[id]) return guideDD[id];
+  try { const j = await (await fetch(`https://ddragon.leagueoflegends.com/cdn/${iconVer}/data/es_ES/champion/${encodeURIComponent(id)}.json`)).json(); guideDD[id] = Object.values(j.data)[0]; } catch (e) { guideDD[id] = null; }
+  return guideDD[id];
+}
+const stripTags = h => String(h || "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+async function renderGuides(){
+  const el = $("#guideBody"); if (!el) return;
+  await loadLearn(); await loadMyMastery();
+  if (!guideSel) guideSel = store.get("guideSel", "Yasuo");
+  const ids = Object.keys(CHAMP_GUIDES);
+  const pick = ids.map(id => { const m = mastOf(id), lrn = guideLearn.includes(id);
+    return `<button type="button" class="gpick ${id === guideSel ? "on" : ""}" data-id="${id}"><img src="${ddChampImg(id)}" alt="" onerror="this.style.visibility='hidden'"><span data-noi18n>${esc(displayChamp(id))}</span>${lrn ? `<small class="good">aprenent</small>` : m ? `<small class="note">${Math.round(m / 1000)}k</small>` : m === 0 ? `<small class="note">nou</small>` : ""}</button>`; }).join("");
+  const g = CHAMP_GUIDES[guideSel], dd = await guideData(guideSel), lrn = guideLearn.includes(guideSel), m = mastOf(guideSel);
+  const keys = ["Q", "W", "E", "R"];
+  const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p></div></li>`,
+    ...dd.spells.map((sp, i) => `<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${sp.image.full}" alt=""><div><b><span class="gk">${keys[i]}</span> ${esc(sp.name)}</b> <small class="note">recàrrega ${esc(sp.cooldownBurn)} s</small><p class="note">${esc(stripTags(sp.description))}</p></div></li>`)].join("")
+    : `<li class="note">No he pogut carregar les habilitats de Riot (sense connexió?).</li>`;
+  const bc = (benchData?.champs || []).find(x => norm(x.champ) === norm(guideSel) && x.games > 0);
+  const icons = list => (list || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
+  const [s1, s2] = (bc?.spells || "").split("+");
+  const build = bc ? `<div class="bhow"><span>Runes: <img class="sbrn" data-rune="${bc.ks}" alt=""><img class="sbrn" data-rune="${bc.sub}" alt=""></span>
+      ${s1 ? `<span>Encanteris: <img src="${spellIcon(s1)}" alt=""><img src="${spellIcon(s2)}" alt=""></span>` : ""}
+      ${bc.start?.length ? `<span>Inici: ${icons(bc.start)}</span>` : ""}${bc.build?.length ? `<span>Build: ${icons(bc.build)}</span>` : ""}
+      ${bc.skills ? `<span>Primer maximitzen la <b>${esc(bc.skills)}</b></span>` : ""}</div>
+      <p class="note">${bc.games} partides reals de Challenger i Grandmaster amb ${esc(bc.name)}${bc.dia?.games ? ` i ${bc.dia.games} de Diamant del teu servidor` : ""}. A la selecció de campions l'app ja posa aquestes runes i objectes sola.</p>`
+    : lrn ? `<p class="note">Llegint partides de Challenger amb ${esc(displayChamp(guideSel))} (build, runes i ordre d'habilitats): pot trigar una estona i s'atura durant les partides.</p>`
+    : `<p class="note">Marca'l com a "l'estic aprenent" i l'app llegirà partides reals de Challenger i Diamant amb ${esc(displayChamp(guideSel))}: build, runes, ordre d'habilitats i, a la selecció de campions, te les posa sola.</p>`;
+  const warn = m != null && m < 12000 ? `<p class="csban bad">Tens ${m.toLocaleString("ca")} punts de maestria: en partides reals, amb tan poca es guanya al voltant del ${Math.round(50 + masteryPP(m))}%. Juga'l a normals fins als 12.000 punts (a partir d'aquí ja es guanya com amb qualsevol altre).</p>` : "";
+  el.innerHTML = `<div class="gpicks">${pick}</div>
+    <section class="card"><div class="ghead"><img src="${ddChampImg(guideSel)}" alt=""><div><h2 data-noi18n>${esc(displayChamp(guideSel))}</h2><p>${esc(g.role)}</p></div>
+      <label class="ph-item"><input type="checkbox" id="gLearn" ${lrn ? "checked" : ""}><span>L'estic aprenent</span></label></div>${warn}
+      <h3>Claus</h3><ul class="cslist">${g.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+      <p><b>Moments forts:</b> ${esc(g.spikes)}</p></section>
+    <section class="card"><h2>Combos</h2>
+      <p class="note">Entrena l'ordre i la velocitat dels dits fora de la partida: prem les tecles (Q W E R, l'encanteri i el clic dret per al cop) a la caixa. La punteria i el temps real s'aprenen a l'eina de pràctica.</p>
+      <div class="keyrow"><span>Flash a la tecla</span><select id="gFlash"><option value="D">D</option><option value="F">F</option></select></div>
+      <div class="gcombos">${g.combos.map((c, i) => `<div class="gcombo"><div><b>${esc(c.n)}</b> <span class="tg ${GLVL[c.l][1]}">${GLVL[c.l][0]}</span></div>
+        <div class="gseq">${c.s.map(k => `<span class="gk">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">${esc(c.how)}</p>
+        <button class="b" type="button" data-train="${i}">Entrenar</button></div>`).join("")}</div>
+      <div id="gTrain" hidden></div>
+      <p class="note">${esc(g.practice)}</p></section>
+    <section class="card"><h2>Habilitats <small class="note">(pedaç ${esc(iconVer)})</small></h2><ul class="gabil">${abil}</ul></section>
+    <section class="card"><h2>Build i runes dels millors</h2>${build}</section>
+    <p class="note">Habilitats: Data Dragon de Riot, del pedaç actual. Combos: llistes de Mobalytics, resumits. Maestria: iTero (1M+ partides).</p>`;
+  try { $("#gFlash").value = store.get("flashKey", "D"); } catch (e) {}
+  $("#gFlash")?.addEventListener("change", e => store.set("flashKey", e.target.value));
+  el.querySelectorAll(".gpick").forEach(b => b.addEventListener("click", () => { guideSel = b.dataset.id; store.set("guideSel", guideSel); comboStop(); renderGuides(); }));
+  $("#gLearn")?.addEventListener("change", async e => {
+    const set = new Set(guideLearn); e.target.checked ? set.add(guideSel) : set.delete(guideSel); guideLearn = [...set].slice(0, 5);
+    try { guideLearn = await (await fetch("/api/learn", {method: "POST", body: JSON.stringify(guideLearn)})).json(); } catch (x) {}
+    renderGuides();
+  });
+  el.querySelectorAll("[data-train]").forEach(b => b.addEventListener("click", () => comboTrain(g.combos[+b.dataset.train])));
+  loadRunes(); fillRunes(); i18nAll();
+}
+// the trainer: the keys of the combo in order, as fast as you can; a mistake starts it again
+let ctr = null;
+function keyOf(step){ if (step === "AA") return "AA"; if (step === "F") return store.get("flashKey", "D"); if (step === "RW") return "R"; return step[0]; }
+function comboStop(){ if (ctr) { document.removeEventListener("keydown", ctr.kd, true); ctr.box?.removeEventListener("mousedown", ctr.md); ctr.box?.removeEventListener("contextmenu", ctr.cm); } ctr = null; }
+function comboTrain(c){
+  comboStop();
+  const box = $("#gTrain"); box.hidden = false;
+  const key = "combo:" + guideSel + ":" + c.n, hist = store.get(key, []);
+  ctr = {c, i: 0, t0: 0, box, reps: 0, miss: 0};
+  const draw = (msg, cls) => {
+    const best = hist.length ? Math.min(...hist) : null, last = hist.slice(-5);
+    box.innerHTML = `<div class="gtrain" tabindex="0"><p><b>${esc(c.n)}</b> · prem les tecles en ordre (clic dret = cop)</p>
+      <div class="gseq big">${c.s.map((k, j) => `<span class="gk ${j < ctr.i ? "done" : j === ctr.i ? "now" : ""}">${esc(k === "AA" ? "Cop" : k === "F" ? `Flash (${store.get("flashKey", "D")})` : k)}</span>`).join("<i>›</i>")}</div>
+      <p class="${cls || "note"}">${msg || "Comença quan vulguis: el temps compta des de la primera tecla."}</p>
+      <p class="note">Repeticions: ${ctr.reps} · errors: ${ctr.miss}${best ? ` · el teu millor temps: ${(best / 1000).toFixed(2).replace(".", ",")} s` : ""}${last.length ? ` · últims: ${last.map(x => (x / 1000).toFixed(2).replace(".", ",")).join(", ")}` : ""}</p>
+      <div class="bar"><button class="b" type="button" id="gTrainStop">Parar</button></div></div>`;
+    $("#gTrainStop").addEventListener("click", () => { comboStop(); box.hidden = true; });
+  };
+  const press = k => {
+    const want = keyOf(c.s[ctr.i]);
+    if (k !== want) { if (ctr.i > 0) { const was = c.s[ctr.i]; ctr.miss++; ctr.i = 0; ctr.t0 = 0; tone([300], .12); draw(`Error: tocava ${was === "AA" ? "el clic dret" : want}. Torna a començar.`, "bad"); } return; }
+    if (ctr.i === 0) ctr.t0 = performance.now();
+    ctr.i++;
+    if (ctr.i === c.s.length) {
+      const ms = Math.round(performance.now() - ctr.t0); hist.push(ms); store.set(key, hist.slice(-50)); ctr.reps++; ctr.i = 0; ctr.t0 = 0;
+      const best = Math.min(...hist); tone(ms <= best ? [880, 1175] : [660], .12);
+      draw(`${(ms / 1000).toFixed(2).replace(".", ",")} s${ms <= best && hist.length > 1 ? " · nou rècord!" : ""}`, "good");
+    } else draw("…");
+  };
+  ctr.kd = e => { if (!ctr || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "")) return; const k = e.key.toUpperCase(); if (!/^[QWERDF]$/.test(k)) return; e.preventDefault(); press(k); };
+  ctr.md = e => { if (e.button === 2) { e.preventDefault(); press("AA"); } };
+  ctr.cm = e => e.preventDefault();
+  document.addEventListener("keydown", ctr.kd, true); box.addEventListener("mousedown", ctr.md); box.addEventListener("contextmenu", ctr.cm);
+  draw(); box.scrollIntoView({behavior: "smooth", block: "center"});
 }
 // ---------- What the patch changed for your champions and items ----------
 let patchData = null;
