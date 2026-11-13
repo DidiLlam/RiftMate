@@ -1,7 +1,7 @@
 {
- "version": "2.1.34",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.1.34.exe",
- "size": 10037760,
- "sha256": "e452fc2f6f06b21272538e7c44ced12d83d2fc5bb343efefb712a752b86d6cf4",
- "notes": "- Quan plegar: només Solo/Duo i sense remakes\n- Cada fila es compara amb la resta de partides i diu si la diferència és clara o pot ser sort\n- Nova fila: després de dues derrotes seguides; consell d'escalfar si la primera partida del dia et va clarament pitjor\n- Taula única amb les columnes alineades"
+ "version": "2.2.0",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.0.exe",
+ "size": 10087424,
+ "sha256": "90b15da8d63aae99dfc96132fca5084608fdeead43c84067663b2f2725d15ae0",
+ "notes": "- Nova pestanya Guies: Yasuo, Yone, Katarina, Akali, Orianna, LeBlanc i Diana, amb habilitats del pedaç, claus, combos i entrenador de combos amb el teclat\n- 'L'estic aprenent': l'app llegeix partides de Challenger i Diamant d'aquell campió (build, runes, ordre d'habilitats)\n- Selecció de campions: % estimat de guanyar amb cada campió i avís si tries un campió amb poca maestria\n- Objectiu de la setmana: un sol hàbit 7 dies, recordat als moments clau i comparat amb un Diamant\n- Tu contra Diamant i Challenger: nova columna amb jugadors Diamant del teu servidor"
 }
