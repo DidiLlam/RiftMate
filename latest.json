@@ -1,7 +1,7 @@
 {
- "version": "2.2.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.0.exe",
- "size": 10087424,
- "sha256": "90b15da8d63aae99dfc96132fca5084608fdeead43c84067663b2f2725d15ae0",
- "notes": "- Nova pestanya Guies: Yasuo, Yone, Katarina, Akali, Orianna, LeBlanc i Diana, amb habilitats del pedaç, claus, combos i entrenador de combos amb el teclat\n- 'L'estic aprenent': l'app llegeix partides de Challenger i Diamant d'aquell campió (build, runes, ordre d'habilitats)\n- Selecció de campions: % estimat de guanyar amb cada campió i avís si tries un campió amb poca maestria\n- Objectiu de la setmana: un sol hàbit 7 dies, recordat als moments clau i comparat amb un Diamant\n- Tu contra Diamant i Challenger: nova columna amb jugadors Diamant del teu servidor"
+ "version": "2.2.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.1.exe",
+ "size": 10099200,
+ "sha256": "e0c78af38fbaa3a4ca77c48b258f5def15d27c4946b5c67fdd5b1353f9694326",
+ "notes": "- Guies: cadascú tria els seus campions (qualsevol campió del joc) i els pot treure\n- Per als campions sense guia escrita, la IA en fa una a partir de les habilitats del pedaç (un cop per campió i pedaç), amb combos per a l'entrenador"
 }
