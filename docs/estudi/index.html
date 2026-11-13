@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RiftMate Macro</title>
+<meta name="theme-color" content="#0e1618">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column like a phone app; a header with the link to your PC, the content, and tabs at the bottom.
+   Colors: the RiftMate dark teal with a gold for titles (the app's banner), a light version for daylight. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --fg:#14201f; --muted:#5d6b69; --line:#dbe3e1;
+  --accent:#137a6b; --gold:#9a7a2c; --good:#1d7f4e; --bad:#b4442e; --chip:#e8efed;
+  --display:"Barlow Condensed", "Arial Narrow", system-ui, sans-serif; --body:Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0e1618; --card:#152124; --fg:#e6efed; --muted:#93a5a2; --line:#24363a;
+  --accent:#3cc4ae; --gold:#d6b25e; --good:#4fc98a; --bad:#ef7a62; --chip:#1c2c30; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--body)}
+body{padding:env(safe-area-inset-top,0) max(16px,env(safe-area-inset-right,0px)) calc(76px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-width:720px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);letter-spacing:.02em;margin:0;text-wrap:balance}
+h1{font-size:1.35rem;white-space:nowrap;color:var(--gold);text-transform:uppercase}
+h2{font-size:1.35rem}
+h3{font-size:1.05rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:18px}
+p{margin:.4em 0}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0 10px}
+header .link{font-size:.8rem;color:var(--muted);text-align:right;background:none;border:0;padding:0;font:inherit;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+.note{color:var(--muted);font-size:.85rem}
+.chip{display:inline-block;background:var(--chip);border-radius:999px;padding:2px 10px;font-size:.8rem;color:var(--muted)}
+.btn{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:10px 16px;font:600 .95rem var(--body);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:focus-visible,.opt:focus-visible,nav button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);text-transform:uppercase;letter-spacing:.15em;width:11em}
+.lesson{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0;color:inherit;font:inherit;cursor:pointer}
+.lesson b{display:block;font-family:var(--display);font-size:1.15rem;letter-spacing:.02em}
+.lesson .meter{margin-left:auto;flex:none;width:64px;text-align:right;display:block}.lesson .meter .bar{display:block}
+.bar{height:6px;border-radius:3px;background:var(--chip);overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:var(--bad)}
+.bar.ok i{background:var(--good)}
+.mapbox{background:var(--chip);border-radius:12px;padding:6px;margin:10px 0}
+.mapbox svg{display:block;width:100%;height:auto;max-width:360px;margin:0 auto}
+ul.rules{padding-left:1.1em}ul.rules li{margin:.25em 0}
+.ex{border-left:3px solid var(--bad);padding:4px 10px;margin:8px 0;font-size:.9rem}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:inherit;font:inherit;cursor:pointer}
+.opt.right{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}.opt.wrong{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.why{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--chip)}
+.mine{color:var(--bad);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;background:var(--card);border-top:1px solid var(--line);padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+nav button{flex:1;max-width:180px;background:none;border:0;color:var(--muted);font:600 .8rem var(--body);padding:8px 4px;border-radius:10px;cursor:pointer}
+nav button[aria-selected="true"]{color:var(--accent);background:var(--chip)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}td{padding:6px 4px;border-top:1px solid var(--line)}td.n{text-align:right;font-variant-numeric:tabular-nums}
+.big{font-family:var(--display);font-size:2.2rem;line-height:1;color:var(--accent)}
+.sources a{color:var(--muted)}
+@media (prefers-reduced-motion: no-preference){.card,.lesson{transition:border-color .15s}}
+</style>
+</head>
+<body>
+<header><h1>RiftMate · Macro</h1><button class="link" id="linkBtn" type="button"></button></header>
+<main id="view"></main>
+<nav role="tablist">
+  <button role="tab" id="tYou" type="button">Per a tu</button>
+  <button role="tab" id="tLessons" type="button">Lliçons</button>
+  <button role="tab" id="tQuiz" type="button">Preguntes</button>
+</nav>
+<script src="content.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const get = (k, d) => { try { const v = localStorage.getItem("rm." + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+const put = (k, v) => { try { localStorage.setItem("rm." + k, JSON.stringify(v)); } catch (e) {} };
+const GAME_KINDS = ["farm", "kp", "llencat", "objs"];
+const LBY = Object.fromEntries(LESSONS.map(l => [l.id, l]));
+
+// ---- the link to your PC: a code shown in RiftMate (Coach › Estudia al mòbil). The PC sends a summary of your
+// mistakes through ntfy.sh under that code; this page keeps the last one it got.
+let code = (location.hash.slice(1).replace(/[^A-Za-z0-9]/g, "").toUpperCase() || get("code", "")).slice(0, 8);
+if (location.hash) { history.replaceState(null, "", location.pathname); }
+if (code.length === 8) put("code", code);
+let prof = get("prof", null);
+async function sync(){
+  if (code.length !== 8) return;
+  try {
+    const r = await fetch(`https://ntfy.sh/riftmate-estudi-${code.toLowerCase()}/json?poll=1&since=all`, {cache: "no-store"});
+    const lines = (await r.text()).trim().split("\n").filter(Boolean).map(l => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(x => x?.event === "message");
+    const last = lines[lines.length - 1]; if (!last) return;
+    const p = JSON.parse(last.message); if (p?.v !== 1) return;
+    if (!prof || p.at > prof.at) { prof = p; put("prof", p); render(); }
+  } catch (e) { /* offline: the last summary stays */ }
+}
+function ago(t){ const m = Math.round((Date.now() / 1000 - t) / 60); return m < 60 ? `fa ${m} min` : m < 1440 ? `fa ${Math.round(m / 60)} h` : `fa ${Math.round(m / 1440)} dies`; }
+function linkLabel(){ $("#linkBtn").textContent = prof ? `${prof.games} partides · ${ago(prof.at)}` : code.length === 8 ? "Esperant el PC…" : "Enllaçar amb el PC"; }
+
+// ---- spaced review: each question in a box 0-4; right moves it up (back in 1, 3, 7, 21 days), wrong to box 0
+const DAYS = [0, 1, 3, 7, 21];
+let srs = get("srs", {});
+function grade(id, ok){ const s = srs[id] || {b: 0, n: 0, w: 0}; s.n++; if (ok) s.b = Math.min(4, s.b + 1); else { s.b = 0; s.w++; } s.due = Date.now() + DAYS[s.b] * 864e5; srs[id] = s; put("srs", srs); }
+
+// your questions: one per example from your games, plus the general ones
+function allQuestions(){
+  const mine = (prof?.ex || []).map((e, i) => { const t = PERSONAL[e.t]; if (!t) return null;
+    const id = `p-${e.t}-${e.d}-${e.m}-${e.c}`;
+    return {id, l: t.l, q: t.q(e), o: t.o, a: 0, why: t.why, mine: true}; }).filter(Boolean);
+  return mine.concat(QUESTIONS);
+}
+// how much each lesson matters for you: the PC's score (your mistakes) and how you answer here
+function weight(l){ const s = prof?.score?.[l] ?? 30; return 1 + s / 25; }
+function pickRound(n = 8){
+  const qs = allQuestions(), now = Date.now();
+  const due = qs.filter(q => srs[q.id] && srs[q.id].due <= now && srs[q.id].b < 4).sort((a, b) => srs[a.id].b - srs[b.id].b);
+  const fresh = qs.filter(q => !srs[q.id]).sort((a, b) => (b.mine - a.mine) || (weight(b.l) * Math.random() - weight(a.l) * Math.random()));
+  const rest = qs.filter(q => srs[q.id] && srs[q.id].due > now).sort(() => Math.random() - .5);
+  const out = []; for (const q of [...due, ...fresh, ...rest]) { if (out.length >= n) break; if (!out.includes(q)) out.push(q); }
+  return out;
+}
+const shuffle = q => { const idx = q.o.map((_, i) => i).sort(() => Math.random() - .5); return {...q, o: idx.map(i => q.o[i]), a: idx.indexOf(q.a)}; };
+
+// ---- the map: a sketch of Summoner's Rift (your base bottom-left), with the lesson's marks
+function mapSVG(marks){
+  const P = v => v * 2.4 + 6, Y = v => (100 - v) * 2.4 + 6;
+  let s = `<svg viewBox="0 0 252 252" role="img" aria-label="Esquema del mapa"><rect x="6" y="6" width="240" height="240" rx="14" fill="var(--card)" stroke="var(--line)"/>
+    <path d="M${P(4)} ${Y(4)} L${P(96)} ${Y(96)}" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M${P(8)} ${Y(4)} L${P(8)} ${Y(92)} L${P(96)} ${Y(92)}" fill="none" stroke="var(--line)" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M${P(4)} ${Y(8)} L${P(92)} ${Y(8)} L${P(92)} ${Y(96)}" fill="none" stroke="var(--line)" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M${P(12)} ${Y(88)} L${P(88)} ${Y(12)}" stroke="var(--accent)" stroke-opacity=".16" stroke-width="22" stroke-linecap="round"/>
+    <text x="${P(20)}" y="${Y(76)}" font-size="9" fill="var(--muted)" font-family="Inter,system-ui">riu</text><text x="${P(14)}" y="${Y(-1)}" font-size="9" fill="var(--muted)" font-family="Inter,system-ui">la teva base</text>
+    <circle cx="${P(6)}" cy="${Y(6)}" r="14" fill="var(--accent)" fill-opacity=".35"/><circle cx="${P(94)}" cy="${Y(94)}" r="14" fill="var(--bad)" fill-opacity=".35"/>
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--gold)"/></marker></defs>`;
+  const lab = (x, y, t) => t ? `<text x="${P(x)}" y="${Y(y) - 9}" text-anchor="middle" font-size="10" font-family="Inter,system-ui" fill="var(--fg)">${esc(t)}</text>` : "";
+  for (const m of marks || []) {
+    if (m.k === "arrow") s += `<line x1="${P(m.x)}" y1="${Y(m.y)}" x2="${P(m.x2)}" y2="${Y(m.y2)}" stroke="var(--gold)" stroke-width="3" marker-end="url(#ah)"/>` + lab((m.x + m.x2) / 2, (m.y + m.y2) / 2, m.t);
+    else if (m.k === "zone") s += `<circle cx="${P(m.x)}" cy="${Y(m.y)}" r="${m.r * 2.4}" fill="var(--gold)" fill-opacity=".25" stroke="var(--gold)"/>` + lab(m.x, m.y + m.r, m.t);
+    else if (m.k === "pit") s += `<circle cx="${P(m.x)}" cy="${Y(m.y)}" r="11" fill="var(--bad)" fill-opacity=".3" stroke="var(--bad)"/>` + lab(m.x, m.y + 2, m.t);
+    else if (m.k === "ward") s += `<path d="M${P(m.x)} ${Y(m.y) - 7}l5 7-5 7-5-7z" fill="var(--gold)"/>`;
+    else s += `<circle cx="${P(m.x)}" cy="${Y(m.y)}" r="5" fill="var(--fg)"/>` + lab(m.x, m.y, m.t);
+  }
+  return s + `</svg>`;
+}
+
+// ---- views
+let tab = get("tab", "you"), lessonOpen = null, round = null;
+function setTab(t){ tab = t; lessonOpen = null; put("tab", t); render(); window.scrollTo(0, 0); }
+function examplesFor(l){ return (prof?.ex || []).filter(e => PERSONAL[e.t]?.l === l); }
+function viewYou(){
+  if (code.length !== 8) return `<section class="card"><h2>Enllaça-ho amb el teu PC</h2>
+    <p>Així les preguntes surten dels errors de les teves partides. A RiftMate, al PC, ves a <b>Coach › Estudia al mòbil</b> i escriu aquí el codi.</p>
+    <form id="codeForm" class="row"><input id="codeIn" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" aria-label="Codi"><button class="btn" type="submit">Enllaçar</button></form>
+    <p class="note">Sense codi també pots fer el curs i les preguntes generals.</p></section>` + viewLessonsList();
+  if (!prof) return `<section class="card"><h2>Esperant les teves partides</h2><p>Encara no ha arribat el resum del PC. Obre RiftMate al PC (envia el resum sol uns minuts després d'obrir-lo i després de cada partida) i torna aquí.</p><button class="btn ghost" id="syncBtn" type="button">Tornar a mirar</button></section>` + viewLessonsList();
+  const order = LESSONS.slice().sort((a, b) => (prof.score?.[b.id] ?? 0) - (prof.score?.[a.id] ?? 0));
+  const kinds = Object.entries(prof.rate || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const top = order[0];
+  return `<section class="card"><p class="note">${prof.games} partides${prof.champ ? ` · sobretot ${esc(prof.champ)}` : ""} · ${ago(prof.at)}</p>
+      <h2>Comença per: ${esc(top.name)}</h2><p>${esc(top.intro)}</p>
+      <div class="row"><button class="btn" data-open="${top.id}" type="button">Obrir la lliçó</button><button class="btn ghost" data-quiz="1" type="button">8 preguntes</button></div></section>
+    ${kinds.length ? `<section class="card"><h3>El que més es repeteix</h3><table>${kinds.map(([k, v]) => `<tr><td>${esc(KIND_NAME[k] || k)}</td><td class="n">${GAME_KINDS.includes(k) ? `${Math.round(v * 100)}% de les partides` : `${String(v).replace(".", ",")} per partida`}</td></tr>`).join("")}</table></section>` : ""}
+    <h3>Les lliçons, per ordre d'importància per a tu</h3>${order.map(lessonBtn).join("")}`;
+}
+function lessonBtn(l){ const s = prof?.score?.[l.id]; const done = get("read", {})[l.id];
+  return `<button class="lesson" data-open="${l.id}" type="button"><span><b>${esc(l.name)}</b><span class="note">${esc(l.short)}${done ? " · llegida" : ""}</span></span>
+    ${s != null ? `<span class="meter"><span class="note">${s > 60 ? "molt" : s > 30 ? "força" : "poc"}</span><span class="bar ${s <= 30 ? "ok" : ""}"><i style="width:${Math.max(6, s)}%"></i></span></span>` : ""}</button>`; }
+function viewLessonsList(){ return `<h3>Lliçons</h3>${LESSONS.map(lessonBtn).join("")}`; }
+function viewLesson(l){
+  const ex = examplesFor(l.id);
+  const read = get("read", {}); read[l.id] = true; put("read", read);
+  return `<button class="btn ghost" data-back="1" type="button">‹ Tornar</button>
+    <section class="card"><h2>${esc(l.name)}</h2><p>${esc(l.intro)}</p><div class="mapbox">${mapSVG(l.map)}</div>
+      ${l.sections.map(([h, t]) => `<h3>${esc(h)}</h3><p>${esc(t)}</p>`).join("")}
+      <h3>Les claus</h3><ul class="rules">${l.rules.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+      <h3>Errors típics</h3><ul class="rules">${l.errors.map(r => `<li>${esc(r)}</li>`).join("")}</ul></section>
+    ${ex.length ? `<section class="card"><h3>A les teves partides</h3>${ex.map(e => `<div class="ex">${esc(PERSONAL[e.t].q(e).replace(/ (Què|Quin)[^?]*\?$/, ""))}</div>`).join("")}</section>` : ""}
+    <button class="btn" data-quiz="${l.id}" type="button">Preguntes d'aquesta lliçó</button>`;
+}
+function viewQuiz(){
+  if (!round) {
+    const due = allQuestions().filter(q => srs[q.id] && srs[q.id].due <= Date.now() && srs[q.id].b < 4).length;
+    const seen = Object.keys(srs).length, total = allQuestions().length;
+    return `<section class="card"><h2>Preguntes</h2><p>Rondes de 8: primer les que toca repassar, després les noves (les de les teves partides primer).</p>
+      <p class="note">${seen} de ${total} vistes · ${due} per repassar avui</p><button class="btn" data-quiz="1" type="button">Començar</button></section>`;
+  }
+  const q = round.qs[round.i], ans = round.ans;
+  return `<section class="card"><p class="note">${round.i + 1} de ${round.qs.length} · ${esc(LBY[q.l]?.name || "")}</p>${q.mine ? `<p class="mine">De les teves partides</p>` : ""}
+    <h2>${esc(q.q)}</h2>${q.o.map((o, i) => `<button class="opt ${ans != null ? (i === q.a ? "right" : i === ans ? "wrong" : "") : ""}" data-ans="${i}" type="button" ${ans != null ? "disabled" : ""}>${esc(o)}</button>`).join("")}
+    ${ans != null ? `<div class="why"><b>${ans === q.a ? "Correcte." : "No."}</b> ${esc(q.why)}</div><p><button class="btn" data-next="1" type="button">${round.i + 1 < round.qs.length ? "Següent" : "Acabar"}</button></p>` : ""}</section>`;
+}
+function render(){
+  linkLabel();
+  for (const [id, t] of [["tYou", "you"], ["tLessons", "lessons"], ["tQuiz", "quiz"]]) $("#" + id).setAttribute("aria-selected", tab === t);
+  const v = $("#view");
+  v.innerHTML = lessonOpen ? viewLesson(LBY[lessonOpen]) : tab === "you" ? viewYou() : tab === "lessons" ? viewLessonsList() + sourcesHTML() : viewQuiz();
+}
+const sourcesHTML = () => `<section class="card sources note"><b>Fonts.</b> Els temps dels objectius són del pedaç 26.21; Riot els pot canviar. ${SOURCES.map(([t, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(t)}</a>`).join(" · ")}</section>`;
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.open) { lessonOpen = b.dataset.open; render(); window.scrollTo(0, 0); }
+  else if (b.dataset.back) { lessonOpen = null; render(); }
+  else if (b.dataset.quiz) { const l = b.dataset.quiz; let qs = l === "1" ? pickRound() : allQuestions().filter(q => q.l === l).sort(() => Math.random() - .5).slice(0, 8);
+    round = {qs: qs.map(shuffle), i: 0, ok: 0, ans: null}; tab = "quiz"; lessonOpen = null; render(); window.scrollTo(0, 0); }
+  else if (b.dataset.ans != null && round && round.ans == null) { const q = round.qs[round.i]; round.ans = +b.dataset.ans; const ok = round.ans === q.a; if (ok) round.ok++; grade(q.id, ok); render(); }
+  else if (b.dataset.next) { round.i++; round.ans = null; if (round.i >= round.qs.length) { const ok = round.ok, n = round.qs.length; round = null; $("#view").innerHTML = `<section class="card"><p class="big">${ok} / ${n}</p><p>Les que has fallat tornaran demà; les encertades, d'aquí a uns dies.</p><button class="btn" data-quiz="1" type="button">Una altra ronda</button></section>`; return; } render(); window.scrollTo(0, 0); }
+  else if (b.id === "syncBtn") sync();
+  else if (b.id === "linkBtn") { if (code.length === 8) linkPanel(); else { tab = "you"; lessonOpen = null; render(); } }
+  else if (b.id === "unlink") { code = ""; prof = null; put("code", ""); put("prof", null); render(); }
+});
+function linkPanel(){ $("#view").innerHTML = `<section class="card"><h2>Enllaç amb el PC</h2><p>Codi <b>${code.slice(0, 4)}-${code.slice(4)}</b>${prof ? `: ${prof.games} partides, ${ago(prof.at)}` : ""}.</p><div class="row"><button class="btn ghost" id="syncBtn" type="button">Actualitzar</button><button class="btn ghost" id="unlink" type="button">Treure l'enllaç</button><button class="btn" data-back="1" type="button">Fet</button></div></section>`; }
+document.addEventListener("submit", e => { e.preventDefault(); const v = ($("#codeIn")?.value || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase(); if (v.length !== 8) { $("#codeIn").setCustomValidity("El codi té 8 lletres i números"); $("#codeIn").reportValidity(); return; } code = v; put("code", v); render(); sync(); });
+$("#tYou").onclick = () => setTab("you"); $("#tLessons").onclick = () => setTab("lessons"); $("#tQuiz").onclick = () => setTab("quiz");
+render(); sync();
+document.addEventListener("visibilitychange", () => { if (!document.hidden) sync(); });
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

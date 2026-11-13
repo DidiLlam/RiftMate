@@ -1,0 +1,16 @@
+{
+ "name": "RiftMate Macro",
+ "short_name": "Macro",
+ "description": "Curs de macro de League of Legends a partir dels teus errors",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0e1618",
+ "theme_color": "#0e1618",
+ "lang": "ca",
+ "icons": [
+  {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+  {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+  {"src": "icon-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+ ]
+}

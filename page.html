@@ -295,7 +295,7 @@ button.watch{font-size:.8em;padding:1px 7px;margin-left:6px;border-radius:10px;c
 .frtab td,.frtab th{white-space:nowrap}.frtab img.emb.fr{width:22px;height:22px;vertical-align:middle}.frdel{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 2px}
 .goals td.gk{text-align:center;width:1.6em;padding:4px 2px;font-weight:700}.goals td.ok{color:var(--good)}.goals td.no{color:var(--loss)}.goals td.gs{white-space:nowrap;text-align:right}
 kbd{font:600 .8em var(--mono,monospace);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:var(--panel)}.hk td{vertical-align:middle}
-.mobq{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.mobq p{margin:.3em 0}#mobQR{background:#fff;padding:8px;border-radius:8px;line-height:0}#mobQR img,#mobQR canvas{display:block}.mobq code{word-break:break-all;font-size:.82rem}
+.mobq{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.mobq p{margin:.3em 0}.studycode{font:700 1.6rem var(--mono,monospace);letter-spacing:.12em;margin:.2em 0}#studyQR{background:#fff;padding:8px;border-radius:8px;line-height:0}#mobQR{background:#fff;padding:8px;border-radius:8px;line-height:0}#mobQR img,#mobQR canvas{display:block}.mobq code{word-break:break-all;font-size:.82rem}
 .ovrow{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:6px 0}.ovrow label{display:flex;gap:8px;align-items:center}
 .wtab{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}.wtab th,.wtab td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}.wtab th{font-weight:600;color:var(--muted);font-size:.9em}
 .keyrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -608,6 +608,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div id="coachAnaBody"></div>
       <div class="bar"><button class="b primary" type="button" id="coachAnaBtn">Analitza les meves partides</button><button class="b" type="button" id="coachAnaVoice" hidden>▶ Escolta-ho</button></div>
     </section>
+    <section class="card" id="studyCard"><h2>Estudia al mòbil</h2><div id="studyBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="wfCard"><h2>Objectiu de la setmana</h2><div id="wfBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="goalCard"><h2>Els teus objectius</h2><div id="goalBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="weekCard"><h2>La teva setmana</h2><div id="weekBody"><p class="note">Carregant…</p></div></section>
@@ -4474,6 +4475,21 @@ function renderWeekFocus(){
     <div class="bar"><button class="b" type="button" id="wfNew">Triar-ne un altre ara</button></div>`;
   $("#wfNew")?.addEventListener("click", () => { const cur = wf.area; store.set("weekFocus", null); let n = weekFocus(); if (n && n.area === cur) { const alt = Object.keys(FOCUS).filter(a => a !== cur && FOCUS_METRIC[a]?.u)[0]; n = {...n, area: alt}; store.set("weekFocus", n); } renderWeekFocus(); });
 }
+// the macro course on the phone: its questions start from your own mistakes (the app sends them a summary)
+async function renderStudy(q = ""){
+  const el = $("#studyBody"); if (!el || !location.protocol.startsWith("http")) return;
+  let st; try { st = await (await fetch("/api/study" + q, {method: q ? "POST" : "GET"})).json(); } catch (e) { el.innerHTML = `<p class="bad">No he pogut llegir l'estat.</p>`; return; }
+  const when = st.sent_at ? new Date(st.sent_at * 1000).toLocaleString("ca", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"}) : null;
+  el.innerHTML = `<p>Un curs de macro per al mòbil (onades, tornar a base, objectius, roams, visió…) amb preguntes fetes a partir dels errors de les teves partides. Funciona sense l'ordinador; quan acabes una partida, l'app li envia els errors nous.</p>
+    <div class="mobq"><div id="studyQR"></div><div><p>Obre al mòbil <code data-noi18n>${esc(st.page)}</code> i escriu el codi:</p>
+      <p class="studycode" data-noi18n>${esc(st.code)}</p><p class="note">O escaneja el codi QR: ja porta el codi. Al mòbil, "Afegeix a la pantalla d'inici" i et queda com una app.</p></div></div>
+    <p class="note">${st.games ? `Amb les teves últimes ${st.games} partides.` : "Encara no hi ha partides per analitzar."} ${when ? `Enviat al mòbil: ${when}.` : "Encara no s'ha enviat."}${st.error ? ` <span class="bad">Error: ${esc(st.error)}</span>` : ""}</p>
+    <p class="note">Cada jugador té el seu codi: qui tingui l'app al seu PC veu les seves preguntes. Els errors viatgen pel servei ntfy.sh (el dels temporitzadors compartits), sense noms ni comptes: campions, minuts i llocs.</p>
+    <div class="bar"><button class="b" type="button" id="studySend">Enviar ara</button><button class="b" type="button" id="studyNew">Fer un codi nou</button></div>`;
+  loadQR().then(ok => { const qq = $("#studyQR"); if (ok && qq) { qq.innerHTML = ""; new QRCode(qq, {text: st.url, width: 150, height: 150, colorDark: "#000", colorLight: "#fff"}); } });
+  $("#studySend").addEventListener("click", () => renderStudy("?send=1"));
+  $("#studyNew").addEventListener("click", () => renderStudy("?new=1"));
+}
 function focusRemindTick(t){
   if (!$("#cFocus")?.checked) return;
   const wf = store.get("weekFocus", null); if (!wf || !FOCUS_REMIND[wf.area]) return;
@@ -6104,7 +6120,7 @@ function showTab(r){
   if (v === "M") { renderMmr(); Promise.all([loadRank(false), loadHistory()]).then(renderMmr); }
   if (v === "H") loadRank(false);
   if (v === "A") { const g = $("#setTabs button[aria-selected=true]")?.dataset.g; if (g === "app") loadStatus(); }
-  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); renderWeekFocus(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
+  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); renderWeekFocus(); renderStudy(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
 }
 $("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C")); $("#tabM").addEventListener("click", () => showTab("M")); $("#tabG").addEventListener("click", () => showTab("G"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
