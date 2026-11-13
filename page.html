@@ -329,6 +329,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 #status:empty{display:none}
 .b.small{padding:3px 10px;font-size:.78rem;margin-top:4px}
 .dclip video,.vcd video{width:100%;max-width:560px;border-radius:8px;background:#000;margin-top:6px}
+.stopt td:first-child,.stopt th:first-child{width:34%}.stopt th:not(:first-child){width:16.5%}
 td.n.neg{color:var(--lporange,#ff8f3a)}td.n.pos{color:var(--lpblue,#4b93ff)}
 .mmrbox{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0}.mmrcell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 10px;text-align:center}.mmrcell+.mmrcell{border-left:1px solid var(--line)}
 .mmrnum{font-size:1.7rem;color:var(--lporange,#ff8f3a);font-variant-numeric:tabular-nums}.mmrrank{display:flex;align-items:center;gap:10px;font-size:1.25rem}.mmremb{width:54px;height:54px;object-fit:contain}
@@ -2232,28 +2233,39 @@ let stopGames = null;
 async function renderStop(){
   const el = $("#stopCard"); if (!el) return;
   if (!stopGames) { try { stopGames = (await (await fetch("/api/season/games?days=365", {cache: "no-store"})).json()).games || []; } catch (e) { stopGames = []; } }
-  const g = stopGames.filter(x => x.e).slice().sort((a, b) => a.e - b.e);
-  if (g.length < 30) { el.innerHTML = `<h2>Quan plegar</h2><p class="note">Calen més partides de la temporada per calcular-ho.</p>`; return; }
-  // sessions: games less than 90 minutes apart
-  const pos = [], prev = [];
-  g.forEach((x, i) => { pos.push(i && x.e - g[i - 1].e < 90 * 60 + 2400 ? pos[i - 1] + 1 : 1); prev.push(i && pos[i] > 1 ? g[i - 1].w : null); });
-  const all = g.filter(x => x.w).length / g.length;
-  const row = (label, list) => { const n = list.length, w = list.filter(x => x.w).length, p = n ? w / n : 0, diff = Math.round(100 * (p - all));
-    return n < 8 ? "" : `<tr><td>${label}</td><td class="n">${n}</td><td class="n"><b>${Math.round(100 * p)}%</b></td><td class="n ${diff <= -5 ? "neg" : diff >= 5 ? "pos" : ""}">${diff > 0 ? "+" : ""}${diff}</td></tr>`; };
-  const byPos = [1, 2, 3, 4].map(k => [k === 4 ? "4a o més" : `${k}a`, g.filter((x, i) => k === 4 ? pos[i] >= 4 : pos[i] === k)]);
-  const afterW = g.filter((x, i) => prev[i] === true), afterL = g.filter((x, i) => prev[i] === false);
-  // the advice: the first place in the session from which you win clearly less
-  let stop = 0;
-  for (const k of [2, 3, 4]) { const list = g.filter((x, i) => k === 4 ? pos[i] >= 4 : pos[i] === k); if (list.length >= 15 && list.filter(x => x.w).length / list.length <= all - 0.06) { stop = k; break; } }
-  const lossL = afterL.length >= 15 ? afterL.filter(x => x.w).length / afterL.length : null;
+  // Solo/Duo only, without remakes (they aren't games: they'd count as losses)
+  const g = stopGames.filter(x => x.e && !x.r && (!x.q || x.q === 420)).slice().sort((a, b) => a.e - b.e);
+  if (g.length < 30) { el.innerHTML = `<h2>Quan plegar</h2><p class="note">Calen més partides de Solo/Duo de la temporada per calcular-ho.</p>`; return; }
+  // sessions: a new one when more than ~90 minutes passed since the last game ended (we only have the end: a game
+  // lasts ~30 min, so less than 2 hours between two ends)
+  const pos = [], prev = [], prev2 = [];
+  g.forEach((x, i) => { const same = i && x.e - g[i - 1].e < 120 * 60; pos.push(same ? pos[i - 1] + 1 : 1);
+    prev.push(same ? g[i - 1].w : null); prev2.push(same && pos[i - 1] > 1 ? (!g[i - 1].w && !g[i - 2].w) : null); });
+  const W = g.filter(x => x.w).length, N = g.length, all = W / N;
+  // each group against all the other games (not against an average that includes itself), with a two-proportion test:
+  // with ~100 games a 5-point gap is still within luck
+  const test = list => { const n = list.length, w = list.filter(x => x.w).length, n2 = N - n, w2 = W - w;
+    if (!n || !n2) return {n, p: 0, d: 0, z: 0};
+    const p = w / n, q = w2 / n2, pp = W / N, se = Math.sqrt(pp * (1 - pp) * (1 / n + 1 / n2));
+    return {n, p, d: Math.round(100 * (p - q)), z: se ? (p - q) / se : 0}; };
+  const sure = z => Math.abs(z) >= 1.96 ? 2 : Math.abs(z) >= 1.64 ? 1 : 0;
+  const row = (label, list) => { const t = test(list); if (t.n < 10) return "";
+    const s = sure(t.z), cls = s ? (t.d < 0 ? "neg" : "pos") : "";
+    return `<tr><td>${label}</td><td class="n">${t.n}</td><td class="n"><b>${Math.round(100 * t.p)}%</b></td><td class="n ${cls}">${t.d > 0 ? "+" : ""}${t.d}</td><td class="n">${s === 2 ? "clar" : s === 1 ? "probable" : "pot ser sort"}</td></tr>`; };
+  const at = k => g.filter((x, i) => k === 4 ? pos[i] >= 4 : pos[i] === k);
+  const afterW = g.filter((x, i) => prev[i] === true), afterL = g.filter((x, i) => prev[i] === false), after2L = g.filter((x, i) => prev2[i] === true);
+  // the advice, only from the differences that aren't luck
   const tips = [];
-  if (stop) tips.push(`A partir de la <b>${stop}a partida</b> del dia guanyes clarament menys: plega després de ${stop === 2 ? "la primera" : `la ${stop - 1}a`}.`);
-  if (lossL != null && lossL <= all - 0.06) tips.push(`Després d'una derrota guanyes el <b>${Math.round(100 * lossL)}%</b>: si en perds una, fes una pausa abans de la següent.`);
-  if (!tips.length) tips.push("No hi ha cap moment en què et vagi clarament pitjor: el cansament no et pesa gaire.");
+  for (const k of [2, 3, 4]) { const t = test(at(k)); if (t.n >= 20 && t.d < 0 && sure(t.z)) { tips.push(`A partir de la <b>${k === 4 ? "4a" : `${k}a`} partida</b> del dia guanyes menys (${Math.round(100 * t.p)}%): plega després de ${k === 2 ? "la primera" : `la ${k - 1}a`}.`); break; } }
+  for (const [list, txt] of [[after2L, "dues derrotes seguides"], [afterL, "una derrota"]]) { const t = test(list);
+    if (t.n >= 20 && t.d < 0 && sure(t.z)) { tips.push(`Després de ${txt} guanyes el <b>${Math.round(100 * t.p)}%</b>: aquí és quan has de plegar o fer una pausa llarga.`); break; } }
+  { const t = test(at(1)); if (t.n >= 20 && t.d < 0 && sure(t.z)) tips.push(`La <b>primera partida del dia</b> és la que pitjor et va (${Math.round(100 * t.p)}%): escalfa abans amb una normal o uns minuts a l'eina de pràctica.`); }
+  if (!tips.length) tips.push("Amb les teves partides, cap moment surt clarament pitjor que la resta (les diferències caben dins de la sort): ni la partida del dia ni venir d'una derrota et pesen de manera clara.");
+  const th = l => `<tr><th>${l}</th><th>Partides</th><th>Victòries</th><th>vs la resta</th><th>Fiabilitat</th></tr>`;
   el.innerHTML = `<h2>Quan plegar</h2><p>${tips.join(" ")}</p>
-    <div class="tbl"><table class="bench"><tr><th>Partida del dia</th><th>Partides</th><th>Victòries</th><th>vs mitjana</th></tr>${byPos.map(([l, x]) => row(l, x)).join("")}</table></div>
-    <div class="tbl"><table class="bench"><tr><th>Després de…</th><th>Partides</th><th>Victòries</th><th>vs mitjana</th></tr>${row("una victòria", afterW)}${row("una derrota", afterL)}</table></div>
-    <p class="note">Les ${g.length} partides de Solo/Duo de la temporada; mitjana: ${Math.round(100 * all)}% de victòries. Una sessió són partides amb menys d'una hora i mitja entre elles. Per hores i dies, mira <i>Quan jugues millor</i> a Temporada.</p>`;
+    <div class="tbl"><table class="bench stopt">${th("Partida del dia")}${[1, 2, 3, 4].map(k => row(k === 4 ? "4a o més" : `${k}a`, at(k))).join("")}
+    ${th("Després de…")}${row("una victòria", afterW)}${row("una derrota", afterL)}${row("dues derrotes seguides", after2L)}</table></div>
+    <p class="note">${N} partides de Solo/Duo (sense remakes); mitjana: ${Math.round(100 * all)}%. "vs la resta": punts de diferència amb totes les altres partides. "Clar" vol dir que la diferència és massa gran per ser sort (95%); "probable", gairebé (90%). Ull: les sessions llargues pesen més quan vas guanyant, perquè quan perds plegues abans; per això "4a o més" sol sortir alt. Per hores i dies, mira <i>Quan jugues millor</i> a Temporada.</p>`;
 }
 function renderMmr(){
   const el = $("#mmrBody"); if (!el) return;
