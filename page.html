@@ -222,6 +222,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend svg{width:100%;height:auto;display:block}.trend .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.trend .ref{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.8}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
 .trend .lab{font-size:11px;fill:var(--muted)}.gpicks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.gpick{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color:inherit;cursor:pointer;min-width:74px}.gpick img{width:40px;height:40px;border-radius:8px}.gpick.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.gpick small{font-size:.7rem}
+.gadd input{height:100%;min-height:58px;min-width:150px;border:1px dashed var(--line);border-radius:10px;padding:0 10px;background:transparent;color:inherit}
 .ghead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.ghead img{width:56px;height:56px;border-radius:10px}.ghead>div{flex:1;min-width:180px}.ghead h2{margin:0}
 .gk{display:inline-block;min-width:26px;padding:2px 7px;border:1px solid var(--line);border-radius:6px;font:600 .85rem var(--mono,monospace);text-align:center;background:rgba(127,127,127,.12)}.gk.now{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}.gk.done{opacity:.45}
 .gseq{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:6px 0}.gseq i{color:var(--muted);font-style:normal}.gseq.big .gk{font-size:1.1rem;padding:6px 10px}
@@ -5850,7 +5851,8 @@ function pickSay(role, laner, locked){
 // it (15 games weigh as much as that start); then the matchup: your season against that champion (25 games of
 // weight toward your average) and, at half weight, how the Challenger do in it; the matchup moves it 8 points at most.
 let myMastery = null;
-async function loadMyMastery(){ if (myMastery || !location.protocol.startsWith("http")) return; try { myMastery = await (await fetch("/api/mastery", {cache: "no-store"})).json() || {}; } catch (e) {} }
+// null until Riot answers (no key, no connection): then nothing is said about mastery rather than "0 points"
+async function loadMyMastery(){ if (myMastery || !location.protocol.startsWith("http")) return; try { const j = await (await fetch("/api/mastery", {cache: "no-store"})).json(); if (j && Object.keys(j).length) myMastery = j; } catch (e) {} }
 function mastOf(c){ if (!myMastery) return null; const id = champId(c) || c; const k = Object.keys(myMastery).find(x => norm(x) === norm(id)); return k ? myMastery[k] : 0; }
 function seasonChamp(c){
   const list = seasonData?.queues?.RANKED_SOLO_5x5?.champions || [], x = list.find(y => norm(y.name) === norm(c) || norm(y.champ) === norm(champId(c) || c));
@@ -6514,14 +6516,45 @@ async function guideData(id){
   return guideDD[id];
 }
 const stripTags = h => String(h || "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+// each player chooses his champions; the guide is the written one when there is one, else the AI writes one from the
+// abilities of the current patch (once per champion and patch)
+function guideChamps(){
+  let l = store.get("guideChamps", null);
+  if (!Array.isArray(l)) {
+    l = store.get("guideSel", null) ? Object.keys(CHAMP_GUIDES)   // who already used the first version keeps its champions
+      : (seasonData?.queues?.RANKED_SOLO_5x5?.champions || []).slice().sort((a, b) => (b.games || 0) - (a.games || 0)).slice(0, 3).map(x => x.champ || champId(x.name)).filter(Boolean);
+    store.set("guideChamps", l);
+  }
+  return l;
+}
+const aiGuides = {};
+async function guideFor2(id, dd){
+  if (CHAMP_GUIDES[id]) return CHAMP_GUIDES[id];
+  if (aiGuides[id]) return aiGuides[id];
+  if (!dd) return {error: "No puc fer la guia sense les habilitats de Riot (sense connexió?)."};
+  const kit = [`Passiva — ${dd.passive.name}: ${stripTags(dd.passive.description)}`, ...dd.spells.map((sp, i) => `${"QWER"[i]} — ${sp.name} (recàrrega ${sp.cooldownBurn} s): ${stripTags(sp.description)}`)].join("\n");
+  try { const g = await (await fetch("/api/guideai", {method: "POST", body: JSON.stringify({Champ: id, Name: dd.name, Patch: iconVer, Kit: kit})})).json(); if (!g.error) { g.ai = true; aiGuides[id] = g; } return g; }
+  catch (e) { return {error: "No he pogut demanar la guia."}; }
+}
 async function renderGuides(){
   const el = $("#guideBody"); if (!el) return;
   await loadLearn(); await loadMyMastery();
-  if (!guideSel) guideSel = store.get("guideSel", "Yasuo");
-  const ids = Object.keys(CHAMP_GUIDES);
+  const ids = guideChamps();
+  if (!guideSel || !ids.includes(guideSel)) guideSel = ids.includes(store.get("guideSel", "")) ? store.get("guideSel", "") : ids[0] || null;
   const pick = ids.map(id => { const m = mastOf(id), lrn = guideLearn.includes(id);
-    return `<button type="button" class="gpick ${id === guideSel ? "on" : ""}" data-id="${id}"><img src="${ddChampImg(id)}" alt="" onerror="this.style.visibility='hidden'"><span data-noi18n>${esc(displayChamp(id))}</span>${lrn ? `<small class="good">aprenent</small>` : m ? `<small class="note">${Math.round(m / 1000)}k</small>` : m === 0 ? `<small class="note">nou</small>` : ""}</button>`; }).join("");
-  const g = CHAMP_GUIDES[guideSel], dd = await guideData(guideSel), lrn = guideLearn.includes(guideSel), m = mastOf(guideSel);
+    return `<button type="button" class="gpick ${id === guideSel ? "on" : ""}" data-id="${id}"><img src="${ddChampImg(id)}" alt="" onerror="this.style.visibility='hidden'"><span data-noi18n>${esc(displayChamp(id))}</span>${lrn ? `<small class="good">aprenent</small>` : m ? `<small class="note">${Math.round(m / 1000)}k</small>` : m === 0 ? `<small class="note">nou</small>` : ""}</button>`; }).join("")
+    + `<span class="gadd"><input id="gAdd" list="gAddList" placeholder="Afegir campió…" autocomplete="off"><datalist id="gAddList">${CHAMPS.filter(c => !ids.includes(champId(c) || c)).map(c => `<option value="${esc(c)}">`).join("")}</datalist></span>`;
+  const bindPick = () => {
+    el.querySelectorAll(".gpick").forEach(b => b.addEventListener("click", () => { guideSel = b.dataset.id; store.set("guideSel", guideSel); comboStop(); renderGuides(); }));
+    $("#gAdd")?.addEventListener("change", e => { const name = CHAMPS.find(c => norm(c) === norm(e.target.value)); if (!name) return; const id = champId(name) || name;
+      const l = guideChamps(); if (!l.includes(id)) { l.push(id); store.set("guideChamps", l); } guideSel = id; store.set("guideSel", id); renderGuides(); });
+  };
+  if (!guideSel) { el.innerHTML = `<div class="gpicks">${pick}</div><p class="note">Afegeix els campions que vulguis aprendre o millorar.</p>`; bindPick(); return; }
+  const dd = await guideData(guideSel), lrn = guideLearn.includes(guideSel), m = mastOf(guideSel);
+  if (!CHAMP_GUIDES[guideSel] && !aiGuides[guideSel]) { el.innerHTML = `<div class="gpicks">${pick}</div><section class="card"><p class="note">Preparant la guia de ${esc(displayChamp(guideSel))}…</p></section>`; bindPick(); }
+  const g = await guideFor2(guideSel, dd);
+  if (g.error) { el.innerHTML = `<div class="gpicks">${pick}</div><section class="card"><p class="bad">${esc(g.error)}</p><div class="bar"><button class="b" type="button" id="gRemove">Treure'l de la llista</button></div></section>`; bindPick();
+    $("#gRemove")?.addEventListener("click", () => { store.set("guideChamps", guideChamps().filter(x => x !== guideSel)); guideSel = null; renderGuides(); }); return; }
   const keys = ["Q", "W", "E", "R"];
   const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p></div></li>`,
     ...dd.spells.map((sp, i) => `<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${sp.image.full}" alt=""><div><b><span class="gk">${keys[i]}</span> ${esc(sp.name)}</b> <small class="note">recàrrega ${esc(sp.cooldownBurn)} s</small><p class="note">${esc(stripTags(sp.description))}</p></div></li>`)].join("")
@@ -6539,7 +6572,8 @@ async function renderGuides(){
   const warn = m != null && m < 12000 ? `<p class="csban bad">Tens ${m.toLocaleString("ca")} punts de maestria: en partides reals, amb tan poca es guanya al voltant del ${Math.round(50 + masteryPP(m))}%. Juga'l a normals fins als 12.000 punts (a partir d'aquí ja es guanya com amb qualsevol altre).</p>` : "";
   el.innerHTML = `<div class="gpicks">${pick}</div>
     <section class="card"><div class="ghead"><img src="${ddChampImg(guideSel)}" alt=""><div><h2 data-noi18n>${esc(displayChamp(guideSel))}</h2><p>${esc(g.role)}</p></div>
-      <label class="ph-item"><input type="checkbox" id="gLearn" ${lrn ? "checked" : ""}><span>L'estic aprenent</span></label></div>${warn}
+      <label class="ph-item"><input type="checkbox" id="gLearn" ${lrn ? "checked" : ""}><span>L'estic aprenent</span></label><button class="b" type="button" id="gRemove" title="Treure'l de la llista">Treure</button></div>${warn}
+      ${g.ai ? `<p class="note">Guia escrita per la IA a partir de les habilitats d'aquest pedaç (no n'hi ha cap de revisada per a aquest campió): fes-la servir de punt de partida.</p>` : ""}
       <h3>Claus</h3><ul class="cslist">${g.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
       <p><b>Moments forts:</b> ${esc(g.spikes)}</p></section>
     <section class="card"><h2>Combos</h2>
@@ -6552,10 +6586,11 @@ async function renderGuides(){
       <p class="note">${esc(g.practice)}</p></section>
     <section class="card"><h2>Habilitats <small class="note">(pedaç ${esc(iconVer)})</small></h2><ul class="gabil">${abil}</ul></section>
     <section class="card"><h2>Build i runes dels millors</h2>${build}</section>
-    <p class="note">Habilitats: Data Dragon de Riot, del pedaç actual. Combos: llistes de Mobalytics, resumits. Maestria: iTero (1M+ partides).</p>`;
+    <p class="note">Habilitats: Data Dragon de Riot, del pedaç actual. ${g.ai ? "Claus i combos: la IA, a partir d'aquestes habilitats." : "Combos: llistes de Mobalytics, resumits."} Maestria: iTero (1M+ partides).</p>`;
   try { $("#gFlash").value = store.get("flashKey", "D"); } catch (e) {}
   $("#gFlash")?.addEventListener("change", e => store.set("flashKey", e.target.value));
-  el.querySelectorAll(".gpick").forEach(b => b.addEventListener("click", () => { guideSel = b.dataset.id; store.set("guideSel", guideSel); comboStop(); renderGuides(); }));
+  bindPick();
+  $("#gRemove")?.addEventListener("click", () => { store.set("guideChamps", guideChamps().filter(x => x !== guideSel)); guideSel = null; comboStop(); renderGuides(); });
   $("#gLearn")?.addEventListener("change", async e => {
     const set = new Set(guideLearn); e.target.checked ? set.add(guideSel) : set.delete(guideSel); guideLearn = [...set].slice(0, 5);
     try { guideLearn = await (await fetch("/api/learn", {method: "POST", body: JSON.stringify(guideLearn)})).json(); } catch (x) {}
@@ -6566,7 +6601,7 @@ async function renderGuides(){
 }
 // the trainer: the keys of the combo in order, as fast as you can; a mistake starts it again
 let ctr = null;
-function keyOf(step){ if (step === "AA") return "AA"; if (step === "F") return store.get("flashKey", "D"); if (step === "RW") return "R"; return step[0]; }
+function keyOf(step){ if (step === "AA") return "AA"; if (step === "F") return store.get("flashKey", "D"); return step[0]; }
 function comboStop(){ if (ctr) { document.removeEventListener("keydown", ctr.kd, true); ctr.box?.removeEventListener("mousedown", ctr.md); ctr.box?.removeEventListener("contextmenu", ctr.cm); } ctr = null; }
 function comboTrain(c){
   comboStop();
