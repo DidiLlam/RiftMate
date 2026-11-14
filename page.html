@@ -1147,6 +1147,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "1 de visió per minut (2 de suport)": ["1 de visión por minuto (2 de support)", "1 vision score per minute (2 as support)"],
   "Marcar-les totes com a vistes ({n})": ["Marcarlas todas como vistas ({n})", "Mark all as watched ({n})"],
   "1 jugada nova": ["1 jugada nueva", "1 new play"], "{n} jugades noves": ["{n} jugadas nuevas", "{n} new plays"],
   "Temporada": ["Temporada", "Season"],
@@ -6955,7 +6956,9 @@ let frLoaded = false;
 // ---------- goals: the lessons the AI keeps repeating, as three numbers checked after every game ----------
 const GOALS = [
   {k: "cs", t: "80 de farm al minut 10", f: r => { if (r.role === "UTILITY" || r.role === "JUNGLE") return null; const v = r.cs?.["10"]; return v == null ? null : {ok: v >= 80, v: `${v}`}; }},
-  {k: "ward", t: "2 wards cada 3 minuts", f: r => { const w = r.map?.stats?.me?.wards, m = minutesOf(r); if (w == null || !m) return null; const per3 = w / m * 3; return {ok: per3 >= 2, v: per3.toFixed(1).replace(".", ",")}; }},
+  // vision score counts everything (wards placed, control wards, wards destroyed with the lens), so it works with
+  // any trinket; the bar is the one the report uses: 1 per minute, 2 as support
+  {k: "vis", t: "1 de visió per minut (2 de suport)", f: r => { const v = r.map?.stats?.me?.vision ?? r.vision, m = minutesOf(r); if (v == null || !m) return null; const pm = v / m; return {ok: pm >= (r.role === "UTILITY" ? 2 : 1), v: pm.toFixed(1).replace(".", ",")}; }},
   {k: "deep", t: "Cap mort a la jungla rival sense wards", f: r => { const di = r.map?.death_info; if (!di) return null; const n = di.filter(d => /jungla rival/.test(d.zone) && !d.wards).length; return {ok: n === 0, v: String(n)}; }},
 ];
 function renderGoals(){
