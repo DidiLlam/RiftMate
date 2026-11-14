@@ -1,7 +1,7 @@
 {
- "version": "2.2.2",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.2.exe",
- "size": 10133504,
- "sha256": "97ae356c6d961e24eaf6fd9218fc8edf41ad3508f1b2c6ce107d2a1ec4134998",
- "notes": "- Nou: Estudia al mòbil (Coach): curs de macro per al mòbil amb preguntes fetes a partir dels errors de les teves partides\n- Cada jugador té el seu codi; l'app envia els errors nous després de cada partida"
+ "version": "2.2.3",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.3.exe",
+ "size": 10137088,
+ "sha256": "4d77ad9fa7063aeea8fdcfc157aefded05e3aefb10561694b8bf2a9fc54bd9e6",
+ "notes": "- Escuts oficials de lliga: més temps per descarregar-los amb connexions lentes, un segon intent, i si no, els agafa del client de LoL"
 }
