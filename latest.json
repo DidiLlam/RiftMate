@@ -1,7 +1,7 @@
 {
- "version": "2.3.6",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.6.exe",
- "size": 10210816,
- "sha256": "5634bd526264e39e5fd8631f7018fc59787a4b6fe5318a9aed82a7d2b98a0415",
- "notes": "- Best plays: etiqueta NEW a les jugades que no has vist i el nombre de noves a la pestanya"
+ "version": "2.3.7",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.7.exe",
+ "size": 10211328,
+ "sha256": "f9f0a3cc6140fc51e3439f8f7ab4a9d31d3c4aa0f81a40e2447a09123769ec60",
+ "notes": "- Avís de derrotes seguides: ara a partir de 3, no de 2"
 }
