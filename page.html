@@ -1230,6 +1230,11 @@ const I18N = {
   "El jungla rival és {x} i pot gankejar a nivell 2. Posa ja el ward groc a l'arbust del riu i juga cap a aquell costat.": ["El jungla rival es {x} y puede gankear a nivel 2. Pon ya el ward amarillo en el arbusto del río y juega hacia ese lado.", "The enemy jungler is {x} and can gank at level 2. Put your yellow ward in the river brush now and play toward that side."],
   "Cap al minut 3 pot arribar el primer gank. Posa el ward groc en un arbust del riu i juga més a prop d'aquell costat.": ["Hacia el minuto 3 puede llegar el primer gank. Pon el ward amarillo en un arbusto del río y juega más cerca de ese lado.", "The first gank can come around minute 3. Put your yellow ward in a river brush and play closer to that side."],
   "Quan tinguis l'onada empesa cap a la seva torre, posa el ward a l'arbust del red buff rival o als raptors. Si hi veus el jungla, ja saps on no és.": ["Cuando tengas la oleada empujada hacia su torre, pon el ward en el arbusto del red buff rival o en los raptores. Si ves al jungla allí, ya sabes dónde no está.", "When your wave is pushed to their tower, ward the enemy red buff brush or raptors. If you see the jungler there, you know where he isn't."],
+  "Fa estona que no poses el ward groc.": ["Hace rato que no pones el ward amarillo.", "You haven't placed your yellow ward in a while."],
+  "Fa estona que no poses el ward groc: posa'l abans d'avançar.": ["Hace rato que no pones el ward amarillo: ponlo antes de avanzar.", "You haven't placed your yellow ward in a while: place it before you push forward."],
+  "Drac en un minut: fes servir la lent de l'oracle a l'entrada del riu cap al drac per treure els seus wards.": ["Dragón en un minuto: usa la lente del oráculo en la entrada del río hacia el dragón para quitar sus wards.", "Dragon in a minute: use Oracle Lens at the river entrance to dragon to clear their wards."],
+  "Baró en un minut: fes servir la lent de l'oracle a l'entrada del riu cap al baró per treure els seus wards.": ["Barón en un minuto: usa la lente del oráculo en la entrada del río hacia el barón para quitar sus wards.", "Baron in a minute: use Oracle Lens at the river entrance to Baron to clear their wards."],
+  "Portes {n} de visió; a les partides que guanyes, a aquest minut en tens uns {m}. Amb la lent, compra un ward de control a cada tornada i treu els seus wards abans dels objectius.": ["Llevas {n} de visión; en las partidas que ganas, a este minuto tienes unos {m}. Con la lente, compra un ward de control en cada vuelta y quita sus wards antes de los objetivos.", "Your vision score is {n}; in your won games you have about {m} at this minute. With the lens, buy a control ward every back and clear their wards before objectives."],
   "Fa estona que no tens cap ward posat. Fes servir el ward groc.": ["Hace rato que no tienes ningún ward puesto. Usa el ward amarillo.", "You haven't had a ward up for a while. Use your yellow ward."],
   "Portes un ward de control: posa'l a l'entrada del riu cap al drac abans que hi arribin.": ["Llevas un ward de control: ponlo en la entrada del río hacia el dragón antes de que lleguen.", "You have a control ward: place it at the river entrance to dragon before they get there."],
   "Portes un ward de control: posa'l a l'entrada del baró abans que hi arribin.": ["Llevas un ward de control: ponlo en la entrada del barón antes de que lleguen.", "You have a control ward: place it at the Baron entrance before they get there."],
@@ -2396,7 +2401,7 @@ function duoApply(m){
   const i = [0, 1, 2, 3, 4].find(k => { const n = $(`#name${k}`).value.trim(); return n && (norm(rowEnglish(k) || "") === norm(m.champ) || norm(n) === norm(m.champ)); });
   if (i == null) { plog(`Duo: ${m.champ} no és a la teva partida`); return; }
   const who = $(`#name${i}`).value.trim(), sp = m.spell;
-  if (!["R", "Zhonya"].includes(sp) && game?.spells?.[i] && !game.spells[i].includes(sp)) return;
+  if (!["R", "Zhonya"].includes(sp) && game?.spells?.[i] && !game.spells[i].includes(sp)) { plog(`Duo: ${sp} ${m.champ} no quadra amb els encanteris que porta`); return; }
   duoApplying = true;
   try {
     const slot = slotFor(i, sp), key = `${i}-${slot}`;
@@ -3146,7 +3151,7 @@ function dataReminder(t, me){
   const ward = me.scores?.wardScore ?? null, vis = avg(r => { const v = r.map?.stats?.me?.vision ?? r.vision; return v == null ? null : v / minutesOf(r); });
   if (vis && ward != null && t >= 600 && t - (said.vis || 0) > 300) {
     const exp = Math.round(vis * t / 60);
-    if (ward < exp * 0.6 && exp - ward >= 5) { said.vis = t; return `Portes ${Math.round(ward)} de visió; a les partides que guanyes, a aquest minut en tens uns ${exp}. Posa el ward groc i compra'n un de control.`; }
+    if (ward < exp * 0.6 && exp - ward >= 5) { said.vis = t; const lensNow = (me.items || []).some(x => x.itemID === 3364); return lensNow ? `Portes ${Math.round(ward)} de visió; a les partides que guanyes, a aquest minut en tens uns ${exp}. Amb la lent, compra un ward de control a cada tornada i treu els seus wards abans dels objectius.` : `Portes ${Math.round(ward)} de visió; a les partides que guanyes, a aquest minut en tens uns ${exp}. Posa el ward groc i compra'n un de control.`; }
   }
   return null;
 }
@@ -4662,7 +4667,7 @@ function renderTrends(){
 // right after the minions meet against a level-2 ganker); MetaBot.GG warding guide, Oct 2026 (vision around dragon
 // or Baron a minute-plus early, Oracle Lens once the game turns into grouped fights).
 // Stealth Ward: 2 charges, recharge 210-120 s with the average level (League of Legends Wiki).
-const STEALTH_WARD = 3340;
+const STEALTH_WARD = 3340, ORACLE_LENS = 3364;
 const LVL2_GANKERS = ["Twitch", "Jarvan IV", "Elise", "Lee Sin", "Shaco"];
 function visStart(data, t){
   const me = playerBy(data, game.me);
@@ -4787,8 +4792,9 @@ function visTick(data, t, me){
     once("v-six", "Ets nivell 6. Abans de fer roam, posa un ward als raptors rivals per saber on és el jungla.");
   // the yellow ward is sitting unused during the laning phase (no vision score for 150 s; every 3 min if the game doesn't report it)
   const idle = score != null ? t - v.lastChange >= 150 : t - v.idleAt >= 180;
-  if (role !== "UTILITY" && t >= 240 && !me.isDead && idle && t - v.idleAt >= 180 && v.idleSaid < 10 && t - (coach.lastSaidAt ?? 0) >= 8) {
-    v.idleSaid++; v.idleAt = t; say(t < 840 && laner && ids.includes(STEALTH_WARD) ? "Fa 3 minuts que no poses cap ward. " + where() : "Fa 3 minuts que no poses cap ward: posa'n un abans d'avançar.");
+  const lens = ids.includes(ORACLE_LENS) && !ids.includes(STEALTH_WARD);
+  if (role !== "UTILITY" && !lens && ids.includes(STEALTH_WARD) && t >= 240 && !me.isDead && idle && t - v.idleAt >= 240 && v.idleSaid < 4 && t - (coach.lastSaidAt ?? 0) >= 8) {
+    v.idleSaid++; v.idleAt = t; say(t < 840 && laner ? "Fa estona que no poses el ward groc. " + where() : "Fa estona que no poses el ward groc: posa'l abans d'avançar.");
   }
   // just bought a control ward during the laning phase
   const ctrl = ids.includes(CONTROL_WARD);
@@ -4803,6 +4809,7 @@ function visTick(data, t, me){
     const at = help?.obj?.[k]; if (!(at > 0 && at < Infinity && t >= at - 60 && t < at - 30)) continue;
     const key = k + Math.round(at); if (v.seenObj.has(key)) continue; v.seenObj.add(key);
     const what = ctrl ? "el ward de control" : "el ward groc";
+    if (!ctrl && ids.includes(ORACLE_LENS) && !ids.includes(STEALTH_WARD)) { say(k === "drag" ? "Drac en un minut: fes servir la lent de l'oracle a l'entrada del riu cap al drac per treure els seus wards." : "Baró en un minut: fes servir la lent de l'oracle a l'entrada del riu cap al baró per treure els seus wards."); continue; }
     say(k === "drag" ? `Posa ${what} a l'entrada del riu cap al drac, pel costat de la seva jungla, abans que hi arribin.` : `Posa ${what} a l'entrada del riu cap al baró, pel costat de la seva jungla, abans que hi arribin.`);
   }
   // grouped fights start: swap to Oracle Lens
@@ -4835,15 +4842,16 @@ function reportVision(r){
   const spots = (WARD_SPOTS[r.role] || WARD_SPOTS._).concat(r.role === "MIDDLE" ? [] : WARD_SPOTS.MIDDLE.filter(x => x.kind === "safe")).map(p => mirror ? {...p, x: 14750 - p.x, y: 14860 - p.y} : p);
   const vis = md.stats?.me?.vision ?? r.vision, pm = vis != null ? vis / minutesOf(r) : null, sup = r.role === "UTILITY", ref = sup ? 2 : 1, ctrl = md.stats?.me?.control;
   const jp = md.jg_path || null, wt = md.ward_t || (jp ? [] : null), jgc = md.jg_champ || "el jungla rival", mm = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
-  const deaths = (md.events || []).filter(e => e.kind === "death"), di = md.death_info || [];
+  const deaths = (md.events || []).filter(e => e.kind === "death"), di = md.death_info || [], lensT = md.lens_t || 0;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), art = t => { t = t.toLowerCase(); return /^[aeiouh]/.test(t) ? "l'" + t : /^raptors/.test(t) ? "els " + t : "el " + t; }, aZone = z => !z ? "" : z.startsWith("la ") ? "a " + z : /^(base|part)/.test(z) ? "a la " + z : "al " + z;
   const facts = [], items = [], marks = [], used = new Map();
   if (pm != null) facts.push(`<b class="${pm >= ref ? "good" : "bad"}">${fmt1(pm)}</b> de visió per minut (referència: ${ref} o més)`);
   if (wt) facts.push(`<b>${wt.length}</b> wards posats (${wt.filter(w => w[1]).length} de control)`);
+  if (lensT) facts.push(`lent de l'oracle des del minut <b>${Math.round(lensT / 60)}</b>${md.ward_kills != null ? ` · <b>${md.ward_kills}</b> ${md.ward_kills === 1 ? "ward rival destruït" : "wards rivals destruïts"}` : ""}`);
   else if (ctrl != null) facts.push(`<b class="${ctrl >= 2 ? "good" : ctrl === 0 ? "bad" : ""}">${ctrl}</b> ${ctrl === 1 ? "ward de control" : "wards de control"}`);
   const spotNo = sp => { if (!used.has(sp)) used.set(sp, used.size + 1); return used.get(sp); };
   // 1. deaths with no ward in the 3 minutes before (laning phase and mid game), and the spot that would have shown it
-  deaths.filter(e => e.t < 1500).forEach(e => {
+  deaths.filter(e => e.t < 1500 && !(lensT && e.t > lensT + 60)).forEach(e => {
     const info = di.find(d => Math.abs(d.t - e.t) < 3); if (!info || info.wards > 0 || /torre|minions/.test(info.killer || "")) return;
     const sp = spots.filter(p => p.kind !== "obj" || e.t > 300).reduce((a, p) => !a || dist(p, e) < dist(a, e) ? p : a, null); if (!sp || dist(sp, e) > 4500) return;
     const n = spotNo(sp), jgNear = jp && jp.filter(f => f[0] <= e.t && f[0] >= e.t - 120).some(f => Math.hypot(f[1] - sp.x, f[2] - sp.y) < 3000);
@@ -4852,15 +4860,16 @@ function reportVision(r){
   });
   // 2. long stretches without a ward (between minute 2 and the end, or minute 25)
   if (wt) {
-    const end = Math.min(minutesOf(r) * 60, 1500), times = [90].concat(wt.map(w => w[0]).filter(t => t > 90 && t < end), [end]);
+    const end = Math.min(minutesOf(r) * 60, 1500, lensT ? lensT : Infinity), times = [90].concat(wt.map(w => w[0]).filter(t => t > 90 && t < end), [end]);
     for (let i = 1; i < times.length; i++) { const gap = times[i] - times[i - 1];
       if (gap >= 240) { const dd = deaths.filter(e => e.t > times[i - 1] && e.t < times[i]).length;
         items.push(`<li>Del <b>${mm(times[i - 1])}</b> al <b>${mm(times[i])}</b> no vas posar cap ward (${Math.round(gap / 60)} minuts)${dd ? `: hi vas morir ${dd === 1 ? "una vegada" : dd + " vegades"}` : ""}. El ward groc es recarrega sol: posa'l cada vegada que el tinguis.</li>`); } }
+    // with the lens the yellow ward is gone, so an objective needs a control ward (or the lens to clear theirs)
     // 3. objectives the enemy took with no ward from you in the 90 s before
     for (const o of (r.objectives || []).filter(o => !o.ours && /drac|bar|herald|larv/i.test(o.obj || o.label || ""))) {
       const t = o.t, had = wt.some(w => w[0] >= t - 90 && w[0] <= t);
       if (!had) { const sp = spots.find(p => p.kind === "obj" && (/drac/i.test(o.obj || o.label) ? /drac/.test(p.t) : /bar/.test(p.t))); const n = sp ? spotNo(sp) : null;
-        items.push(`<li><b>${mm(t)}</b> · el rival va fer ${esc((o.obj || o.label || "un objectiu").toLowerCase())} i no havies posat cap ward el minut i mig abans${sp ? `: el lloc era <b>${esc(art(sp.t))}</b> (${n})` : ""}.</li>`); }
+        items.push(`<li><b>${mm(t)}</b> · el rival va fer ${esc((o.obj || o.label || "un objectiu").toLowerCase())} i no havies posat cap ward el minut i mig abans${sp ? `: el lloc era <b>${esc(art(sp.t))}</b> (${n})` : ""}${lensT && t > lensT ? ". Amb la lent, el ward de control és el que hi has de posar, i la lent per treure els seus" : ""}.</li>`); }
     }
   }
   // 4. where the enemy jungler spent the laning phase (minutes 2-8): your side of the map or the other?

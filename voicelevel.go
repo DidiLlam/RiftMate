@@ -41,7 +41,7 @@ func voiceLoudEnough(db float64, learn bool) (bool, float64) {
 		ref = s[len(s)*7/10] // your usual level: a bit above the middle, so a few quiet ones don't pull it down
 		ok = db >= ref-vlMargin
 	}
-	if ok && learn {
+	if ok && learn && db <= -8 { // a bang or a shout near full scale isn't your usual voice: it would raise the bar
 		vlL = append(vlL, db)
 		if len(vlL) > 60 {
 			vlL = vlL[len(vlL)-60:]

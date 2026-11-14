@@ -43,9 +43,11 @@ var (
 	duoConn   bool
 	duoGen    int // bumped when the code changes: the old listener stops
 	duoLastIn time.Time
-	duoGameCh string              // the channel of this game and team ("" outside a game)
-	duoSeen   = map[string]bool{} // message ids already taken (the same one can come by both channels)
-	curTeam   atomic.Value        // "ORDER" / "CHAOS" of the game being played
+	duoGameCh string                // the channel of this game and team ("" outside a game)
+	duoSeen   = map[string]bool{}   // message ids already taken (the same one can come by both channels)
+	curTeam   atomic.Value          // "ORDER" / "CHAOS" of the game being played
+	duoGameAt time.Time             // when this game's channel started (to read what teammates sent before we connected)
+	duoLastID = map[string]string{} // the last message id read on each channel: after a cut, carry on from there
 )
 
 // duoGameStart: called when the game id is known (and with 0 at the end): listen on this game's team channel
@@ -59,6 +61,9 @@ func duoGameStart(gameID int64) {
 	duoMu.Lock()
 	same := ch == duoGameCh
 	duoGameCh = ch
+	if !same {
+		duoGameAt = time.Now()
+	}
 	duoMu.Unlock()
 	if !same {
 		if ch != "" {
@@ -161,12 +166,19 @@ func duoStart() {
 				if !alive {
 					return
 				}
+				t0 := time.Now()
 				err := duoListen(gen, c, ch)
+				duoMu.Lock()
+				duoConn = false
+				duoMu.Unlock()
 				if err != nil {
-					logf("Duo: connexió perduda (%v), reintento", err)
+					logf("Duo: connexió perduda (%v), reconnecto", err)
+				}
+				if time.Since(t0) > 30*time.Second {
+					wait = time.Second
 				}
 				time.Sleep(wait)
-				if wait < time.Minute {
+				if wait < 15*time.Second {
 					wait *= 2
 				}
 			}
@@ -177,7 +189,19 @@ func duoStart() {
 var duoHTTP = &http.Client{} // the listener stays open; no overall timeout
 
 func duoListen(gen int, c duoCfg, ch string) error {
-	req, _ := http.NewRequest("GET", duoBase()+"/"+ch+"/json", nil)
+	// read from where we left off (a message sent while the connection was down isn't lost); on the game's channel,
+	// from the start of the game (a teammate whose app connected sooner may have marked something already)
+	duoMu.Lock()
+	since := duoLastID[ch]
+	if since == "" && ch == duoGameCh && !duoGameAt.IsZero() {
+		since = strconv.FormatInt(duoGameAt.Add(-2*time.Minute).Unix(), 10)
+	}
+	duoMu.Unlock()
+	u := duoBase() + "/" + ch + "/json"
+	if since != "" {
+		u += "?since=" + since
+	}
+	req, _ := http.NewRequest("GET", u, nil)
 	r, err := duoHTTP.Do(req)
 	if err != nil {
 		return err
@@ -186,9 +210,36 @@ func duoListen(gen int, c duoCfg, ch string) error {
 	if r.StatusCode != 200 {
 		return &httpErr{r.StatusCode}
 	}
+	// ntfy sends a keepalive every 45 s: two minutes of nothing means the connection died without saying so
+	alive := make(chan struct{}, 1)
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		t := time.NewTimer(2 * time.Minute)
+		defer t.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-alive:
+				if !t.Stop() {
+					<-t.C
+				}
+				t.Reset(2 * time.Minute)
+			case <-t.C:
+				logf("Duo: el canal no respon fa 2 minuts, reconnecto")
+				r.Body.Close()
+				return
+			}
+		}
+	}()
 	sc := bufio.NewScanner(r.Body)
 	sc.Buffer(make([]byte, 64<<10), 64<<10)
 	for sc.Scan() {
+		select {
+		case alive <- struct{}{}:
+		default:
+		}
 		duoMu.Lock()
 		if gen != duoGen {
 			duoMu.Unlock()
@@ -197,11 +248,17 @@ func duoListen(gen int, c duoCfg, ch string) error {
 		duoConn = true
 		duoMu.Unlock()
 		var ev struct {
+			ID      string `json:"id"`
 			Event   string `json:"event"`
 			Message string `json:"message"`
 		}
 		if json.Unmarshal(sc.Bytes(), &ev) != nil || ev.Event != "message" {
 			continue
+		}
+		if ev.ID != "" {
+			duoMu.Lock()
+			duoLastID[ch] = ev.ID
+			duoMu.Unlock()
 		}
 		var m map[string]any
 		if json.Unmarshal([]byte(ev.Message), &m) != nil {
@@ -262,6 +319,9 @@ func duoSend(msg map[string]any) error {
 		if r.StatusCode != 200 {
 			last = &httpErr{r.StatusCode}
 		}
+	}
+	if last == nil {
+		logf("Duo: enviat %v %v (torna al segon %v)", msg["spell"], msg["champ"], msg["back"])
 	}
 	return last
 }
