@@ -1,7 +1,7 @@
 {
- "version": "2.3.5",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.5.exe",
- "size": 10208256,
- "sha256": "4618f6ac73f61efe02ba418eb4d22874ce476b34d9af6148358f9ea3958c4fb1",
- "notes": "- Duo: els temporitzadors ja no es perden si la connexió es talla (reprèn on ho havia deixat i llegeix el que el company ha marcat abans de connectar)\n- Lent de l'oracle: el coach i l'informe ja no et demanen wards grocs quan l'has canviada\n- Registre: diu què envies al duo"
+ "version": "2.3.6",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.6.exe",
+ "size": 10210816,
+ "sha256": "5634bd526264e39e5fd8631f7018fc59787a4b6fe5318a9aed82a7d2b98a0415",
+ "notes": "- Best plays: etiqueta NEW a les jugades que no has vist i el nombre de noves a la pestanya"
 }
