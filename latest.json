@@ -1,7 +1,7 @@
 {
- "version": "2.3.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.1.exe",
- "size": 10173952,
- "sha256": "7f305108be178c20105e0025f141e5955128d80424c5a7146a9b4fc60bbf9b79",
- "notes": "- Best plays: només jugades de 90 punts o més\n- App del mòbil: es pot posar a la pantalla d'inici i recorda el codi"
+ "version": "2.3.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.2.exe",
+ "size": 10187264,
+ "sha256": "7820172ee5b07f0aa13fc91f37a7c8656205943d2ef1fa870245452ce6077a73",
+ "notes": "- Best plays: el rànquing queda guardat per sempre a GitHub, encara que no tinguis l'app oberta\n- Avís quan algú t'avança al rànquing (notificació de Windows i a l'app)"
 }
