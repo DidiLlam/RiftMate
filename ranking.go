@@ -28,6 +28,8 @@ const rankTopic = "riftmate-millors-jugades-v1-7q4k"
 // only the really good ones: the ranking is for the best plays, not every decent one
 const rankMin = 90
 
+const rankGitHub = "https://github.com/DidiLlam/RiftMate/releases/download/ranking/"
+
 type rankEntry struct {
 	ID    string `json:"id"`
 	Name  string `json:"n"`
@@ -38,6 +40,7 @@ type rankEntry struct {
 	Kills int    `json:"k,omitempty"`
 	At    int64  `json:"at"` // when it was played (unix)
 	Video bool   `json:"v,omitempty"`
+	VURL  string `json:"vurl,omitempty"` // the clip kept on GitHub (the ranking release), for when ntfy no longer has it
 	Mine  bool   `json:"mine,omitempty"`
 	Seen  int64  `json:"seen,omitempty"` // when this app heard it
 }
@@ -48,6 +51,7 @@ type rankCfg struct {
 	Sent     map[string]int64 `json:"sent,omitempty"`  // own play id -> last time sent (data)
 	VidSent  map[string]int64 `json:"vsent,omitempty"` // own play id -> last time the clip was sent
 	Since    string           `json:"since,omitempty"` // the last message id read from the channel
+	Told     map[string]bool  `json:"told,omitempty"`  // plays that already got a "passed you" notice
 	LastPoll int64            `json:"last_poll,omitempty"`
 }
 
@@ -72,6 +76,9 @@ func rankLoad() rankCfg {
 	}
 	if c.VidSent == nil {
 		c.VidSent = map[string]int64{}
+	}
+	if c.Told == nil {
+		c.Told = map[string]bool{}
 	}
 	return c
 }
@@ -255,6 +262,29 @@ func rankPoll() {
 			n++
 		}
 	}
+	// the permanent list (GitHub keeps everything the channel ever had: tools/ranking_sync.py)
+	if gr, err := cl.Get(rankGitHub + "ranking.json"); err == nil {
+		var data struct {
+			Plays map[string]rankEntry `json:"plays"`
+		}
+		gb, _ := io.ReadAll(io.LimitReader(gr.Body, 4<<20))
+		gr.Body.Close()
+		if gr.StatusCode == 200 && json.Unmarshal(gb, &data) == nil {
+			for id, e := range data.Plays {
+				if e.ID != id || e.Score < rankMin || e.Score > 100 || e.Name == "" {
+					continue
+				}
+				old, had := store[id]
+				e.Mine, e.Seen, e.Video = old.Mine, old.Seen, old.Video || e.VURL != ""
+				if !had {
+					e.Seen = time.Now().Unix()
+					n++
+				}
+				store[id] = e
+			}
+		}
+	}
+	rankNotices(c, store)
 	// at most 400 plays and 600 MB of clips: the oldest and lowest go first
 	if len(store) > 400 {
 		list := make([]rankEntry, 0, len(store))
@@ -361,5 +391,74 @@ func rankFileHandler(w http.ResponseWriter, req *http.Request) {
 		http.NotFound(w, req)
 		return
 	}
-	http.ServeFile(w, req, filepath.Join(rankDir(), id+".mp4"))
+	file := filepath.Join(rankDir(), id+".mp4")
+	if _, err := os.Stat(file); err != nil {
+		if e, ok := rankStore()[id]; ok && strings.HasPrefix(e.VURL, rankGitHub) {
+			rankDownload(e.VURL, file) // GitHub keeps every clip: fetched the first time someone watches it
+		}
+	}
+	http.ServeFile(w, req, file)
+}
+
+// ---- "X has passed you": when someone else's new play beats your best one
+
+var (
+	rankNewsMu sync.Mutex
+	rankNews   []string // for the page (it shows them and says them), taken by /api/ranking/news
+)
+
+func rankNotices(c rankCfg, store map[string]rankEntry) {
+	best, first := 0, true
+	for _, e := range store {
+		if e.Mine && e.Score > best {
+			best = e.Score
+		}
+	}
+	if best == 0 || len(c.Told) == 0 {
+		for id := range store { // the first time: what's already there is old news
+			c.Told[id] = true
+		}
+		rankSave(c)
+		return
+	}
+	// were you first before the new ones? (everything already told counts as old)
+	for id, e := range store {
+		if !e.Mine && c.Told[id] && e.Score > best {
+			first = false
+		}
+	}
+	for id, e := range store {
+		if e.Mine || c.Told[id] {
+			continue
+		}
+		c.Told[id] = true
+		if e.Score <= best || time.Since(time.Unix(e.At, 0)) > 7*24*time.Hour {
+			continue // nothing new to beat you, or an old play you're only seeing now
+		}
+		what := e.Title
+		if what == "" {
+			what = "una jugada"
+		}
+		msg := fmt.Sprintf("%s t'ha avançat al rànquing: %s amb %s, %d punts. La seva play és mega OP!", e.Name, what, e.Champ, e.Score)
+		if first {
+			msg = fmt.Sprintf("%s t'ha tret el primer lloc del rànquing: %s amb %s, %d punts. La seva play és mega OP!", e.Name, what, e.Champ, e.Score)
+			first = false
+		}
+		logf("Rànquing: %s", msg)
+		rankNewsMu.Lock()
+		rankNews = append(rankNews, msg)
+		rankNewsMu.Unlock()
+		notifyDesktop("RiftMate · Best plays", msg)
+	}
+	rankSave(c)
+}
+
+func rankNewsHandler(w http.ResponseWriter, req *http.Request) {
+	rankNewsMu.Lock()
+	n := rankNews
+	rankNews = nil
+	rankNewsMu.Unlock()
+	b, _ := json.Marshal(n)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(b)
 }

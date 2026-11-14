@@ -221,7 +221,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend .tv span{font-size:12px}.trend .tv .good{color:var(--good)}.trend .tv .bad{color:var(--loss)}.trend .tv .flat{color:var(--muted)}
 .trend svg{width:100%;height:auto;display:block}.trend .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.trend .ref{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.8}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
-.trend .lab{font-size:11px;fill:var(--muted)}.bprow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.bprow.mine{background:rgba(127,127,127,.06)}.bppos{font:700 1.3rem var(--mono,monospace);min-width:36px;text-align:center}.bpmain{flex:1;min-width:0}.bphead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bphead img{width:28px;height:28px;border-radius:6px}.bpsc{margin-left:auto;font:700 1.1rem var(--mono,monospace)}.bpmain video{width:100%;max-width:560px;border-radius:8px;margin-top:6px;background:#000}
+.trend .lab{font-size:11px;fill:var(--muted)}.bpnews{position:fixed;right:16px;bottom:16px;max-width:420px;z-index:50;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bprow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.bprow.mine{background:rgba(127,127,127,.06)}.bppos{font:700 1.3rem var(--mono,monospace);min-width:36px;text-align:center}.bpmain{flex:1;min-width:0}.bphead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bphead img{width:28px;height:28px;border-radius:6px}.bpsc{margin-left:auto;font:700 1.1rem var(--mono,monospace)}.bpmain video{width:100%;max-width:560px;border-radius:8px;margin-top:6px;background:#000}
 .gpicks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.gpick{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color:inherit;cursor:pointer;min-width:74px}.gpick img{width:40px;height:40px;border-radius:8px}.gpick.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.gpick small{font-size:.7rem}
 .gadd input{height:100%;min-height:58px;min-width:150px;border:1px dashed var(--line);border-radius:10px;padding:0 10px;background:transparent;color:inherit}
 .ghead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.ghead img{width:56px;height:56px;border-radius:10px}.ghead>div{flex:1;min-width:180px}.ghead h2{margin:0}
@@ -1452,6 +1453,8 @@ const I18N = {
   "Recorda l'objectiu: quan estavellis l'onada, mou-te al riu o a la línia del costat.": ["Recuerda el objetivo: cuando estampes la oleada, muévete al río o a la línea de al lado.", "Remember the goal: when you crash the wave, move to the river or the next lane."],
   "Recorda: després de l'onada, ajuda al drac o a la línia del costat.": ["Recuerda: después de la oleada, ayuda en el dragón o en la línea de al lado.", "Remember: after the wave, help at dragon or the next lane."],
   "Recorda l'objectiu: intercanvia només quan el rival hagi gastat les habilitats.": ["Recuerda el objetivo: tradea solo cuando el rival haya gastado sus habilidades.", "Remember the goal: only trade when your opponent has used his abilities."],
+  "{x} t'ha avançat al rànquing: {y} amb {z}, {n} punts. La seva play és mega OP!": ["{x} te ha adelantado en el ranking: {y} con {z}, {n} puntos. ¡Su play está mega OP!", "{x} passed you in the ranking: {y} with {z}, {n} points. That play is mega OP!"],
+  "{x} t'ha tret el primer lloc del rànquing: {y} amb {z}, {n} punts. La seva play és mega OP!": ["{x} te ha quitado el primer puesto del ranking: {y} con {z}, {n} puntos. ¡Su play está mega OP!", "{x} took your first place in the ranking: {y} with {z}, {n} points. That play is mega OP!"],
   "Contra {x}, et va millor {y}: uns {n} de cada 100 contra {m} amb {z}.": ["Contra {x}, te va mejor {y}: unas {n} de cada 100 contra {m} con {z}.", "Against {x}, {y} is your best pick: about {n} wins in 100 against {m} with {z}."],
   "Amb {x} tens {n} punts de maestria: amb tan poca, en partides reals es guanya al voltant del {m}%, uns {k} punts menys. Per aprendre'l, millor a normals (pestanya Guies).": ["Con {x} tienes {n} puntos de maestría: con tan poca, en partidas reales se gana alrededor del {m}%, unos {k} puntos menos. Para aprenderlo, mejor en normales (pestaña Guías).", "You have {n} mastery points with {x}: with that little, real games are won about {m}% of the time, {k} points less. To learn it, play normals (Guides tab)."],
   "Contra {x}, et va millor {y}: aquesta temporada hi vas {n} a {m}.": ["Contra {x}, te va mejor {y}: esta temporada vas {n} a {m}.", "Against {x}, {y} is your best pick: you're {n}-{m} this season."],
@@ -2200,6 +2203,19 @@ function bpSub(b){
   if (b === "mine") renderPlaysTab(); else renderBestPlays();
 }
 $("#bpTabs")?.addEventListener("click", e => { const b = e.target.closest("button")?.dataset.b; if (b) bpSub(b); });
+// "X has passed you": the app checks the ranking every 10 minutes (outside games); the page shows it and says it
+setInterval(async () => {
+  if (!location.protocol.startsWith("http")) return;
+  let n = []; try { n = await (await fetch("/api/ranking/news", {cache: "no-store"})).json() || []; } catch (e) { return; }
+  for (const msg of n) {
+    const d = document.createElement("div"); d.className = "bpnews"; d.setAttribute("role", "status");
+    d.innerHTML = `<b>Best plays</b> <span>${esc(msg)}</span> <button class="b" type="button">Veure-la</button> <button class="b" type="button" aria-label="Tancar">×</button>`;
+    const [see, x] = d.querySelectorAll("button");
+    see.addEventListener("click", () => { d.remove(); showTab("B"); bpSub("all"); }); x.addEventListener("click", () => d.remove());
+    document.body.appendChild(d); setTimeout(() => d.remove(), 60000);
+    if (!game) speak(msg);
+  }
+}, 60000);
 async function renderBestPlays(){
   const el = $("#bpAll"); if (!el || !location.protocol.startsWith("http")) return;
   let st; try { st = await (await fetch("/api/ranking", {cache: "no-store"})).json(); } catch (e) { el.innerHTML = `<p class="bad">No he pogut llegir el rànquing.</p>`; return; }
@@ -2222,7 +2238,7 @@ async function renderBestPlays(){
   el.innerHTML = `${join}
     <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button></div>
       ${rows || `<p class="note">Encara no hi ha jugades. Quan algú que hi participa fa una jugada de 90 punts o més, surt aquí (l'app mira cada 10 minuts, fora de partida).</p>`}
-      <p class="note">Les jugades viatgen pel servei ntfy.sh (el dels temporitzadors compartits). Cada ordinador guarda el que ha rebut; els clips que arriben mentre l'app està tancada més de 3 hores no es poden baixar.</p></section>`;
+      <p class="note">Les jugades viatgen pel servei ntfy.sh (el dels temporitzadors compartits). Totes les jugades i els clips queden guardats a GitHub (al repositori de l'app), encara que no tinguis l'app oberta quan es fan.</p></section>`;
   const f = $("#bpF"); f.value = bpFilter; f.addEventListener("change", () => { bpFilter = f.value; renderBestPlays(); });
   $("#bpRef").addEventListener("click", async () => { await fetch("/api/ranking?now=1", {method: "POST"}); setTimeout(renderBestPlays, 4000); });
   $("#bpOn")?.addEventListener("click", async () => { const n = $("#bpName").value.trim(); if (!n) { $("#bpName").focus(); return; }
