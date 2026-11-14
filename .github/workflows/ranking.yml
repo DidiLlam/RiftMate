@@ -1,0 +1,23 @@
+# Keeps the shared Best plays ranking (see tools/ranking_sync.py): every 10 minutes, reads the ntfy channel and
+# saves new plays and clips in the "ranking" release.
+name: Rànquing de Best plays
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ranking
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools
+      - run: python3 tools/ranking_sync.py
+        env:
+          GH_TOKEN: ${{ github.token }}
