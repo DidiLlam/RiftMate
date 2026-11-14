@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -148,13 +149,27 @@ func guideAIHandler(w http.ResponseWriter, req *http.Request) {
 Fes servir NOMÉS les habilitats que et passo (són les del pedaç actual): no t'inventis efectes.
 Respon un JSON: {"role": una frase (posició habitual i estil), "tips": 4 o 5 frases (com fer servir cada habilitat i l'error típic), "spikes": una frase (quan és fort), "combos": 3 o 4 combos de més fàcil a més difícil, cadascun {"n": nom curt, "l": 1 fàcil|2 mitjà|3 difícil, "s": les tecles en ordre, "how": una frase}, "practice": una frase de què practicar a l'eina de pràctica}.
 A "s" només pots fer servir: "Q","W","E","R" (habilitats), "Q2","Q3","E2","R2" (segona o tercera activació), "AA" (cop bàsic), "F" (Flash). Només combos que el kit permet de veritat i que els jugadors fan servir.`
-	txt, model, err := geminiJSON(c.AIKey, sys, fmt.Sprintf("Campió: %s (pedaç %s)\nHabilitats:\n%s", in.Name, in.Patch, in.Kit), 1500)
-	if err != nil {
-		reply(aiGuide{Error: "La IA no ha pogut fer la guia: " + err.Error()})
-		return
-	}
+	// generous room: the newer models think before answering, and that thinking counts against the limit (a guide cut
+	// in half isn't JSON). A second try if the first answer can't be read.
 	var g aiGuide
-	if json.Unmarshal([]byte(txt), &g) != nil || g.Role == "" || len(g.Tips) == 0 {
+	model := ""
+	for try := 0; try < 2; try++ {
+		user := fmt.Sprintf("Campió: %s (pedaç %s)\nHabilitats:\n%s", in.Name, in.Patch, in.Kit)
+		if try > 0 {
+			user += "\n\nRespon només el JSON, complet i tancat, amb els camps exactes que t'he dit."
+		}
+		txt, m, err := geminiJSON(c.AIKey, sys, user, 8192)
+		if err != nil {
+			reply(aiGuide{Error: "La IA no ha pogut fer la guia: " + err.Error()})
+			return
+		}
+		if gg, ok := parseAIGuide(txt); ok {
+			g, model = gg, m
+			break
+		}
+		logf("Guies: la IA (%s) ha tornat una guia de %s que no s'entén (%d caràcters): %.300s", m, in.Name, len(txt), txt)
+	}
+	if g.Role == "" {
 		reply(aiGuide{Error: "La IA ha tornat una guia que no s'entén; torna-ho a provar."})
 		return
 	}
@@ -178,4 +193,90 @@ A "s" només pots fer servir: "Q","W","E","R" (habilitats), "Q2","Q3","E2","R2" 
 	logf("Guies: guia de %s feta amb %s (%d combos)", in.Name, model, len(ok))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(b)
+}
+
+// parseAIGuide: reads the AI's guide without failing on small differences (a level written as "2" or "fàcil",
+// tips as objects instead of sentences)
+func parseAIGuide(txt string) (aiGuide, bool) {
+	var m map[string]any
+	if json.Unmarshal([]byte(txt), &m) != nil {
+		return aiGuide{}, false
+	}
+	str := func(v any) string {
+		switch x := v.(type) {
+		case string:
+			return strings.TrimSpace(x)
+		case map[string]any:
+			for _, k := range []string{"text", "tip", "t", "how", "description"} {
+				if s, ok := x[k].(string); ok {
+					return strings.TrimSpace(s)
+				}
+			}
+			parts := []string{}
+			for _, v := range x {
+				if s, ok := v.(string); ok {
+					parts = append(parts, s)
+				}
+			}
+			return strings.Join(parts, ": ")
+		case []any:
+			parts := []string{}
+			for _, e := range x {
+				if s, ok := e.(string); ok {
+					parts = append(parts, s)
+				}
+			}
+			return strings.Join(parts, " ")
+		}
+		return ""
+	}
+	g := aiGuide{Role: str(m["role"]), Spikes: str(m["spikes"]), Practice: str(m["practice"])}
+	if l, ok := m["tips"].([]any); ok {
+		for _, t := range l {
+			if s := str(t); s != "" {
+				g.Tips = append(g.Tips, s)
+			}
+		}
+	} else if s := str(m["tips"]); s != "" {
+		g.Tips = []string{s}
+	}
+	if l, ok := m["combos"].([]any); ok {
+		for _, e := range l {
+			c, ok := e.(map[string]any)
+			if !ok {
+				continue
+			}
+			cb := aiGuideCombo{N: str(c["n"]), How: str(c["how"])}
+			switch x := c["l"].(type) {
+			case float64:
+				cb.L = int(x)
+			case string:
+				lx := strings.ToLower(x)
+				switch {
+				case strings.Contains(lx, "1") || strings.Contains(lx, "fàcil") || strings.Contains(lx, "facil"):
+					cb.L = 1
+				case strings.Contains(lx, "3") || strings.Contains(lx, "difícil") || strings.Contains(lx, "dificil"):
+					cb.L = 3
+				default:
+					cb.L = 2
+				}
+			}
+			switch x := c["s"].(type) {
+			case []any:
+				for _, st := range x {
+					if s, ok := st.(string); ok {
+						cb.S = append(cb.S, strings.ToUpper(strings.TrimSpace(s)))
+					}
+				}
+			case string: // "Q > E > AA"
+				for _, f := range strings.FieldsFunc(x, func(r rune) bool { return r == '>' || r == ',' || r == ' ' || r == '+' || r == '-' }) {
+					cb.S = append(cb.S, strings.ToUpper(f))
+				}
+			}
+			if cb.N != "" {
+				g.Combos = append(g.Combos, cb)
+			}
+		}
+	}
+	return g, g.Role != "" && len(g.Tips) > 0
 }

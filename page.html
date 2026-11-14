@@ -1147,6 +1147,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Tornar-ho a provar": ["Volver a intentarlo", "Try again"], "Fent la guia…": ["Haciendo la guía…", "Writing the guide…"],
   "1 de visió per minut (2 de suport)": ["1 de visión por minuto (2 de support)", "1 vision score per minute (2 as support)"],
   "Marcar-les totes com a vistes ({n})": ["Marcarlas todas como vistas ({n})", "Mark all as watched ({n})"],
   "1 jugada nova": ["1 jugada nueva", "1 new play"], "{n} jugades noves": ["{n} jugadas nuevas", "{n} new plays"],
@@ -6750,7 +6751,8 @@ async function renderGuides(){
   const dd = await guideData(guideSel), lrn = guideLearn.includes(guideSel), m = mastOf(guideSel);
   if (!CHAMP_GUIDES[guideSel] && !aiGuides[guideSel]) { el.innerHTML = `<div class="gpicks">${pick}</div><section class="card"><p class="note">Preparant la guia de ${esc(displayChamp(guideSel))}…</p></section>`; bindPick(); }
   const g = await guideFor2(guideSel, dd);
-  if (g.error) { el.innerHTML = `<div class="gpicks">${pick}</div><section class="card"><p class="bad">${esc(g.error)}</p><div class="bar"><button class="b" type="button" id="gRemove">Treure'l de la llista</button></div></section>`; bindPick();
+  if (g.error) { el.innerHTML = `<div class="gpicks">${pick}</div><section class="card"><p class="bad">${esc(g.error)}</p><div class="bar"><button class="b" type="button" id="gRetry">Tornar-ho a provar</button><button class="b" type="button" id="gRemove">Treure'l de la llista</button></div></section>`; bindPick();
+    $("#gRetry")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Fent la guia…"; renderGuides(); });
     $("#gRemove")?.addEventListener("click", () => { store.set("guideChamps", guideChamps().filter(x => x !== guideSel)); guideSel = null; renderGuides(); }); return; }
   const keys = ["Q", "W", "E", "R"];
   const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p></div></li>`,
