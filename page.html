@@ -223,6 +223,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
 .trend .lab{font-size:11px;fill:var(--muted)}.mplist{display:flex;flex-direction:column;gap:6px;align-items:stretch}.mplist .b{text-align:left}.mpgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}@media (max-width:760px){.mpgrid{grid-template-columns:1fr}}.mpmap svg{width:100%;height:auto;border-radius:10px;display:block}.mpopt{display:block;width:100%;text-align:left;margin:6px 0}.mpcap{background:rgba(127,127,127,.1);border-radius:8px;padding:10px 12px}
 .bpnew{background:var(--accent);color:#fff;font:800 11px/1 var(--mono, monospace);letter-spacing:.06em;padding:4px 6px;border-radius:6px;margin-left:6px}
+.play.isnew{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
 .bprow.isnew{box-shadow:inset 3px 0 0 var(--accent)}
 .bpbadge{display:inline-block;min-width:18px;margin-left:6px;padding:2px 5px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;line-height:14px;text-align:center}
 .bpnews{position:fixed;right:16px;bottom:16px;max-width:420px;z-index:50;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -2160,9 +2161,9 @@ document.addEventListener("click", async e => {
 if (location.protocol.startsWith("http")) { playsRefresh(); setInterval(() => { if ($("#playsState")?.offsetParent) playsRefresh(); }, 3000); }
 const playStamp = d => String(d || "").replace(":", "").replace(" ", "_");
 const playVideo = p => `/api/playfile?g=${encodeURIComponent(p.stamp)}&f=${encodeURIComponent(p.file)}`;
-function playItem(p, rank){
-  return `<div class="play"><video controls preload="${!rank || rank <= 6 ? "metadata" : "none"}" src="${playVideo(p)}"></video>
-    <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b></div>
+function playItem(p, rank, isNew){
+  return `<div class="play${isNew ? " isnew" : ""}" data-pid="${esc(p.stamp)}:${p.n}"><video controls preload="${!rank || rank <= 6 ? "metadata" : "none"}" src="${playVideo(p)}"></video>
+    <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b>${isNew ? `<span class="bpnew">NEW</span>` : ""}</div>
     <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}
     <div><button class="b small" type="button" data-pdel="${esc(p.stamp)}:${p.n}">Esborrar</button></div></div></div>`;
 }
@@ -2201,9 +2202,14 @@ async function renderPlaysTab(){
   const champs = [...new Set((st.plays || []).map(p => p.champ).filter(Boolean))];
   const off = !st.on ? `<p class="note">Els clips estan desactivats. Activa'ls a Ajustos → En partida → "Clips de les teves millors jugades" <button class="b" type="button" data-goset>Anar-hi</button></p>` : "";
   el.innerHTML = `<section class="card"><h2>Rànquing de les teves jugades</h2>${off}
-    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · les de 80 o més es guarden per sempre${st.keep_low ? "" : "; les de menys de 60 s'esborren al cap de 3 hores"}</span><button class="b small" type="button" data-pdel="*">Esborrar-les totes</button></div>
-    <div class="plays">${list.map((p, k) => playItem(p, k + 1)).join("") || `<p class="note">Cap jugada amb aquest filtre.</p>`}</div>`
+    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · les de 80 o més es guarden per sempre${st.keep_low ? "" : "; les de menys de 60 s'esborren al cap de 3 hores"}</span><button class="b small" type="button" data-pdel="*">Esborrar-les totes</button>${myNew(st.plays).length ? `<button class="b small" type="button" id="myAllSeen">Marcar-les totes com a vistes (${myNew(st.plays).length})</button>` : ""}</div>
+    <div class="plays">${list.map((p, k) => playItem(p, k + 1, !mySeen.has(`${p.stamp}:${p.n}`))).join("") || `<p class="note">Cap jugada amb aquest filtre.</p>`}</div>`
     : (st.on ? `<p class="note">Encara no hi ha cap jugada. Quan facis una kill, una doble o robis un objectiu, sortirà aquí després de la partida.</p>` : "")}</section>`;
+  myPlaysCache = st.plays || [];
+  const seenMine = id => { if (mySeen.has(id)) return; mySeen.add(id); store.set("mySeen", [...mySeen].slice(-800)); const it = el.querySelector(`.play[data-pid="${CSS.escape(id)}"]`); it?.classList.remove("isnew"); it?.querySelector(".bpnew")?.remove(); bpBadgeRefresh(); };
+  el.querySelectorAll(".play.isnew").forEach(it => it.querySelector("video")?.addEventListener("play", () => seenMine(it.dataset.pid), {once: true}));
+  $("#myAllSeen")?.addEventListener("click", () => { for (const p of myPlaysCache) mySeen.add(`${p.stamp}:${p.n}`); store.set("mySeen", [...mySeen].slice(-800)); renderPlaysTab(); bpBadgeRefresh(); });
+  bpBadgeRefresh();
   const f = $("#playsF"); if (f) { f.value = playsFilter; f.addEventListener("change", () => { playsFilter = f.value; renderPlaysTab(); }); }
   el.querySelector("[data-goset]")?.addEventListener("click", () => { showTab("A"); setGroup("partida"); setTimeout(() => $("#playsCard")?.scrollIntoView({behavior: "smooth", block: "center"}), 50); });
 }
@@ -2232,15 +2238,22 @@ setInterval(async () => {
 }, 60000);
 // NEW on the plays you haven't watched: a play counts as seen once its clip has played (or, with no clip, once it
 // has been on screen); your own are seen. The tab shows how many are new.
-const bpSeen = new Set(store.get("bpSeen", []));
+const bpSeen = new Set(store.get("bpSeen", [])), mySeen = new Set(store.get("mySeen", []));
+let myPlaysCache = [], bpPlaysCache = [];
+const myNew = plays => (plays || []).filter(p => !mySeen.has(`${p.stamp}:${p.n}`));
 function bpSeenSave(){ store.set("bpSeen", [...bpSeen].slice(-800)); }
 function bpBadge(plays){
-  const n = (plays || []).filter(p => !p.mine && !bpSeen.has(p.id)).length, t = $("#tabB"); if (!t) return;
+  if (plays) bpPlaysCache = plays;
+  const nAll = bpPlaysCache.filter(p => !p.mine && !bpSeen.has(p.id)).length, nMine = myNew(myPlaysCache).length, n = nAll + nMine, t = $("#tabB"); if (!t) return;
+  for (const [b, k] of [["all", nAll], ["mine", nMine]]) { const bt = document.querySelector(`#bpTabs button[data-b="${b}"]`); if (!bt) continue;
+    let c = bt.querySelector(".bpbadge"); if (!k) { c?.remove(); continue; } if (!c) { c = document.createElement("span"); c.className = "bpbadge"; c.setAttribute("data-noi18n", ""); bt.appendChild(c); } c.textContent = k; }
   let b = t.querySelector(".bpbadge"); if (!n) { b?.remove(); return; }
   if (!b) { b = document.createElement("span"); b.className = "bpbadge"; b.setAttribute("data-noi18n", ""); t.appendChild(b); }
   b.textContent = n; b.title = n === 1 ? "1 jugada nova" : `${n} jugades noves`;
 }
-async function bpBadgeRefresh(){ if (!location.protocol.startsWith("http")) return; try { bpBadge((await (await fetch("/api/ranking", {cache: "no-store"})).json()).plays); } catch (e) {} }
+async function bpBadgeRefresh(){ if (!location.protocol.startsWith("http")) return;
+  try { myPlaysCache = (await (await fetch("/api/plays", {cache: "no-store"})).json()).plays || []; } catch (e) {}
+  try { bpBadge((await (await fetch("/api/ranking", {cache: "no-store"})).json()).plays); } catch (e) { bpBadge(); } }
 bpBadgeRefresh(); setInterval(bpBadgeRefresh, 120000);
 async function renderBestPlays(){
   const el = $("#bpAll"); if (!el || !location.protocol.startsWith("http")) return;
