@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -40,6 +41,32 @@ func parseLockfile(path string) (*lcuCreds, error) {
 }
 
 func lcuGet(path string, out any) (int, error) { return lcuDo("GET", path, nil, out) }
+
+// lcuBytes: a file the client serves (its images), raw
+func lcuBytes(path string) ([]byte, error) {
+	lcuMu.Lock()
+	c := lcuCached
+	if c == nil && time.Since(lcuTried) > 5*time.Second {
+		lcuTried = time.Now()
+		c = findLCU()
+		lcuCached = c
+	}
+	lcuMu.Unlock()
+	if c == nil {
+		return nil, errors.New("no_client")
+	}
+	req, _ := http.NewRequest("GET", "https://127.0.0.1:"+c.Port+path, nil)
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("riot:"+c.Token)))
+	r, err := lcuHTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	if r.StatusCode != 200 {
+		return nil, fmt.Errorf("client HTTP %d", r.StatusCode)
+	}
+	return io.ReadAll(io.LimitReader(r.Body, 8<<20))
+}
 
 // lcuDo: any method; body is sent as JSON
 func lcuDo(method, path string, in, out any) (int, error) {

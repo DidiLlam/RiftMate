@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"image"
 	"image/png"
 	"io"
@@ -132,15 +133,10 @@ func emblemHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if err != nil || !isPNG(b) {
-		r, err := riotHTTP.Get("https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-" + t + ".png")
+		b, err = emblemFetch(t)
 		if err != nil {
+			logf("Escut %s: no l'he pogut descarregar: %v", t, err)
 			http.Error(w, err.Error(), 502)
-			return
-		}
-		defer r.Body.Close()
-		b, _ = io.ReadAll(io.LimitReader(r.Body, 8<<20))
-		if r.StatusCode != 200 || !isPNG(b) {
-			http.Error(w, "no emblem", 502)
 			return
 		}
 		if c, err := cropTransparent(b); err == nil {
@@ -153,6 +149,33 @@ func emblemHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "max-age=604800")
 	w.Write(b)
+}
+
+// emblemFetch: the emblem from Community Dragon (the files are 1-2 MB: a slow connection needs more than the 10 s of
+// the Riot calls), tried twice, and else from the LoL client itself, which has the same file.
+var emblemHTTP = &http.Client{Timeout: 60 * time.Second}
+
+func emblemFetch(t string) ([]byte, error) {
+	isPNG := func(x []byte) bool { return len(x) > 100 && bytes.HasPrefix(x, []byte("\x89PNG")) }
+	var last error
+	for try := 0; try < 2; try++ {
+		r, err := emblemHTTP.Get("https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-" + t + ".png")
+		if err != nil {
+			last = err
+			continue
+		}
+		b, err := io.ReadAll(io.LimitReader(r.Body, 8<<20))
+		r.Body.Close()
+		if err == nil && r.StatusCode == 200 && isPNG(b) {
+			return b, nil
+		}
+		last = fmt.Errorf("Community Dragon: HTTP %d", r.StatusCode)
+	}
+	if b, err := lcuBytes("/fe/lol-static-assets/images/ranked-emblem/emblem-" + t + ".png"); err == nil && isPNG(b) {
+		logf("Escut %s: agafat del client de LoL", t)
+		return b, nil
+	}
+	return nil, last
 }
 
 // cropTransparent trims the fully transparent border of a PNG (keeps a small margin).
