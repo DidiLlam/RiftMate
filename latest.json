@@ -1,7 +1,7 @@
 {
- "version": "2.3.3",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.3.exe",
- "size": 10191872,
- "sha256": "0a5ec1c23fb45f45c445809a279fd8a880f643a7932ed93249793dc6e5621921",
- "notes": "- Coach: jugades de macro explicades al mapa oficial (les mateixes que al mòbil)\n- Mapa oficial de la Grieta a les jugades i lliçons del mòbil"
+ "version": "2.3.4",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.4.exe",
+ "size": 10201088,
+ "sha256": "25395c6a012a557203b83661ba147932c117f6e9ab8a12417cf2245ae8933ee6",
+ "notes": "- Visió: anàlisi de cada partida (morts sense ward, ruta del jungla rival, minuts sense wards, objectius perduts) al mapa oficial"
 }
