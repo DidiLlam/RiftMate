@@ -1,7 +1,7 @@
 {
- "version": "2.3.7",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.7.exe",
+ "version": "2.3.8",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.8.exe",
  "size": 10211328,
- "sha256": "f9f0a3cc6140fc51e3439f8f7ab4a9d31d3c4aa0f81a40e2447a09123769ec60",
- "notes": "- Avís de derrotes seguides: ara a partir de 3, no de 2"
+ "sha256": "b23361682ac861526799a57c192d8bd55e8f14cc9b7027566a38bb304f2147a8",
+ "notes": "- Probabilitat de guanyar: la ratxa de derrotes compta a partir de 3"
 }
