@@ -1,7 +1,7 @@
 {
- "version": "2.3.2",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.2.exe",
- "size": 10187264,
- "sha256": "7820172ee5b07f0aa13fc91f37a7c8656205943d2ef1fa870245452ce6077a73",
- "notes": "- Best plays: el rànquing queda guardat per sempre a GitHub, encara que no tinguis l'app oberta\n- Avís quan algú t'avança al rànquing (notificació de Windows i a l'app)"
+ "version": "2.3.3",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.3.exe",
+ "size": 10191872,
+ "sha256": "0a5ec1c23fb45f45c445809a279fd8a880f643a7932ed93249793dc6e5621921",
+ "notes": "- Coach: jugades de macro explicades al mapa oficial (les mateixes que al mòbil)\n- Mapa oficial de la Grieta a les jugades i lliçons del mòbil"
 }
