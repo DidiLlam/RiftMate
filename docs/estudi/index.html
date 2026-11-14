@@ -108,18 +108,28 @@ function grade(id, ok){ const s = srs[id] || {b: 0, n: 0, w: 0}; s.n++; if (ok) 
 function allQuestions(){
   const mine = (prof?.ex || []).map((e, i) => { const t = PERSONAL[e.t]; if (!t) return null;
     const id = `p-${e.t}-${e.d}-${e.m}-${e.c}`;
-    return {id, l: t.l, q: t.q(e), o: t.o, a: 0, why: t.why, mine: true}; }).filter(Boolean);
+    return {id, l: t.l, d: t.d || 2, q: t.q(e), o: t.o, a: 0, why: t.why, mine: true}; }).filter(Boolean);
   return mine.concat(QUESTIONS);
 }
 // how much each lesson matters for you: the PC's score (your mistakes) and how you answer here
 function weight(l){ const s = prof?.score?.[l] ?? 30; return 1 + s / 25; }
-function pickRound(n = 8){
-  const qs = allQuestions(), now = Date.now();
+// the level: 1 basic, 2 advanced, 3 expert. It moves by itself: 7 or 8 right goes up, 3 or less goes down
+let lvl = get("lvl", 2);
+const LVL_NAME = {1: "Bàsic", 2: "Avançat", 3: "Expert"};
+const near = q => Math.abs((q.d || 1) - lvl);
+function pickRound(n = 8, lesson = null){
+  const qs = allQuestions().filter(q => (!lesson || q.l === lesson) && (q.d || 1) <= lvl), now = Date.now();
   const due = qs.filter(q => srs[q.id] && srs[q.id].due <= now && srs[q.id].b < 4).sort((a, b) => srs[a.id].b - srs[b.id].b);
-  const fresh = qs.filter(q => !srs[q.id]).sort((a, b) => (b.mine - a.mine) || (weight(b.l) * Math.random() - weight(a.l) * Math.random()));
-  const rest = qs.filter(q => srs[q.id] && srs[q.id].due > now).sort(() => Math.random() - .5);
+  const fresh = qs.filter(q => !srs[q.id]).sort((a, b) => (near(a) - near(b)) || (b.mine - a.mine) || (weight(b.l) * Math.random() - weight(a.l) * Math.random()));
+  const rest = qs.filter(q => srs[q.id] && srs[q.id].due > now).sort((a, b) => (near(a) - near(b)) || Math.random() - .5);
   const out = []; for (const q of [...due, ...fresh, ...rest]) { if (out.length >= n) break; if (!out.includes(q)) out.push(q); }
   return out;
+}
+function levelAfter(ok, n){
+  if (n < 6) return "";
+  if (ok >= n - 1 && lvl < 3) { lvl++; put("lvl", lvl); return `Massa fàcil: pugem a nivell <b>${LVL_NAME[lvl]}</b>.`; }
+  if (ok <= n / 2 - 1 && lvl > 1) { lvl--; put("lvl", lvl); return `Baixem a nivell <b>${LVL_NAME[lvl]}</b> per assentar les bases.`; }
+  return "";
 }
 const shuffle = q => { const idx = q.o.map((_, i) => i).sort(() => Math.random() - .5); return {...q, o: idx.map(i => q.o[i]), a: idx.indexOf(q.a)}; };
 
@@ -183,11 +193,13 @@ function viewQuiz(){
   if (!round) {
     const due = allQuestions().filter(q => srs[q.id] && srs[q.id].due <= Date.now() && srs[q.id].b < 4).length;
     const seen = Object.keys(srs).length, total = allQuestions().length;
-    return `<section class="card"><h2>Preguntes</h2><p>Rondes de 8: primer les que toca repassar, després les noves (les de les teves partides primer).</p>
+    return `<section class="card"><h2>Preguntes</h2><p>Rondes de 8: primer les que toca repassar, després les noves del teu nivell (les de les teves partides primer).</p>
+      <div class="row" role="radiogroup" aria-label="Nivell">${[1, 2, 3].map(k => `<button class="btn ${k === lvl ? "" : "ghost"}" data-lvl="${k}" type="button" aria-pressed="${k === lvl}">${LVL_NAME[k]}</button>`).join("")}</div>
+      <p class="note">El nivell canvia sol: si n'encertes 7 o 8, puja; si en falles més de la meitat, baixa.</p>
       <p class="note">${seen} de ${total} vistes · ${due} per repassar avui</p><button class="btn" data-quiz="1" type="button">Començar</button></section>`;
   }
   const q = round.qs[round.i], ans = round.ans;
-  return `<section class="card"><p class="note">${round.i + 1} de ${round.qs.length} · ${esc(LBY[q.l]?.name || "")}</p>${q.mine ? `<p class="mine">De les teves partides</p>` : ""}
+  return `<section class="card"><p class="note">${round.i + 1} de ${round.qs.length} · ${esc(LBY[q.l]?.name || "")} · ${LVL_NAME[q.d || 1]}</p>${q.mine ? `<p class="mine">De les teves partides</p>` : ""}
     <h2>${esc(q.q)}</h2>${q.o.map((o, i) => `<button class="opt ${ans != null ? (i === q.a ? "right" : i === ans ? "wrong" : "") : ""}" data-ans="${i}" type="button" ${ans != null ? "disabled" : ""}>${esc(o)}</button>`).join("")}
     ${ans != null ? `<div class="why"><b>${ans === q.a ? "Correcte." : "No."}</b> ${esc(q.why)}</div><p><button class="btn" data-next="1" type="button">${round.i + 1 < round.qs.length ? "Següent" : "Acabar"}</button></p>` : ""}</section>`;
 }
@@ -202,10 +214,11 @@ document.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.open) { lessonOpen = b.dataset.open; render(); window.scrollTo(0, 0); }
   else if (b.dataset.back) { lessonOpen = null; render(); }
-  else if (b.dataset.quiz) { const l = b.dataset.quiz; let qs = l === "1" ? pickRound() : allQuestions().filter(q => q.l === l).sort(() => Math.random() - .5).slice(0, 8);
+  else if (b.dataset.quiz) { const l = b.dataset.quiz; let qs = l === "1" ? pickRound() : pickRound(8, l);
     round = {qs: qs.map(shuffle), i: 0, ok: 0, ans: null}; tab = "quiz"; lessonOpen = null; render(); window.scrollTo(0, 0); }
   else if (b.dataset.ans != null && round && round.ans == null) { const q = round.qs[round.i]; round.ans = +b.dataset.ans; const ok = round.ans === q.a; if (ok) round.ok++; grade(q.id, ok); render(); }
-  else if (b.dataset.next) { round.i++; round.ans = null; if (round.i >= round.qs.length) { const ok = round.ok, n = round.qs.length; round = null; $("#view").innerHTML = `<section class="card"><p class="big">${ok} / ${n}</p><p>Les que has fallat tornaran demà; les encertades, d'aquí a uns dies.</p><button class="btn" data-quiz="1" type="button">Una altra ronda</button></section>`; return; } render(); window.scrollTo(0, 0); }
+  else if (b.dataset.next) { round.i++; round.ans = null; if (round.i >= round.qs.length) { const ok = round.ok, n = round.qs.length; round = null; const lv = levelAfter(ok, n); $("#view").innerHTML = `<section class="card"><p class="big">${ok} / ${n}</p>${lv ? `<p>${lv}</p>` : ""}<p>Les que has fallat tornaran demà; les encertades, d'aquí a uns dies.</p><button class="btn" data-quiz="1" type="button">Una altra ronda</button></section>`; return; } render(); window.scrollTo(0, 0); }
+  else if (b.dataset.lvl) { lvl = +b.dataset.lvl; put("lvl", lvl); render(); }
   else if (b.id === "syncBtn") sync();
   else if (b.id === "linkBtn") { if (code.length === 8) linkPanel(); else { tab = "you"; lessonOpen = null; render(); } }
   else if (b.id === "unlink") { code = ""; prof = null; put("code", ""); put("prof", null); render(); }
