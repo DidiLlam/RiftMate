@@ -1,7 +1,7 @@
 {
- "version": "2.3.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.0.exe",
+ "version": "2.3.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.1.exe",
  "size": 10173952,
- "sha256": "fec74995836b08ef0df9b4d2af466360a1b32d75f225dfb055f484575e524be3",
- "notes": "- Nova pestanya Best plays: rànquing de les millors jugades de tots els que tenen l'app i hi participen, amb el clip\n- Les teves jugades passen a Best plays › Les meves\n- Participar és opcional i es tria el nom que surt"
+ "sha256": "7f305108be178c20105e0025f141e5955128d80424c5a7146a9b4fc60bbf9b79",
+ "notes": "- Best plays: només jugades de 90 punts o més\n- App del mòbil: es pot posar a la pantalla d'inici i recorda el codi"
 }
