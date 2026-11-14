@@ -1,7 +1,7 @@
 {
- "version": "2.3.8",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.8.exe",
- "size": 10211328,
- "sha256": "b23361682ac861526799a57c192d8bd55e8f14cc9b7027566a38bb304f2147a8",
- "notes": "- Probabilitat de guanyar: la ratxa de derrotes compta a partir de 3"
+ "version": "2.3.9",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.9.exe",
+ "size": 10213376,
+ "sha256": "967905c9a733588fff9b1be06bfed94a8dcc4535f77c5110f7e5c502ab93549c",
+ "notes": "- Best plays: NEW també a les teves jugades (Les meves), amb el nombre de noves a cada pestanya"
 }
