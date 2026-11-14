@@ -1,6 +1,6 @@
 package main
 
-// The best plays of everyone who has the app: each app that takes part sends its plays of 60 points or more (the
+// The best plays of everyone who has the app: each app that takes part sends its plays of 90 points or more (the
 // data and a light copy of the clip) to a shared channel of ntfy.sh, and keeps on disk everything it hears there.
 // ntfy keeps messages 12 hours (and attachments 3 hours), so each app sends its best ones again every few hours,
 // and keeps forever what it has already seen: the ranking grows on each computer even if nobody is always on.
@@ -24,6 +24,9 @@ import (
 )
 
 const rankTopic = "riftmate-millors-jugades-v1-7q4k"
+
+// only the really good ones: the ranking is for the best plays, not every decent one
+const rankMin = 90
 
 type rankEntry struct {
 	ID    string `json:"id"`
@@ -126,7 +129,7 @@ func rankSendOwn() {
 	store := rankStore()
 	top := 0
 	for _, p := range plays {
-		if p.Score < 60 || !strings.HasPrefix(p.File, "jugada") {
+		if p.Score < rankMin || !strings.HasPrefix(p.File, "jugada") {
 			continue
 		}
 		at := playTime(p)
@@ -229,7 +232,7 @@ func rankPoll() {
 		}
 		c.Since = m.ID
 		var e rankEntry
-		if json.Unmarshal([]byte(m.Message), &e) != nil || e.ID == "" || len(e.ID) > 32 || e.Score < 60 || e.Score > 100 || e.Name == "" {
+		if json.Unmarshal([]byte(m.Message), &e) != nil || e.ID == "" || len(e.ID) > 32 || e.Score < rankMin || e.Score > 100 || e.Name == "" {
 			continue
 		}
 		old, had := store[e.ID]
@@ -337,7 +340,9 @@ func bpHandler(w http.ResponseWriter, req *http.Request) {
 	store := rankStore()
 	list := make([]rankEntry, 0, len(store))
 	for _, e := range store {
-		list = append(list, e)
+		if e.Score >= rankMin { // ones kept from when the bar was lower don't show
+			list = append(list, e)
+		}
 	}
 	sort.Slice(list, func(i, j int) bool {
 		if list[i].Score != list[j].Score {

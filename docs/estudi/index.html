@@ -83,7 +83,26 @@ const LBY = Object.fromEntries(LESSONS.map(l => [l.id, l]));
 // ---- the link to your PC: a code shown in RiftMate (Coach › Estudia al mòbil). The PC sends a summary of your
 // mistakes through ntfy.sh under that code; this page keeps the last one it got.
 let code = (location.hash.slice(1).replace(/[^A-Za-z0-9]/g, "").toUpperCase() || get("code", "")).slice(0, 8);
-if (location.hash) { history.replaceState(null, "", location.pathname); }
+// the code stays in the address: a home-screen icon made from this page (iPhone) then opens already linked
+function keepCodeInURL(){ try { history.replaceState(null, "", location.pathname + (code.length === 8 ? "#" + code : "")); } catch (e) {} }
+keepCodeInURL();
+
+// ---- installing it as an app: Android Chrome offers a button; iPhone needs Share › Add to Home Screen; the
+// browser inside the camera or other apps (where the QR opens) forgets everything when you leave
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const ua = navigator.userAgent, isIOS = /iPhone|iPad|iPod/.test(ua), inApp = /GSA\/|FBAN|FBAV|Instagram|Line\/|wv\)|; wv/.test(ua);
+let installEvt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; render(); });
+addEventListener("appinstalled", () => { installEvt = null; put("installed", true); render(); });
+function installCard(){
+  if (standalone || get("installHide", false)) return "";
+  const url = location.href;
+  const how = installEvt ? `<button class="btn" id="installBtn" type="button">Instal·lar l'app</button>`
+    : inApp ? `<p>Ara l'has obert dins d'una altra app (la càmera o el lector de QR), i quan en surts s'oblida de tot. Obre-la amb ${isIOS ? "<b>Safari</b>" : "<b>Chrome</b>"}: copia l'enllaç i enganxa'l al navegador.</p><p class="note" style="word-break:break-all">${esc(url)}</p><button class="btn ghost" id="copyUrl" type="button">Copiar l'enllaç</button>`
+    : isIOS ? `<p>A Safari, prem <b>Compartir</b> (el quadrat amb la fletxa) i després <b>Afegeix a la pantalla d'inici</b>. Ja portarà el teu codi.</p>`
+    : `<p>A Chrome, prem el menú <b>⋮</b> i després <b>Instal·la l'aplicació</b> (o <b>Afegeix a la pantalla d'inici</b>).</p>`;
+  return `<section class="card"><h2>Posa-la a la pantalla d'inici</h2><p>Així s'obre com una app, amb el teu codi guardat, i funciona sense connexió.</p>${how}<p><button class="btn ghost" id="installHide" type="button">Ja ho he fet</button></p></section>`;
+}
 if (code.length === 8) put("code", code);
 let prof = get("prof", null);
 async function sync(){
@@ -159,7 +178,8 @@ function mapSVG(marks){
 let tab = get("tab", "you"), lessonOpen = null, round = null;
 function setTab(t){ tab = t; lessonOpen = null; put("tab", t); render(); window.scrollTo(0, 0); }
 function examplesFor(l){ return (prof?.ex || []).filter(e => PERSONAL[e.t]?.l === l); }
-function viewYou(){
+function viewYou(){ return installCard() + viewYou2(); }
+function viewYou2(){
   if (code.length !== 8) return `<section class="card"><h2>Enllaça-ho amb el teu PC</h2>
     <p>Així les preguntes surten dels errors de les teves partides. A RiftMate, al PC, ves a <b>Coach › Estudia al mòbil</b> i escriu aquí el codi.</p>
     <form id="codeForm" class="row"><input id="codeIn" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" aria-label="Codi"><button class="btn" type="submit">Enllaçar</button></form>
@@ -219,12 +239,15 @@ document.addEventListener("click", e => {
   else if (b.dataset.ans != null && round && round.ans == null) { const q = round.qs[round.i]; round.ans = +b.dataset.ans; const ok = round.ans === q.a; if (ok) round.ok++; grade(q.id, ok); render(); }
   else if (b.dataset.next) { round.i++; round.ans = null; if (round.i >= round.qs.length) { const ok = round.ok, n = round.qs.length; round = null; const lv = levelAfter(ok, n); $("#view").innerHTML = `<section class="card"><p class="big">${ok} / ${n}</p>${lv ? `<p>${lv}</p>` : ""}<p>Les que has fallat tornaran demà; les encertades, d'aquí a uns dies.</p><button class="btn" data-quiz="1" type="button">Una altra ronda</button></section>`; return; } render(); window.scrollTo(0, 0); }
   else if (b.dataset.lvl) { lvl = +b.dataset.lvl; put("lvl", lvl); render(); }
+  else if (b.id === "installBtn" && installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; render(); }); }
+  else if (b.id === "copyUrl") { navigator.clipboard?.writeText(location.href).then(() => { b.textContent = "Copiat"; }, () => {}); }
+  else if (b.id === "installHide") { put("installHide", true); render(); }
   else if (b.id === "syncBtn") sync();
   else if (b.id === "linkBtn") { if (code.length === 8) linkPanel(); else { tab = "you"; lessonOpen = null; render(); } }
-  else if (b.id === "unlink") { code = ""; prof = null; put("code", ""); put("prof", null); render(); }
+  else if (b.id === "unlink") { code = ""; prof = null; put("code", ""); put("prof", null); keepCodeInURL(); render(); }
 });
 function linkPanel(){ $("#view").innerHTML = `<section class="card"><h2>Enllaç amb el PC</h2><p>Codi <b>${code.slice(0, 4)}-${code.slice(4)}</b>${prof ? `: ${prof.games} partides, ${ago(prof.at)}` : ""}.</p><div class="row"><button class="btn ghost" id="syncBtn" type="button">Actualitzar</button><button class="btn ghost" id="unlink" type="button">Treure l'enllaç</button><button class="btn" data-back="1" type="button">Fet</button></div></section>`; }
-document.addEventListener("submit", e => { e.preventDefault(); const v = ($("#codeIn")?.value || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase(); if (v.length !== 8) { $("#codeIn").setCustomValidity("El codi té 8 lletres i números"); $("#codeIn").reportValidity(); return; } code = v; put("code", v); render(); sync(); });
+document.addEventListener("submit", e => { e.preventDefault(); const v = ($("#codeIn")?.value || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase(); if (v.length !== 8) { $("#codeIn").setCustomValidity("El codi té 8 lletres i números"); $("#codeIn").reportValidity(); return; } code = v; put("code", v); keepCodeInURL(); render(); sync(); });
 $("#tYou").onclick = () => setTab("you"); $("#tLessons").onclick = () => setTab("lessons"); $("#tQuiz").onclick = () => setTab("quiz");
 render(); sync();
 document.addEventListener("visibilitychange", () => { if (!document.hidden) sync(); });

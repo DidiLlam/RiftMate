@@ -2208,8 +2208,8 @@ async function renderBestPlays(){
   if (bpFilter === "week") list = list.filter(p => now - p.at < 7 * 86400);
   else if (bpFilter === "day") list = list.filter(p => now - p.at < 86400);
   const join = st.on
-    ? `<p class="note">Hi participes com a <b data-noi18n>${esc(st.name || "?")}</b>: les teves jugades de 60 punts o més surten aquí per a tothom, amb el clip. <button class="b" type="button" id="bpOff">Deixar de participar</button></p>`
-    : `<section class="card"><h2>Participa al rànquing</h2><p>Les jugades de 60 punts o més de tots els que tenen l'app i hi participen, amb el seu clip. Si hi participes, els altres veuran el teu nom de Riot (sense el #) i els teus clips.</p>
+    ? `<p class="note">Hi participes com a <b data-noi18n>${esc(st.name || "?")}</b>: les teves jugades de 90 punts o més surten aquí per a tothom, amb el clip. <button class="b" type="button" id="bpOff">Deixar de participar</button></p>`
+    : `<section class="card"><h2>Participa al rànquing</h2><p>Les jugades de 90 punts o més de tots els que tenen l'app i hi participen, amb el seu clip. Si hi participes, els altres veuran el teu nom de Riot (sense el #) i els teus clips.</p>
         <div class="keyrow"><input id="bpName" placeholder="El teu nom al rànquing" value="${esc(st.name || "")}" maxlength="24" autocomplete="off"><button class="b" type="button" id="bpOn">Participar</button></div>
         ${st.supported ? "" : `<p class="note">Els clips només es graven a Windows.</p>`}</section>`;
   const medal = i => i < 3 ? ["🥇", "🥈", "🥉"][i] : `${i + 1}`;
@@ -2221,7 +2221,7 @@ async function renderBestPlays(){
         <p class="note">${agoTxt(p.at)}</p></div></div>`).join("");
   el.innerHTML = `${join}
     <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button></div>
-      ${rows || `<p class="note">Encara no hi ha jugades. Quan algú que hi participa fa una jugada de 60 punts o més, surt aquí (l'app mira cada 10 minuts, fora de partida).</p>`}
+      ${rows || `<p class="note">Encara no hi ha jugades. Quan algú que hi participa fa una jugada de 90 punts o més, surt aquí (l'app mira cada 10 minuts, fora de partida).</p>`}
       <p class="note">Les jugades viatgen pel servei ntfy.sh (el dels temporitzadors compartits). Cada ordinador guarda el que ha rebut; els clips que arriben mentre l'app està tancada més de 3 hores no es poden baixar.</p></section>`;
   const f = $("#bpF"); f.value = bpFilter; f.addEventListener("change", () => { bpFilter = f.value; renderBestPlays(); });
   $("#bpRef").addEventListener("click", async () => { await fetch("/api/ranking?now=1", {method: "POST"}); setTimeout(renderBestPlays, 4000); });
@@ -4519,7 +4519,7 @@ async function renderStudy(q = ""){
   const when = st.sent_at ? new Date(st.sent_at * 1000).toLocaleString("ca", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"}) : null;
   el.innerHTML = `<p>Un curs de macro per al mòbil (onades, tornar a base, objectius, roams, visió…) amb preguntes fetes a partir dels errors de les teves partides. Funciona sense l'ordinador; quan acabes una partida, l'app li envia els errors nous.</p>
     <div class="mobq"><div id="studyQR"></div><div><p>Obre al mòbil <code data-noi18n>${esc(st.page)}</code> i escriu el codi:</p>
-      <p class="studycode" data-noi18n>${esc(st.code)}</p><p class="note">O escaneja el codi QR: ja porta el codi. Al mòbil, "Afegeix a la pantalla d'inici" i et queda com una app.</p></div></div>
+      <p class="studycode" data-noi18n>${esc(st.code)}</p><p class="note">O escaneja el codi QR: ja porta el codi. Obre l'enllaç amb Chrome (Android) o Safari (iPhone), no dins de la càmera, i posa-la a la pantalla d'inici: llavors s'obre com una app i recorda el codi.</p></div></div>
     <p class="note">${st.games ? `Amb les teves últimes ${st.games} partides.` : "Encara no hi ha partides per analitzar."} ${when ? `Enviat al mòbil: ${when}.` : "Encara no s'ha enviat."}${st.error ? ` <span class="bad">Error: ${esc(st.error)}</span>` : ""}</p>
     <p class="note">Cada jugador té el seu codi: qui tingui l'app al seu PC veu les seves preguntes. Els errors viatgen pel servei ntfy.sh (el dels temporitzadors compartits), sense noms ni comptes: campions, minuts i llocs.</p>
     <div class="bar"><button class="b" type="button" id="studySend">Enviar ara</button><button class="b" type="button" id="studyNew">Fer un codi nou</button></div>`;
