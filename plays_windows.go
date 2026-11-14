@@ -301,3 +301,31 @@ func captureCleanup() {
 		logf("Jugades: aturada una gravació que havia quedat oberta")
 	}
 }
+
+// rankPreview: a light copy of a clip for the shared ranking (540p, ~1.5 Mbps: a few MB), with the same graphics
+// card encoder that records them
+func rankPreview(src, dst string) error {
+	enc := playsLoadCfg().Encoder
+	var ea []string
+	for _, e := range capEncoders {
+		if e.name == enc {
+			ea = []string{"-c:v", e.name, "-b:v", "1500k", "-maxrate", "2M"}
+		}
+	}
+	if ea == nil {
+		return fmt.Errorf("sense codificador de vídeo")
+	}
+	args := append([]string{"-hide_banner", "-loglevel", "error", "-y", "-i", src, "-t", "25", "-vf", "scale=-2:540,format=nv12", "-r", "30"}, ea...)
+	args = append(args, "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", dst)
+	cmd := exec.Command(ffExe(), args...)
+	cmd.Dir = ffDir()
+	hideCmd(cmd)
+	if b, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("%v: %.200s", err, b)
+	}
+	if st, err := os.Stat(dst); err != nil || st.Size() > 15<<20 {
+		os.Remove(dst)
+		return fmt.Errorf("massa gran")
+	}
+	return nil
+}

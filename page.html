@@ -221,7 +221,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend .tv span{font-size:12px}.trend .tv .good{color:var(--good)}.trend .tv .bad{color:var(--loss)}.trend .tv .flat{color:var(--muted)}
 .trend svg{width:100%;height:auto;display:block}.trend .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.trend .ref{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.8}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
-.trend .lab{font-size:11px;fill:var(--muted)}.gpicks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.gpick{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color:inherit;cursor:pointer;min-width:74px}.gpick img{width:40px;height:40px;border-radius:8px}.gpick.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.gpick small{font-size:.7rem}
+.trend .lab{font-size:11px;fill:var(--muted)}.bprow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.bprow.mine{background:rgba(127,127,127,.06)}.bppos{font:700 1.3rem var(--mono,monospace);min-width:36px;text-align:center}.bpmain{flex:1;min-width:0}.bphead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bphead img{width:28px;height:28px;border-radius:6px}.bpsc{margin-left:auto;font:700 1.1rem var(--mono,monospace)}.bpmain video{width:100%;max-width:560px;border-radius:8px;margin-top:6px;background:#000}
+.gpicks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.gpick{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color:inherit;cursor:pointer;min-width:74px}.gpick img{width:40px;height:40px;border-radius:8px}.gpick.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.gpick small{font-size:.7rem}
 .gadd input{height:100%;min-height:58px;min-width:150px;border:1px dashed var(--line);border-radius:10px;padding:0 10px;background:transparent;color:inherit}
 .ghead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.ghead img{width:56px;height:56px;border-radius:10px}.ghead>div{flex:1;min-width:180px}.ghead h2{margin:0}
 .gk{display:inline-block;min-width:26px;padding:2px 7px;border:1px solid var(--line);border-radius:6px;font:600 .85rem var(--mono,monospace);text-align:center;background:rgba(127,127,127,.12)}.gk.now{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}.gk.done{opacity:.45}
@@ -415,7 +416,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span></div></div>
   </header>
   <div class="whero topbanner" aria-hidden="true"><div><p class="wtitle" data-noi18n>RiftMate</p><p class="wsub">El teu coach de veu</p></div></div>
-  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabG" aria-selected="false">Guies</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabM" aria-selected="false">MMR</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
+  <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabB" aria-selected="false">Best plays</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabG" aria-selected="false">Guies</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabM" aria-selected="false">MMR</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
   <div class="updbar" id="updBar" hidden></div>
   <div class="session" id="session" hidden></div>
   <div class="view" id="viewT">
@@ -637,7 +638,6 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <section class="card" id="trendCard"><h2>Evolució · últimes partides</h2><div id="trendBody"><p class="note">Carregant…</p></div></section>
   </div>
   <div class="view" id="viewR" hidden>
-    <nav class="subtabs" id="repTabs" role="tablist"><button type="button" data-r="game" aria-selected="true">Partides</button><button type="button" data-r="plays" aria-selected="false">Jugades</button></nav>
     <div id="repGame">
     <p class="note" id="recNote">L'informe es genera sol en acabar cada partida i es guarda al teu ordinador.</p>
     <div id="report"></div>
@@ -645,6 +645,10 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div class="bar" id="histReset"><button class="b" id="histResetBtn" type="button">Posar l'historial a zero</button></div>
     </section>
     </div>
+  </div>
+  <div class="view" id="viewB" hidden>
+    <nav class="subtabs" id="bpTabs" role="tablist"><button type="button" data-b="all" aria-selected="true">Rànquing de tothom</button><button type="button" data-b="mine" aria-selected="false">Les meves</button></nav>
+    <div id="bpAll"></div>
     <div id="repPlays" hidden></div>
   </div>
 </div>
@@ -2186,13 +2190,46 @@ async function renderPlaysTab(){
   const f = $("#playsF"); if (f) { f.value = playsFilter; f.addEventListener("change", () => { playsFilter = f.value; renderPlaysTab(); }); }
   el.querySelector("[data-goset]")?.addEventListener("click", () => { showTab("A"); setGroup("partida"); setTimeout(() => $("#playsCard")?.scrollIntoView({behavior: "smooth", block: "center"}), 50); });
 }
-function repTab(r){
-  document.querySelectorAll("#repTabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.r === r));
-  $("#repGame").hidden = r !== "game"; $("#repPlays").hidden = r !== "plays";
-  if (r === "plays") renderPlaysTab();
-  if ($("#viewR").hidden) showTab("R");
+// the plays live in their own tab now (Best plays): "Les meves" are yours, "Rànquing de tothom" everyone's
+function repTab(r){ if (r === "plays") { showTab("B"); bpSub("mine"); } else showTab("R"); }
+let bpCur = "all", bpFilter = "all";
+function bpSub(b){
+  bpCur = b;
+  document.querySelectorAll("#bpTabs button").forEach(x => x.setAttribute("aria-selected", x.dataset.b === b));
+  $("#bpAll").hidden = b !== "all"; $("#repPlays").hidden = b !== "mine";
+  if (b === "mine") renderPlaysTab(); else renderBestPlays();
 }
-$("#repTabs")?.addEventListener("click", e => { const r = e.target.closest("button")?.dataset.r; if (r) repTab(r); });
+$("#bpTabs")?.addEventListener("click", e => { const b = e.target.closest("button")?.dataset.b; if (b) bpSub(b); });
+async function renderBestPlays(){
+  const el = $("#bpAll"); if (!el || !location.protocol.startsWith("http")) return;
+  let st; try { st = await (await fetch("/api/ranking", {cache: "no-store"})).json(); } catch (e) { el.innerHTML = `<p class="bad">No he pogut llegir el rànquing.</p>`; return; }
+  const now = Date.now() / 1000;
+  let list = st.plays || [];
+  if (bpFilter === "week") list = list.filter(p => now - p.at < 7 * 86400);
+  else if (bpFilter === "day") list = list.filter(p => now - p.at < 86400);
+  const join = st.on
+    ? `<p class="note">Hi participes com a <b data-noi18n>${esc(st.name || "?")}</b>: les teves jugades de 60 punts o més surten aquí per a tothom, amb el clip. <button class="b" type="button" id="bpOff">Deixar de participar</button></p>`
+    : `<section class="card"><h2>Participa al rànquing</h2><p>Les jugades de 60 punts o més de tots els que tenen l'app i hi participen, amb el seu clip. Si hi participes, els altres veuran el teu nom de Riot (sense el #) i els teus clips.</p>
+        <div class="keyrow"><input id="bpName" placeholder="El teu nom al rànquing" value="${esc(st.name || "")}" maxlength="24" autocomplete="off"><button class="b" type="button" id="bpOn">Participar</button></div>
+        ${st.supported ? "" : `<p class="note">Els clips només es graven a Windows.</p>`}</section>`;
+  const medal = i => i < 3 ? ["🥇", "🥈", "🥉"][i] : `${i + 1}`;
+  const rows = list.slice(0, 60).map((p, i) => `<div class="bprow ${p.mine ? "mine" : ""}">
+      <div class="bppos" data-noi18n>${medal(i)}</div>
+      <div class="bpmain"><div class="bphead"><img src="${ddChampImg(champId(p.c) || p.c)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(p.n)}</b><span class="note" data-noi18n>${esc(p.c)}</span><span class="bpsc">${p.s}</span></div>
+        <p><b>${esc(p.t || "")}</b>${p.w ? ` <span class="note">${esc(p.w)}</span>` : ""}</p>
+        ${p.v ? `<video src="/api/rankfile?id=${p.id}" controls preload="none" playsinline></video>` : `<p class="note">Sense clip (no ha arribat a temps).</p>`}
+        <p class="note">${agoTxt(p.at)}</p></div></div>`).join("");
+  el.innerHTML = `${join}
+    <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button></div>
+      ${rows || `<p class="note">Encara no hi ha jugades. Quan algú que hi participa fa una jugada de 60 punts o més, surt aquí (l'app mira cada 10 minuts, fora de partida).</p>`}
+      <p class="note">Les jugades viatgen pel servei ntfy.sh (el dels temporitzadors compartits). Cada ordinador guarda el que ha rebut; els clips que arriben mentre l'app està tancada més de 3 hores no es poden baixar.</p></section>`;
+  const f = $("#bpF"); f.value = bpFilter; f.addEventListener("change", () => { bpFilter = f.value; renderBestPlays(); });
+  $("#bpRef").addEventListener("click", async () => { await fetch("/api/ranking?now=1", {method: "POST"}); setTimeout(renderBestPlays, 4000); });
+  $("#bpOn")?.addEventListener("click", async () => { const n = $("#bpName").value.trim(); if (!n) { $("#bpName").focus(); return; }
+    await fetch(`/api/ranking?on=1&name=${encodeURIComponent(n)}`, {method: "POST"}); renderBestPlays(); });
+  $("#bpOff")?.addEventListener("click", async () => { await fetch("/api/ranking?on=0", {method: "POST"}); renderBestPlays(); });
+  i18nAll();
+}
 // The game only tells your farm in steps of ten while you play (78 arrives as 70): so it says "between 70 and 79"
 // instead of a number that's lower than what you have
 function csLine(min, cs){
@@ -6112,17 +6149,18 @@ setInterval(() => { if (!$("#viewA").hidden) loadStatus(); }, 5000);
 function showTab(r){
   const v = r === true ? "R" : r === false ? "T" : r;
   if (v !== "G") comboStop();
-  for (const k of ["T", "R", "H", "C", "G", "S", "M", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
+  for (const k of ["T", "R", "B", "H", "C", "G", "S", "M", "A"]) { $(`#view${k}`).hidden = v !== k; $(`#tab${k}`).setAttribute("aria-selected", v === k); }
   if (v === "R") loadHistory();
   if (v === "S") { loadRank(false); loadSeason(false); loadHistory(); }
   if (v === "H" && !mhLoaded) loadMatches(true);
+  if (v === "B") bpSub(bpCur);
   if (v === "G") { (benchData ? Promise.resolve() : loadBench()).then(renderGuides); renderGuides(); }
   if (v === "M") { renderMmr(); Promise.all([loadRank(false), loadHistory()]).then(renderMmr); }
   if (v === "H") loadRank(false);
   if (v === "A") { const g = $("#setTabs button[aria-selected=true]")?.dataset.g; if (g === "app") loadStatus(); }
   if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); renderWeekFocus(); renderStudy(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
 }
-$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C")); $("#tabM").addEventListener("click", () => showTab("M")); $("#tabG").addEventListener("click", () => showTab("G"));
+$("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C")); $("#tabM").addEventListener("click", () => showTab("M")); $("#tabG").addEventListener("click", () => showTab("G")); $("#tabB").addEventListener("click", () => showTab("B"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const mm = t => fmtClock(t);
 const dash = v => v === null || v === undefined ? "—" : v;

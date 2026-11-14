@@ -17,3 +17,5 @@ func captureCut(from, to time.Time, out string) error {
 }
 
 func captureCleanup() {}
+
+func rankPreview(src, dst string) error { return errors.New("només a Windows") }

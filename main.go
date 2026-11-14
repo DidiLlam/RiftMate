@@ -29,7 +29,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.2.3"
+	version = "2.3.0"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -149,6 +149,9 @@ func (r *Recorder) step(g *AllGame) {
 		myID := g.ActivePlayer.RiotID
 		if myID == "" {
 			myID = g.ActivePlayer.SummonerName
+		}
+		if myID != "" {
+			myRiotNow.Store(myID)
 		}
 		var me *Player
 		for i := range g.AllPlayers {
@@ -509,6 +512,8 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/learn", learnHandler)
 	mux.HandleFunc("/api/guideai", guideAIHandler)
 	mux.HandleFunc("/api/study", studyHandler)
+	mux.HandleFunc("/api/ranking", bpHandler)
+	mux.HandleFunc("/api/rankfile", rankFileHandler)
 	mux.HandleFunc("/api/mastery", masteryHandler)
 	aiHandlers(mux, send)
 	mux.HandleFunc("/api/ult", func(w http.ResponseWriter, req *http.Request) {
