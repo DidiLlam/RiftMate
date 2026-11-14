@@ -723,7 +723,8 @@ const I18N = {
   "És el teu millor resultat: abans {n}.": ["Es tu mejor resultado: antes {n}.", "That's your best result: before, {n}."],
   "Fa 3 minuts que no poses cap ward: posa'n un abans d'avançar.": ["Hace 3 minutos que no pones ningún ward: pon uno antes de avanzar.", "You haven't placed a ward in 3 minutes: place one before stepping up."],
   "Fa 3 minuts que no poses cap ward.": ["Hace 3 minutos que no pones ningún ward.", "You haven't placed a ward in 3 minutes."],
-  "Les {n} vegades que has seguit jugant després de dues derrotes, aquell dia has fet {m} LP de mitjana amb les partides de després.": ["Las {n} veces que has seguido jugando después de dos derrotas, ese día has hecho {m} LP de media con las partidas de después.", "The {n} times you kept playing after two losses, the games after them made {m} LP on average that day."],
+  "Les {n} vegades que has seguit jugant després de tres derrotes seguides, aquell dia has fet {m} LP de mitjana amb les partides de després.": ["Las {n} veces que has seguido jugando después de tres derrotas seguidas, ese día has hecho {m} LP de media con las partidas de después.", "The {n} times you kept playing after three losses in a row, the games after them made {m} LP on average that day."],
+  "{n} derrotes seguides. Avui ja n'hi ha prou de ranked: a totes t'ha fallat {x}.": ["{n} derrotas seguidas. Hoy ya basta de ranked: en todas te ha fallado {x}.", "{n} losses in a row. That's enough ranked for today: in all of them, {x} went wrong."],
   "L'última vegada contra {a}: {x}": ["La última vez contra {a}: {x}", "Last time against {a}: {x}"],
   "Portes {n} derrotes seguides avui.": ["Llevas {n} derrotas seguidas hoy.", "You've lost {n} in a row today."],
   "Quan has seguit jugant així, les partides de després t'han costat {n} LP de mitjana.": ["Cuando has seguido jugando así, las partidas de después te han costado {n} LP de media.", "When you kept playing like this, the games after cost you {n} LP on average."],
@@ -5614,7 +5615,7 @@ function tiltCost(){
   for (const r of histCache) if (r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number") (days[String(r.date).slice(0, 10)] ??= []).push(r);
   const after = [];
   for (const list of Object.values(days)) { list.sort((a, b) => a.date < b.date ? -1 : 1); let k = 0, i = 0;
-    for (; i < list.length; i++) { k = list[i].lp.delta < 0 ? k + 1 : 0; if (k >= 2) break; }
+    for (; i < list.length; i++) { k = list[i].lp.delta < 0 ? k + 1 : 0; if (k >= 3) break; }
     const rest = list.slice(i + 1); if (i < list.length && rest.length) after.push(rest.reduce((a, r) => a + r.lp.delta, 0)); }
   return after.length >= 3 ? {n: after.length, avg: Math.round(after.reduce((a, b) => a + b, 0) / after.length)} : null;
 }
@@ -5627,7 +5628,7 @@ function renderSession(h, fresh){
   if (!all.length && !resetToday) { const wa = warmupAdvice(); if (wa) { box.className = "session"; box.innerHTML = `<span>${esc(wa)}</span>`; box.hidden = false; } else box.hidden = true; return; }
   const w = day.filter(r => r.result === "Victòria").length, l = day.filter(r => r.result === "Derrota").length;
   let streak = 0; for (const r of day) { if (r.result === "Victòria") break; if (r.result === "Derrota") streak++; } // newest first; unknown results don't count
-  const stop = streak >= 3, pause = streak === 2;
+  const stop = streak >= 3, pause = false; // two losses happen: the warning is from three
   // LP of the day and the error that repeats most (the "a treballar" areas of today's reports)
   // LP of the day: your rank after the last game minus your rank before the first one (Solo/Duo), not the sum of
   // the games' changes: a game whose change Riot gave late (or never) would be missing from a sum
@@ -5643,8 +5644,8 @@ function renderSession(h, fresh){
   const bad = {}; for (const r of day) for (const g of reportGrades(r)) if (g.level === "bad") bad[g.area] = (bad[g.area] || 0) + 1;
   const rep = Object.entries(bad).sort((a, b) => b[1] - a[1])[0];
   const lost2 = day.filter(r => r.result).slice(0, streak), same = streak >= 2 ? Object.keys(bad).filter(a => lost2.every(r => reportGrades(r).some(g => g.area === a && g.level === "bad"))) : [];
-  const tc = (stop || pause) ? tiltCost() : null, tcTxt = tc ? ` Les ${tc.n} vegades que has seguit jugant després de dues derrotes, aquell dia has fet ${tc.avg >= 0 ? "+" : ""}${tc.avg} LP de mitjana amb les partides de després.` : "";
-  const msg = (stop ? `${streak} derrotes seguides. Avui ja n'hi ha prou de ranked.` : pause ? `Dues derrotes seguides. Fes una pausa de deu minuts abans de la següent${same.length ? `: a totes dues t'ha fallat ${same[0].toLowerCase()}` : ""}.` : "") + (tc && tc.avg < 0 ? tcTxt : "");
+  const tc = (stop || pause) ? tiltCost() : null, tcTxt = tc ? ` Les ${tc.n} vegades que has seguit jugant després de tres derrotes seguides, aquell dia has fet ${tc.avg >= 0 ? "+" : ""}${tc.avg} LP de mitjana amb les partides de després.` : "";
+  const msg = (stop ? `${streak} derrotes seguides. Avui ja n'hi ha prou de ranked${same.length ? `: a totes t'ha fallat ${same[0].toLowerCase()}` : ""}.` : pause ? `Dues derrotes seguides. Fes una pausa de deu minuts abans de la següent${same.length ? `: a totes dues t'ha fallat ${same[0].toLowerCase()}` : ""}.` : "") + (tc && tc.avg < 0 ? tcTxt : "");
   box.className = "session" + (stop || pause ? " stop" : "");
   box.innerHTML = `<span>Avui: <b>${w}V – ${l}D</b>${withLp ? ` · <b class="${lp >= 0 ? "good" : "bad"}">${lp >= 0 ? "+" : ""}${lp} LP</b>${lpPartial ? ` <span class="note" title="Riot no ha donat el rang d'alguna partida (Flex, o massa seguides): el compte és des de la primera que sí">(aprox.)</span>` : ""}` : ""}${resetToday && from ? ` <span class="note">(des de les ${from.slice(11)})</span>` : ""}${rep && day.length >= 2 && rep[1] >= 2 ? ` <span class="note">· el que més es repeteix: ${esc(rep[0].toLowerCase())} (${rep[1]} de ${day.length})</span>` : ""}</span>`
     + (msg ? `<span class="msg">${esc(msg)}</span>` : "")
@@ -6084,7 +6085,7 @@ let csTiltSaid = "";
 function tiltLine(){
   const day = histCache.filter(r => !r.error && String(r.date).startsWith(today()) && r.result);
   let k = 0; for (const r of day) { if (r.result === "Victòria") break; if (r.result === "Derrota") k++; }
-  if (k < 2) return "";
+  if (k < 3) return "";
   const tc = tiltCost();
   return `Portes ${k} derrotes seguides avui.` + (tc && tc.avg < 0 ? ` Quan has seguit jugant així, les partides de després t'han costat ${-tc.avg} LP de mitjana.` : " Pensa-t'ho abans de jugar la següent.");
 }
