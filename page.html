@@ -5372,7 +5372,7 @@ function allyFacts(r){
 // public studies of real games give to what the scouting sees:
 // - mastery with the champion (iTero, 1M+ Gold games: under ~10k about 44% of wins, 12k already 50%, then barely
 //   moves: +1-2 points more for the big mains), the strongest sign;
-// - two or more losses in a row: 48.8% the next game (iTero, 100k games); win streaks: no proven effect, not counted;
+// - three or more losses in a row (the study measured two or more: 48.8% the next game, iTero, 100k games); win streaks: no proven effect, not counted;
 // - the season's win rate, pulled toward 50% (few games say little): more than 50% = better than his rank;
 // - rank against the lobby: a division is ~100 of MMR; in a 5-player team that's ~+3 points (Elo), halved because
 //   the rank you see isn't the MMR. The champions (counters) are weighed by the AI in the plan.
@@ -5387,7 +5387,7 @@ function duelPower(r, lobbyAvg){
   const why = []; let p = 0;
   if (r.masteryOk) { const m = masteryPP(r.mastery); p += m; if (m <= -3) why.push("gairebé no l'ha jugat"); else if (m >= 1.5) why.push("main"); }
   const games = r.games || []; let k = 0; for (const x of games) { if (x.w === games[0].w) k++; else break; }
-  if (games.length && !games[0].w && k >= 2) { p -= 1.2; why.push(`${k} derrotes seguides`); }
+  if (games.length && !games[0].w && k >= 3) { p -= 1.2; why.push(`${k} derrotes seguides`); }
   const tot = r.wins + r.losses; if (tot) { const wr = (r.wins + 15) / (tot + 30); p += Math.max(-3, Math.min(3, (wr - 0.5) * 50)); }
   if (r.tier && lobbyAvg != null) p += Math.max(-4.5, Math.min(4.5, (absRank(r.tier, r.rank, r.lp) - lobbyAvg) / 100 * 1.5));
   return {p, why};
