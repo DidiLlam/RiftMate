@@ -221,7 +221,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend .tv span{font-size:12px}.trend .tv .good{color:var(--good)}.trend .tv .bad{color:var(--loss)}.trend .tv .flat{color:var(--muted)}
 .trend svg{width:100%;height:auto;display:block}.trend .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.trend .ref{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.8}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
-.trend .lab{font-size:11px;fill:var(--muted)}.bpnews{position:fixed;right:16px;bottom:16px;max-width:420px;z-index:50;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.trend .lab{font-size:11px;fill:var(--muted)}.mplist{display:flex;flex-direction:column;gap:6px;align-items:stretch}.mplist .b{text-align:left}.mpgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}@media (max-width:760px){.mpgrid{grid-template-columns:1fr}}.mpmap svg{width:100%;height:auto;border-radius:10px;display:block}.mpopt{display:block;width:100%;text-align:left;margin:6px 0}.mpcap{background:rgba(127,127,127,.1);border-radius:8px;padding:10px 12px}
+.bpnews{position:fixed;right:16px;bottom:16px;max-width:420px;z-index:50;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .bprow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.bprow.mine{background:rgba(127,127,127,.06)}.bppos{font:700 1.3rem var(--mono,monospace);min-width:36px;text-align:center}.bpmain{flex:1;min-width:0}.bphead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bphead img{width:28px;height:28px;border-radius:6px}.bpsc{margin-left:auto;font:700 1.1rem var(--mono,monospace)}.bpmain video{width:100%;max-width:560px;border-radius:8px;margin-top:6px;background:#000}
 .gpicks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.gpick{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color:inherit;cursor:pointer;min-width:74px}.gpick img{width:40px;height:40px;border-radius:8px}.gpick.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.gpick small{font-size:.7rem}
 .gadd input{height:100%;min-height:58px;min-width:150px;border:1px dashed var(--line);border-radius:10px;padding:0 10px;background:transparent;color:inherit}
@@ -610,6 +611,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
       <div id="coachAnaBody"></div>
       <div class="bar"><button class="b primary" type="button" id="coachAnaBtn">Analitza les meves partides</button><button class="b" type="button" id="coachAnaVoice" hidden>▶ Escolta-ho</button></div>
     </section>
+    <section class="card" id="mplayCard"><h2>Jugades de macro explicades</h2><div id="mplayBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="studyCard"><h2>Estudia al mòbil</h2><div id="studyBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="wfCard"><h2>Objectiu de la setmana</h2><div id="wfBody"><p class="note">Carregant…</p></div></section>
     <section class="card" id="goalCard"><h2>Els teus objectius</h2><div id="goalBody"><p class="note">Carregant…</p></div></section>
@@ -4528,6 +4530,38 @@ function renderWeekFocus(){
     <div class="bar"><button class="b" type="button" id="wfNew">Triar-ne un altre ara</button></div>`;
   $("#wfNew")?.addEventListener("click", () => { const cur = wf.area; store.set("weekFocus", null); let n = weekFocus(); if (n && n.area === cur) { const alt = Object.keys(FOCUS).filter(a => a !== cur && FOCUS_METRIC[a]?.u)[0]; n = {...n, area: alt}; store.set("weekFocus", n); } renderWeekFocus(); });
 }
+// the plays explained on the official map: the same ones as the phone app, loaded from its page (one source)
+const STUDY_BASE = "https://didillam.github.io/RiftMate/estudi/";
+let mplayLoaded = null, mplay = null, mplayTimer = null;
+function loadScript(src){ return new Promise((ok, ko) => { const e = document.createElement("script"); e.src = src; e.onload = ok; e.onerror = ko; document.head.appendChild(e); }); }
+function mplayMe(){ const r = histCache.find(x => !x.error && x.champion); return r ? displayChamp(r.champion) : "Ahri"; }
+async function renderMacroPlays(){
+  const el = $("#mplayBody"); if (!el) return;
+  if (!mplayLoaded) mplayLoaded = Promise.all([loadScript(STUDY_BASE + "content.js?v=" + Date.now().toString().slice(0, 7)), loadScript(STUDY_BASE + "plays.js?v=" + Date.now().toString().slice(0, 7))]).catch(() => { mplayLoaded = null; throw 0; });
+  try { await mplayLoaded; } catch (e) { el.innerHTML = `<p class="note">No he pogut carregar les jugades (cal connexió a internet).</p>`; return; }
+  clearInterval(mplayTimer);
+  const LN = Object.fromEntries((window.LESSONS || []).map(l => [l.id, l.name])), done = store.get("mplayDone", {});
+  if (!mplay) {
+    el.innerHTML = `<p>Situacions de partida al mapa oficial, amb les cares dels campions, les onades i fletxes. Primer tries què faries i després la veus pas a pas. Són les mateixes que a l'app del mòbil.</p>
+      <div class="mplist">${PLAYS.map(p => `<button class="b" type="button" data-mp="${p.id}"><b>${esc(p.name)}</b><small class="note"> · ${esc(LN[p.l] || "")}${done[p.id] != null ? (done[p.id] ? " · encertada" : " · fallada") : ""}</small></button>`).join("")}</div>`;
+    el.querySelectorAll("[data-mp]").forEach(b => b.addEventListener("click", () => { mplay = {p: PLAYS.find(x => x.id === b.dataset.mp), i: 0, ans: null}; renderMacroPlays(); }));
+    return;
+  }
+  const p = mplay.p;
+  el.innerHTML = `<div class="bar"><button class="b" type="button" id="mpBack">‹ Totes les jugades</button></div>
+    <div class="mpgrid"><div class="mpmap">${RMPlays.playSVG(p)}</div><div class="mpside"><p class="note">${esc(LN[p.l] || "")}</p><h3>${esc(p.name)}</h3>
+      ${mplay.ans == null ? `<p><b>${esc(p.q)}</b></p>${p.o.map((o, i) => `<button class="b mpopt" type="button" data-mpa="${i}">${esc(o)}</button>`).join("")}`
+        : `<p class="${mplay.ans === p.a ? "good" : "bad"}"><b>${mplay.ans === p.a ? "Correcte." : "No: mira com es fa."}</b></p><p class="mpcap" id="mpCap"></p>
+          <div class="bar"><button class="b" type="button" id="mpPrev">‹</button><span class="note" id="mpPos"></span><button class="b" type="button" id="mpNext">›</button><button class="b" type="button" id="mpPlay">Reproduir</button></div>`}</div></div>`;
+  const go = i => { mplay.i = Math.max(0, Math.min(p.steps.length - 1, i)); RMPlays.draw(el.querySelector(".rmplay"), p, mplay.i, mplayMe());
+    const c = $("#mpCap"); if (c) c.textContent = p.steps[mplay.i].t; const q = $("#mpPos"); if (q) q.textContent = `${mplay.i + 1} de ${p.steps.length}`; };
+  go(mplay.ans == null ? 0 : mplay.i);
+  $("#mpBack").addEventListener("click", () => { mplay = null; renderMacroPlays(); });
+  el.querySelectorAll("[data-mpa]").forEach(b => b.addEventListener("click", () => { mplay.ans = +b.dataset.mpa; const d = store.get("mplayDone", {}); d[p.id] = mplay.ans === p.a; store.set("mplayDone", d); mplay.i = 0; renderMacroPlays(); }));
+  $("#mpPrev")?.addEventListener("click", () => { clearInterval(mplayTimer); go(mplay.i - 1); });
+  $("#mpNext")?.addEventListener("click", () => { clearInterval(mplayTimer); go(mplay.i + 1); });
+  $("#mpPlay")?.addEventListener("click", () => { clearInterval(mplayTimer); go(0); mplayTimer = setInterval(() => { if (!mplay || mplay.i >= p.steps.length - 1) return clearInterval(mplayTimer); go(mplay.i + 1); }, 3200); });
+}
 // the macro course on the phone: its questions start from your own mistakes (the app sends them a summary)
 async function renderStudy(q = ""){
   const el = $("#studyBody"); if (!el || !location.protocol.startsWith("http")) return;
@@ -6174,7 +6208,7 @@ function showTab(r){
   if (v === "M") { renderMmr(); Promise.all([loadRank(false), loadHistory()]).then(renderMmr); }
   if (v === "H") loadRank(false);
   if (v === "A") { const g = $("#setTabs button[aria-selected=true]")?.dataset.g; if (g === "app") loadStatus(); }
-  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); renderWeekFocus(); renderStudy(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
+  if (v === "C") { (histCount < 0 ? loadHistory() : Promise.resolve()).then(() => { renderProgress(); renderWeekFocus(); renderStudy(); renderMacroPlays(); (seasonData ? Promise.resolve() : loadSeason(false)).then(() => { renderPool(); loadBench().then(loadPatch); }); }); renderCoachAna(); loadWhen(); }
 }
 $("#tabT").addEventListener("click", () => showTab("T")); $("#tabR").addEventListener("click", () => showTab("R")); $("#tabS").addEventListener("click", () => showTab("S")); $("#tabA").addEventListener("click", () => showTab("A")); $("#tabH").addEventListener("click", () => showTab("H")); $("#tabC").addEventListener("click", () => showTab("C")); $("#tabM").addEventListener("click", () => showTab("M")); $("#tabG").addEventListener("click", () => showTab("G")); $("#tabB").addEventListener("click", () => showTab("B"));
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));

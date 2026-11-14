@@ -73,6 +73,7 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}td{padding:6px 4px;bor
   <button role="tab" id="tQuiz" type="button">Preguntes</button>
 </nav>
 <script src="content.js"></script>
+<script src="plays.js"></script>
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
@@ -154,88 +155,11 @@ function levelAfter(ok, n){
 }
 const shuffle = q => { const idx = q.o.map((_, i) => i).sort(() => Math.random() - .5); return {...q, o: idx.map(i => q.o[i]), a: idx.indexOf(q.a)}; };
 
-// ---- the map: a sketch of Summoner's Rift in 0-100 (your base bottom-left). Towers, river, pits and bases are
-// where they are in the game, roughly; the lessons and the plays draw on top of it.
-const SY = y => 100 - y;
-const TOWERS = {b: [[8, 72], [8, 48], [8, 26], [38, 38], [30, 30], [22, 22], [72, 8], [48, 8], [26, 8]], r: [[28, 92], [52, 92], [74, 92], [62, 62], [70, 70], [78, 78], [92, 28], [92, 52], [92, 74]]};
-function mapBase(){
-  // in screen coordinates (y down): top lane up the left edge and along the top, bot lane along the bottom and up
-  // the right edge, mid from your base to theirs, the river across the other diagonal
-  return `<rect x="0" y="0" width="100" height="100" rx="5" fill="var(--card)"/>
-    <path d="M14 14L86 86" stroke="var(--accent)" stroke-opacity=".14" stroke-width="11" stroke-linecap="round"/>
-    <path d="M12 88L88 12" stroke="var(--line)" stroke-width="4.5" stroke-linecap="round"/>
-    <path d="M8 96V8H96" fill="none" stroke="var(--line)" stroke-width="5" stroke-linejoin="round"/>
-    <path d="M4 92H92V4" fill="none" stroke="var(--line)" stroke-width="5" stroke-linejoin="round"/>
-    <circle cx="6" cy="${SY(6)}" r="7" fill="var(--accent)" fill-opacity=".3"/><circle cx="94" cy="${SY(94)}" r="7" fill="var(--bad)" fill-opacity=".3"/>
-    <circle cx="67" cy="${SY(33)}" r="4.2" fill="none" stroke="var(--muted)" stroke-dasharray="1 1"/><circle cx="33" cy="${SY(67)}" r="4.2" fill="none" stroke="var(--muted)" stroke-dasharray="1 1"/>
-    ${TOWERS.b.map(([x, y]) => `<rect x="${x - 1.4}" y="${SY(y) - 1.4}" width="2.8" height="2.8" rx=".5" fill="var(--accent)"/>`).join("")}
-    ${TOWERS.r.map(([x, y]) => `<rect x="${x - 1.4}" y="${SY(y) - 1.4}" width="2.8" height="2.8" rx=".5" fill="var(--bad)"/>`).join("")}
-    <text x="14" y="${SY(1.5)}" font-size="3" fill="var(--muted)">la teva base</text>
-    <defs><marker id="ahg" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--gold)"/></marker>
-      <marker id="ahb" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker>
-      <marker id="ahr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--bad)"/></marker>
-      <clipPath id="cc"><circle cx="0" cy="0" r="2.75"/></clipPath></defs>`;
-}
-const lab = (x, y, t, dy = -3.2) => t ? `<text x="${x}" y="${SY(y) + dy}" text-anchor="middle" font-size="3.2" font-weight="600" fill="var(--fg)" paint-order="stroke" stroke="var(--card)" stroke-width=".8">${esc(t)}</text>` : "";
-const wardSVG = (x, y) => `<path d="M${x} ${SY(y) - 2.2}l1.6 2.2-1.6 2.2-1.6-2.2z" fill="var(--gold)"/>`;
-const arrowSVG = (x1, y1, x2, y2, c = "g") => `<line x1="${x1}" y1="${SY(y1)}" x2="${x2}" y2="${SY(y2)}" stroke="${c === "b" ? "var(--accent)" : c === "r" ? "var(--bad)" : "var(--gold)"}" stroke-width="1.1" ${c === "r" ? 'stroke-dasharray="2 1.2"' : ""} marker-end="url(#ah${c})"/>`;
-function mapSVG(marks){
-  let s = `<svg viewBox="-1 -1 102 102" role="img" aria-label="Esquema del mapa">${mapBase()}`;
-  for (const m of marks || []) {
-    if (m.k === "arrow") s += arrowSVG(m.x, m.y, m.x2, m.y2) + lab((m.x + m.x2) / 2, (m.y + m.y2) / 2, m.t);
-    else if (m.k === "zone") s += `<circle cx="${m.x}" cy="${SY(m.y)}" r="${m.r}" fill="var(--gold)" fill-opacity=".22" stroke="var(--gold)" stroke-width=".5"/>` + lab(m.x, m.y + m.r, m.t, -1);
-    else if (m.k === "ward") s += wardSVG(m.x, m.y);
-    else s += `<circle cx="${m.x}" cy="${SY(m.y)}" r="1.6" fill="var(--fg)"/>` + lab(m.x, m.y, m.t);
-  }
-  return s + `</svg>`;
-}
-
-// ---- plays on the map: champions' faces (Riot's Data Dragon), waves, arrows and wards, step by step
-let ddv = get("ddv", "14.24.1");
-fetch("https://ddragon.leagueoflegends.com/api/versions.json").then(r => r.json()).then(v => { if (v?.[0]) { ddv = v[0]; put("ddv", ddv); } }).catch(() => {});
-const DDID = {"LeBlanc": "Leblanc", "Wukong": "MonkeyKing", "Kai'Sa": "Kaisa", "Cho'Gath": "Chogath", "Vel'Koz": "Velkoz", "Kha'Zix": "Khazix", "Bel'Veth": "Belveth", "Renata Glasc": "Renata", "Nunu & Willump": "Nunu"};
-const ddId = n => DDID[n] || String(n || "Ahri").replace(/[^A-Za-z]/g, "").replace(/^./, c => c.toUpperCase());
-const champImg = c => `https://ddragon.leagueoflegends.com/cdn/${ddv}/img/champion/${ddId(c)}.png`;
+// ---- the map and the plays: plays.js (shared with the PC app)
+const mapSVG = m => RMPlays.mapSVG(m);
 let play = null; // {p, i, ans}
-function playState(p, upto){
-  const st = {u: {}, w: {}, o: [], a: [], wd: []};
-  p.steps.slice(0, upto + 1).forEach((s, i) => {
-    for (const [id, v] of Object.entries(s.u || {})) {
-      if (v === "dead") st.u[id] = {...st.u[id], dead: true};
-      else if (v.length === 4) st.u[id] = {c: v[0] === "@me" ? (prof?.champ || "Ahri") : v[0], t: v[1], x: v[2], y: v[3], me: id === "me"};
-      else st.u[id] = {...st.u[id], x: v[0], y: v[1]};
-    }
-    for (const [id, v] of Object.entries(s.w || {})) st.w[id] = {t: v[0], x: v[1], y: v[2], n: v[3]};
-    if (s.o) st.o = s.o;
-    if (s.wd) st.wd = st.wd.concat(s.wd);
-    st.a = i === upto ? (s.a || []) : [];
-  });
-  return st;
-}
-function playSVG(p){
-  const st = playState(p, 0);
-  return `<svg viewBox="-1 -1 102 102" role="img" aria-label="${esc(p.name)}" id="pmap">${mapBase()}<g id="pobj"></g><g id="pwd"></g><g id="pw"></g><g id="parr"></g>
-    ${Object.entries(st.u).map(([id]) => `<g class="unit" id="u-${id}"></g>`).join("")}${p.steps.flatMap(s => Object.entries(s.u || {}).filter(([, v]) => Array.isArray(v) && v.length === 4)).map(([id]) => id).filter((id, i, a) => a.indexOf(id) === i && !st.u[id]).map(id => `<g class="unit" id="u-${id}"></g>`).join("")}</svg>`;
-}
 function playDraw(p, i){
-  const st = playState(p, i), svg = $("#pmap"); if (!svg) return;
-  svg.querySelector("#pobj").innerHTML = st.o.map(o => `<circle cx="${o.x}" cy="${SY(o.y)}" r="4.2" fill="var(--bad)" fill-opacity="${o.dead ? .1 : .3}" stroke="var(--bad)" stroke-width=".5"/>${lab(o.x, o.y, ({drac: "Drac", baro: "Baró", larves: "Larves", herald: "Herald"}[o.k] || o.k) + (o.t ? " " + o.t : ""), 7.5)}`).join("");
-  svg.querySelector("#pwd").innerHTML = st.wd.map(([x, y]) => wardSVG(x, y)).join("");
-  svg.querySelector("#pw").innerHTML = Object.values(st.w).filter(w => w.n > 0).map(w => { const c = w.t === "b" ? "var(--accent)" : "var(--bad)", k = Math.min(w.n, 15);
-    return `<g transform="translate(${w.x} ${SY(w.y)})">${Array.from({length: k}, (_, j) => `<rect x="${(j % 5) * 1.5 - 3.6}" y="${Math.floor(j / 5) * 1.5 - 1.4}" width="1.2" height="1.2" fill="${c}"/>`).join("")}</g>`; }).join("");
-  svg.querySelector("#parr").innerHTML = st.a.map(a => arrowSVG(...a)).join("");
-  for (const [id, u] of Object.entries(st.u)) {
-    const g = svg.querySelector("#u-" + id); if (!g) continue;
-    if (!g.dataset.c) { g.dataset.c = u.c; const ring = u.me ? "var(--gold)" : u.t === "b" ? "var(--accent)" : "var(--bad)";
-      g.innerHTML = `<circle r="3.3" fill="${ring}"/><circle r="2.75" fill="var(--chip)"/><text y="1" text-anchor="middle" font-size="2.6" fill="var(--fg)">${esc(u.c.slice(0, 2))}</text>
-        <image href="${champImg(u.c)}" x="-2.75" y="-2.75" width="5.5" height="5.5" clip-path="url(#cc)" onerror="this.remove()"/>${u.me ? `<text y="-4.3" text-anchor="middle" font-size="2.8" font-weight="700" fill="var(--gold)" paint-order="stroke" stroke="var(--card)" stroke-width=".8">Tu</text>` : ""}
-        <path class="x" d="M-2.6 -2.6L2.6 2.6M2.6 -2.6L-2.6 2.6" stroke="var(--bad)" stroke-width="1" opacity="0"/>`; }
-    const first = !g.dataset.placed; g.dataset.placed = 1;
-    if (first) g.style.transition = "none";
-    g.style.transform = `translate(${u.x}px, ${SY(u.y)}px)`;
-    if (first) { g.getBoundingClientRect(); g.style.transition = ""; }
-    g.style.opacity = u.dead ? .35 : 1; g.querySelector(".x").setAttribute("opacity", u.dead ? 1 : 0);
-  }
+  RMPlays.draw($(".rmplay"), p, i, prof?.champ);
   const cap = $("#pcap"); if (cap) cap.textContent = p.steps[i].t;
   const pos = $("#ppos"); if (pos) pos.textContent = `${i + 1} de ${p.steps.length}`;
 }
@@ -248,7 +172,7 @@ function viewPlay(){
   const p = play.p;
   return `<button class="btn ghost" data-back="1" type="button">‹ Tornar</button>
     <section class="card"><p class="note">${esc(LBY[p.l]?.name || "")}</p><h2>${esc(p.name)}</h2>
-      <div class="mapbox big">${playSVG(p)}</div>
+      <div class="mapbox big">${RMPlays.playSVG(p)}</div>
       ${play.ans == null ? `<p><b>${esc(p.q)}</b></p>${p.o.map((o, i) => `<button class="opt" data-pans="${i}" type="button">${esc(o)}</button>`).join("")}`
         : `<p class="${play.ans === p.a ? "good" : "bad"}"><b>${play.ans === p.a ? "Correcte." : "No: mira com es fa."}</b></p>
           <p id="pcap" class="why"></p>
