@@ -1,7 +1,7 @@
 {
- "version": "2.3.4",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.4.exe",
- "size": 10201088,
- "sha256": "25395c6a012a557203b83661ba147932c117f6e9ab8a12417cf2245ae8933ee6",
- "notes": "- Visió: anàlisi de cada partida (morts sense ward, ruta del jungla rival, minuts sense wards, objectius perduts) al mapa oficial"
+ "version": "2.3.5",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.5.exe",
+ "size": 10208256,
+ "sha256": "4618f6ac73f61efe02ba418eb4d22874ce476b34d9af6148358f9ea3958c4fb1",
+ "notes": "- Duo: els temporitzadors ja no es perden si la connexió es talla (reprèn on ho havia deixat i llegeix el que el company ha marcat abans de connectar)\n- Lent de l'oracle: el coach i l'informe ja no et demanen wards grocs quan l'has canviada\n- Registre: diu què envies al duo"
 }
