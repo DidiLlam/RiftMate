@@ -1,7 +1,7 @@
 {
- "version": "2.3.9",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.9.exe",
- "size": 10213376,
- "sha256": "967905c9a733588fff9b1be06bfed94a8dcc4535f77c5110f7e5c502ab93549c",
- "notes": "- Best plays: NEW també a les teves jugades (Les meves), amb el nombre de noves a cada pestanya"
+ "version": "2.3.10",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.10.exe",
+ "size": 10213888,
+ "sha256": "643d972a8a4c603de377e96d7011d90bcaac5ee55790263b951bc928c2301837",
+ "notes": "- Objectius: '2 wards cada 3 minuts' canviat per '1 de visió per minut' (compta també els wards de control i els que destrueixes amb la lent)"
 }
