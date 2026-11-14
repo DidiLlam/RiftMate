@@ -21,7 +21,7 @@ window.LESSONS = [
  ],
  rules: ["Abans de moure't o de tornar a base, empeny.", "No empenyis fins a la torre rival si no saps on és el jungla rival: és on et poden matar.", "Si vas per darrere, deixa que l'onada vingui cap a tu.", "Una onada a prop de la teva torre et protegeix; una onada a la seva et deixa temps lliure."],
  errors: ["Empènyer sense visió i morir al riu.", "Tornar a base amb una onada gran que va cap a la teva torre: la perds.", "Pegar al rival dins de la seva onada: els minions fan molt mal al principi."],
- map: [{k: "zone", x: 50, y: 50, r: 8, t: "onada"}, {k: "arrow", x: 46, y: 54, x2: 62, y2: 38, t: "empènyer"}, {k: "dot", x: 66, y: 34, t: "torre rival"}, {k: "dot", x: 34, y: 66, t: "la teva torre"}]},
+ map: [{k: "zone", x: 50, y: 50, r: 6, t: "onada"}, {k: "arrow", x: 50, y: 50, x2: 59, y2: 59, t: "empènyer"}]},
 
 {id: "tornar", name: "Tornar a base", short: "Quan i amb quant",
  intro: "Cada tornada a base és una decisió: quanta onada perds, què compres i quan arribes al proper objectiu.",
@@ -34,7 +34,7 @@ window.LESSONS = [
  ],
  rules: ["Empeny, i després torna.", "Torna amb or per a alguna cosa que canviï els teus combats.", "Sincronitza les tornades amb els objectius."],
  errors: ["Tornar a base amb poca vida però amb l'onada al teu costat: perds 2 onades.", "Quedar-te a la línia amb molt d'or i morir amb tot l'or a sobre.", "Tornar just quan surt el drac."],
- map: [{k: "dot", x: 8, y: 8, t: "base"}, {k: "arrow", x: 52, y: 48, x2: 12, y2: 12, t: "torna"}, {k: "zone", x: 64, y: 36, r: 6, t: "onada a la torre"}]},
+ map: [{k: "zone", x: 60, y: 60, r: 5, t: "onada a la torre"}, {k: "arrow", x: 54, y: 54, x2: 12, y2: 12, t: "torna"}]},
 
 {id: "objectius", name: "Objectius", short: "Timers 2026 i prioritat",
  intro: "Els monstres èpics i les torres guanyen partides. Saber quan surten i preparar-los un minut abans és el més rendible de la macro.",
@@ -47,7 +47,7 @@ window.LESSONS = [
  ],
  rules: ["Un minut abans: empeny el mid i posa visió.", "Si no pots disputar-lo, canvia'l per un altre.", "No et moris abans de l'objectiu."],
  errors: ["Arribar al drac sense haver empès el mid: el rival arriba primer.", "Lluitar el drac en inferioritat perquè un company ha mort abans.", "Deixar passar el Baró al 20:00 sense ni mirar-lo."],
- map: [{k: "pit", x: 70, y: 70, t: "Baró / Herald / larves"}, {k: "pit", x: 30, y: 30, t: "Drac"}, {k: "ward", x: 38, y: 34}, {k: "ward", x: 32, y: 40}, {k: "arrow", x: 50, y: 50, x2: 34, y2: 34, t: "del mid al drac"}]},
+ map: [{k: "ward", x: 60, y: 27}, {k: "ward", x: 74, y: 40}, {k: "ward", x: 58, y: 40}, {k: "arrow", x: 50, y: 50, x2: 63, y2: 37, t: "del mid al drac"}]},
 
 {id: "roam", name: "Moure't des del mid", short: "Quan i on fer roam",
  intro: "Des del mid tens el camí més curt a totes les línies. Un bon roam guanya la partida; un de dolent et deixa sense farm i sense experiència.",
@@ -60,7 +60,7 @@ window.LESSONS = [
  ],
  rules: ["Primer empeny, després mou-te.", "Ves on el rival està lluny de la seva torre.", "Si el rival desapareix, avisa i fes alguna cosa: seguir-lo o treure plaques."],
  errors: ["Moure't amb l'onada al teu costat: la perds sencera.", "Anar a una línia on el rival és sota la seva torre.", "No fer res quan el rival mid fa roam."],
- map: [{k: "dot", x: 50, y: 50, t: "mid"}, {k: "arrow", x: 50, y: 50, x2: 22, y2: 78, t: "a dalt pel riu"}, {k: "arrow", x: 50, y: 50, x2: 78, y2: 22, t: "a baix pel riu"}]},
+ map: [{k: "dot", x: 50, y: 50, t: "mid"}, {k: "arrow", x: 48, y: 52, x2: 20, y2: 80, t: "a dalt pel riu"}, {k: "arrow", x: 52, y: 48, x2: 80, y2: 20, t: "a baix pel riu"}]},
 
 {id: "visio", name: "Visió i el jungla rival", short: "Wards i on és el jungla",
  intro: "La majoria de morts de la fase de línies són ganks que es podien veure venir. Saber on és el jungla rival val més que qualsevol ward.",
@@ -73,7 +73,7 @@ window.LESSONS = [
  ],
  rules: ["Ward abans, no quan ja hi és.", "Si no el veus, és a prop teu.", "Sense visió, no passis de la meitat del riu."],
  errors: ["Empènyer sense ward i morir pel jungla.", "Gastar el ward al principi i no tenir-ne quan arriba el gank.", "No comprar mai wards de control."],
- map: [{k: "ward", x: 42, y: 42}, {k: "ward", x: 58, y: 58}, {k: "ward", x: 34, y: 56}, {k: "ward", x: 56, y: 34}, {k: "dot", x: 74, y: 52, t: "jungla rival?"}]},
+ map: [{k: "ward", x: 44, y: 57}, {k: "ward", x: 57, y: 44}, {k: "ward", x: 38, y: 64}, {k: "ward", x: 63, y: 38}, {k: "dot", x: 76, y: 50, t: "jungla rival?"}]},
 
 {id: "migjoc", name: "Mig joc", short: "El mapa després de les línies",
  intro: "Quan cauen les primeres torres, el joc canvia: ja no hi ha línies fixes, i es guanya agrupant-se bé i agafant les onades del costat sense morir-hi.",
@@ -85,7 +85,7 @@ window.LESSONS = [
  ],
  rules: ["Agafa les onades del costat abans dels objectius.", "Si no veus els rivals, no avancis sol.", "Agrupa't amb l'equip per lluitar."],
  errors: ["Anar sol a una línia del costat quan falten 3 rivals.", "Farmejar mentre l'equip lluita el Baró.", "Entrar a la jungla rival sense visió per fer una kill."],
- map: [{k: "zone", x: 20, y: 80, r: 7, t: "onada de dalt"}, {k: "zone", x: 50, y: 50, r: 7, t: "equip"}, {k: "dot", x: 70, y: 70, t: "Baró"}]},
+ map: [{k: "zone", x: 8, y: 80, r: 6, t: "onada de dalt"}, {k: "zone", x: 46, y: 54, r: 7, t: "equip"}]},
 
 {id: "avantatge", name: "Per davant i per darrere", short: "Aprofitar i remuntar",
  intro: "Anar per davant no guanya res sol: cal convertir-ho en torres i objectius. Anar per darrere tampoc és perdut: els objectius donen remuntades.",
@@ -97,7 +97,7 @@ window.LESSONS = [
  ],
  rules: ["Avantatge = objectius, no kills.", "Per darrere: farm segur i lluitar a prop de casa.", "Amb el Baró, empeny per dues línies."],
  errors: ["Anar +3.000 d'or i perdre per baralles soles.", "Entrar a la base rival amb pocs minions.", "Perseguir una kill i perdre el Baró."],
- map: [{k: "arrow", x: 22, y: 30, x2: 22, y2: 72, t: "onada 1"}, {k: "arrow", x: 30, y: 22, x2: 72, y2: 22, t: "onada 2"}, {k: "dot", x: 88, y: 88, t: "base rival"}]}
+ map: [{k: "arrow", x: 44, y: 44, x2: 64, y2: 64, t: "grup al mid"}, {k: "arrow", x: 50, y: 8, x2: 90, y2: 22, t: "onada de baix"}]}
 ];
 
 // general questions: l = lesson, a = index of the right option
@@ -196,3 +196,63 @@ window.PERSONAL = {
   why: "Sota torre, la torre ha d'apuntar als teus minions; i dins l'onada rival, els seus minions et fan molt mal."}
 };
 window.KIND_NAME = {gank: "morts per gank abans del 14", endins: "morts al riu o a la jungla rival sense ward", sol: "morts sol en inferioritat (mig joc)", preobj: "morts just abans d'un objectiu del rival", objs: "3 objectius o més de diferència en contra", farm: "menys de 7 de farm per minut", kp: "menys del 45% de participació en kills", llencat: "perdudes anant +2.000 d'or al 15", torre: "morts per la torre o els minions"};
+
+// ---- plays explained on the map, step by step. Your base bottom-left (0,0), the enemy's top-right (100,100).
+// u: champions {id: [champion, team b|r, x, y]} (a step moves them: {id: [x, y]} or {id: "dead"});
+// w: waves {id: [team, x, y, minions]}; a: arrows [x1, y1, x2, y2, team]; wd: wards [x, y]; o: objectives {k, x, y, t, dead}
+// "@me" is your champion (from your games), or Ahri.
+window.PLAYS = [
+{id: "recall", l: "tornar", name: "Empènyer abans de tornar", q: "Minut 7. Tens 1.300 d'or (un component) i poca vida. Les dues onades estan al mig del carril. Què fas?",
+ o: ["Empènyer l'onada fins a la seva torre i tornar mentre la torre se la menja", "Tornar ara mateix", "Esperar que l'onada arribi a la meva torre i tornar", "Fer roam a bot"], a: 0,
+ steps: [
+  {t: "La situació: onades iguals al mig i tu amb poca vida.", u: {me: ["@me", "b", 45, 45], mr: ["Syndra", "r", 55, 55]}, w: {wb: ["b", 48, 48, 6], wr: ["r", 52, 52, 6]}},
+  {t: "Mates l'onada rival de pressa: la teva avança cap a la seva torre. Syndra ha de farmejar sota la torre.", u: {me: [53, 53], mr: [64, 64]}, w: {wb: ["b", 58, 58, 6], wr: ["r", 52, 52, 0]}, a: [[47, 47, 53, 53, "b"]]},
+  {t: "Quan xoca a la torre, tornes a base: la torre es menja la teva onada i ella no en treu cap avantatge.", u: {me: [8, 8]}, w: {wb: ["b", 61, 61, 3]}, a: [[53, 53, 10, 10, "b"]]},
+  {t: "Tornes amb l'objecte i les onades han rebotat cap a tu: farmeges a prop de la teva torre i no has perdut res.", u: {me: [40, 40], mr: [52, 52]}, w: {wb: ["b", 44, 44, 0], wr: ["r", 45, 45, 7]}, a: [[10, 10, 38, 38, "b"]]}]},
+{id: "roam", l: "roam", name: "Roam a bot després d'empènyer", q: "Minut 6:30. Has empès la teva onada a la torre rival. El bot rival està empès fins a la vostra torre exterior i el jungla rival acaba de sortir a dalt. Què fas?",
+ o: ["Anar a bot pel riu i entrar-los per darrere", "Anar a dalt a ajudar el top", "Quedar-me al mid farmejant", "Tornar a base"], a: 0,
+ steps: [
+  {t: "La teva onada xoca a la torre rival. A bot, els rivals empenyen fins a la vostra torre. El jungla rival s'ha vist a dalt.", u: {me: ["@me", "b", 56, 56], mr: ["Syndra", "r", 64, 64], ad: ["Jinx", "b", 64, 6], sp: ["Thresh", "b", 66, 12], ea: ["Caitlyn", "r", 80, 7], es: ["Lux", "r", 82, 14], jg: ["LeeSin", "b", 44, 22], ej: ["Viego", "r", 28, 76]}, w: {wb: ["b", 60, 60, 4], wr2: ["r", 73, 8, 6]}},
+  {t: "Agafes el camí curt pel riu. Avisa el bot i el jungla; els rivals miren la torre i no et veuen.", u: {me: [70, 30], jg: [62, 18]}, a: [[56, 56, 70, 30, "b"], [44, 22, 62, 18, "b"]]},
+  {t: "Entres per darrere amb el jungla: no tenen cap torre a prop on refugiar-se.", u: {me: [90, 12], jg: [76, 20], ad: [70, 7], sp: [72, 13]}, a: [[70, 30, 89, 14, "b"], [62, 18, 75, 19, "b"]]},
+  {t: "Doble kill. Tornes al mid: la teva onada era a la torre rival, així que no l'has perduda.", u: {ea: "dead", es: "dead", me: [50, 50]}, a: [[90, 12, 52, 48, "b"]]}]},
+{id: "drake", l: "objectius", name: "Preparar el drac", q: "Minut 9:00. El drac surt al 10:00 i el jungla rival s'ha vist a dalt. Què és el millor pla?",
+ o: ["Empènyer el mid i el bot, posar wards al voltant del drac i anar-hi amb el jungla i el bot", "Esperar al mid fins que surti", "Anar-hi ja sol a posar wards", "Tornar a base al 9:55"], a: 0,
+ steps: [
+  {t: "9:00. Les onades estan igualades i el drac surt d'aquí a un minut.", u: {me: ["@me", "b", 48, 48], mr: ["Syndra", "r", 56, 56], jg: ["LeeSin", "b", 40, 24], ad: ["Jinx", "b", 62, 7], sp: ["Thresh", "b", 66, 7], ea: ["Caitlyn", "r", 84, 10], es: ["Lux", "r", 86, 14], ej: ["Viego", "r", 30, 76]}, w: {wm: ["b", 52, 52, 6], wbt: ["b", 74, 8, 6]}, o: [{k: "drac", x: 67, y: 33, t: "10:00"}]},
+  {t: "9:00-9:30. Tu empenys el mid i el bot empeny la seva onada: totes dues xoquen a les torres rivals.", u: {me: [56, 56], mr: [65, 65], ad: [84, 8], sp: [86, 10], ea: [92, 20], es: [90, 24]}, w: {wm: ["b", 60, 60, 4], wbt: ["b", 91, 22, 4]}, a: [[48, 48, 56, 56, "b"], [62, 7, 84, 8, "b"]]},
+  {t: "9:40. Wards al voltant del pou i la lent per treure els seus, mentre el jungla s'hi acosta.", u: {me: [58, 40], sp: [74, 26], ad: [70, 22], jg: [62, 28]}, wd: [[60, 27], [74, 40], [57, 41]], a: [[56, 56, 58, 41, "b"], [86, 10, 74, 25, "b"]]},
+  {t: "10:00. El drac surt i el feu de seguida. El jungla rival venia de dalt i arriba tard.", u: {ej: [50, 58]}, o: [{k: "drac", x: 67, y: 33, t: "Fet", dead: true}], a: [[30, 76, 50, 58, "r"]]}]},
+{id: "trade", l: "objectius", name: "Intercanviar objectius", q: "Minut 8:10. El rival té el mid i el bot empesos i va cap al drac amb quatre. Vosaltres no hi arribeu a temps. Què feu?",
+ o: ["Fer les larves a dalt amb el jungla i el top alhora", "Anar al drac igualment", "Tornar tots a base", "Defensar la torre del mid"], a: 0,
+ steps: [
+  {t: "El rival va al drac amb quatre; si hi aneu, arribareu tard i en inferioritat.", u: {me: ["@me", "b", 44, 44], jg: ["LeeSin", "b", 30, 40], tp: ["Garen", "b", 8, 68], ej: ["Viego", "r", 66, 36], mr: ["Syndra", "r", 60, 40], ea: ["Caitlyn", "r", 72, 30], es: ["Lux", "r", 70, 26]}, o: [{k: "drac", x: 67, y: 33, t: ""}, {k: "larves", x: 33, y: 67, t: "8:00"}]},
+  {t: "Tu, el jungla i el top aneu a les larves mentre ells fan el drac.", u: {me: [38, 62], jg: [32, 62], tp: [27, 69]}, a: [[44, 44, 38, 60, "b"], [30, 40, 32, 60, "b"], [8, 68, 26, 68, "b"]]},
+  {t: "Cada equip s'emporta un objectiu. És molt millor que arribar tard al drac i perdre una baralla de tres contra quatre.", o: [{k: "drac", x: 67, y: 33, t: "", dead: true}, {k: "larves", x: 33, y: 67, t: "Fetes", dead: true}]}]},
+{id: "freeze", l: "onades", name: "Congelar l'onada", q: "Minut 5 a dalt. El vostre top va per davant, l'onada rival té tres minions més que la vostra, i el top rival no té Flash. Què ha de fer el vostre top?",
+ o: ["Congelar l'onada davant de la seva torre fent només l'últim cop", "Empènyer-la fins a la torre rival", "Tornar a base", "Anar al mid a ajudar"], a: 0,
+ steps: [
+  {t: "L'onada rival (més gran) empeny cap a la torre del vostre top.", u: {tp: ["Garen", "b", 8, 72], et: ["Darius", "r", 12, 86], jg: ["LeeSin", "b", 30, 60]}, w: {wr: ["r", 8, 79, 7], wb: ["b", 8, 77, 4]}},
+  {t: "Garen fa només l'últim cop: l'onada es queda quieta just davant de la seva torre.", u: {tp: [8, 74]}, w: {wr: ["r", 8, 78, 5], wb: ["b", 8, 76, 2]}},
+  {t: "Per farmejar, Darius ha d'avançar molt lluny de la seva torre.", u: {et: [9, 80]}, a: [[12, 86, 9, 81, "r"]]},
+  {t: "El jungla surt pel costat del riu i el talla. Sense Flash, no té on anar.", u: {jg: [12, 82], et: "dead"}, a: [[30, 60, 13, 80, "b"]]}]},
+{id: "slowpush", l: "onades", name: "Slow push abans del drac", q: "Minut 9:00, el drac surt al 10:00. Vols que el mid rival no pugui anar-hi sense perdre molt. Què fas amb l'onada?",
+ o: ["Matar només els minions de rang rivals perquè la teva onada creixi i xoqui cap al 9:50", "Matar-la tan de pressa com puguis ara", "Congelar-la davant de la teva torre", "No tocar-la i anar a posar wards"], a: 0,
+ steps: [
+  {t: "9:00. Les onades estan igualades.", u: {me: ["@me", "b", 46, 46], mr: ["Syndra", "r", 56, 56]}, w: {wb: ["b", 49, 49, 6], wr: ["r", 52, 52, 6]}, o: [{k: "drac", x: 67, y: 33, t: "10:00"}]},
+  {t: "Mates només els minions de rang rivals. La teva onada guanya per poc i va creixent amb cada onada nova.", w: {wb: ["b", 54, 54, 10], wr: ["r", 56, 56, 3]}, u: {me: [50, 50]}},
+  {t: "9:50. Una onada enorme xoca a la seva torre. Syndra ha de triar: o la perd o arriba tard al drac.", w: {wb: ["b", 60, 60, 14], wr: ["r", 60, 60, 0]}, u: {me: [56, 54], mr: [64, 64]}},
+  {t: "Tu vas al drac amb avantatge; ella es queda a la torre o perd molt d'or.", u: {me: [62, 38]}, a: [[56, 54, 62, 40, "b"]]}]},
+{id: "side", l: "migjoc", name: "L'onada del costat abans del Baró", q: "Minut 19:00. El Baró surt al 20:00 i una onada rival arriba a la vostra torre de baix sense ningú. Què feu?",
+ o: ["L'ADC la recull ara i cap al 19:40 va amb l'equip al Baró", "Ningú: tothom al Baró ja", "L'ADC es queda a baix durant el Baró", "Tots cinc a recollir-la"], a: 0,
+ steps: [
+  {t: "19:00. L'equip és al mig i l'onada rival entra per baix.", u: {me: ["@me", "b", 46, 52], jg: ["LeeSin", "b", 40, 50], tp: ["Garen", "b", 42, 58], sp: ["Thresh", "b", 48, 46], ad: ["Jinx", "b", 40, 30]}, w: {wr: ["r", 50, 9, 6]}, o: [{k: "baro", x: 33, y: 67, t: "20:00"}]},
+  {t: "La Jinx la recull: no perdeu ni l'or ni la torre.", u: {ad: [48, 10]}, w: {wr: ["r", 50, 9, 0]}, a: [[40, 30, 48, 12, "b"]]},
+  {t: "19:40. Tothom s'agrupa al Baró amb visió. Ningú queda sol en una banda.", u: {ad: [38, 58], me: [40, 62], jg: [34, 60], tp: [30, 62], sp: [36, 56]}, wd: [[28, 72], [40, 72], [24, 62]], a: [[48, 10, 38, 56, "b"]]}]},
+{id: "baron", l: "avantatge", name: "Empènyer amb el Baró", q: "Acabeu de fer el Baró. Com empenyeu per tancar?",
+ o: ["Per dues línies alhora: el grup al mid i un a baix", "Tots cinc pel mid encara que no hi hagi minions", "Cadascú per una línia diferent", "Tornar a base i esperar el proper Baró"], a: 0,
+ steps: [
+  {t: "Teniu el Baró: els vostres minions són molt més forts.", u: {me: ["@me", "b", 36, 62], jg: ["LeeSin", "b", 32, 64], tp: ["Garen", "b", 30, 66], sp: ["Thresh", "b", 38, 60], ad: ["Jinx", "b", 34, 58]}, o: [{k: "baro", x: 33, y: 67, t: "", dead: true}]},
+  {t: "Quatre van al mid amb l'onada i el Garen, que pot aguantar sol, empeny la de baix.", u: {me: [56, 56], jg: [54, 58], sp: [58, 54], ad: [54, 54], tp: [80, 12]}, w: {wm: ["b", 60, 60, 8], wbt: ["b", 90, 30, 8]}, a: [[38, 58, 56, 56, "b"], [30, 66, 80, 14, "b"]]},
+  {t: "El rival s'ha de dividir. Si van tots al mid, el Garen tira la torre de baix; si van a baix, el grup entra pel mid.", u: {tp: [90, 32], me: [62, 62]}, a: [[80, 14, 90, 30, "b"]]}]}
+];
