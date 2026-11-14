@@ -222,6 +222,9 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend svg{width:100%;height:auto;display:block}.trend .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.trend .ref{stroke:var(--good);stroke-dasharray:4 4;stroke-width:1;opacity:.8}
 .trend .ax{stroke:var(--line);stroke-width:1}.trend .pt{fill:var(--accent);stroke:var(--panel);stroke-width:2}.trend .pt.l{fill:var(--panel);stroke:var(--accent)}.trend .hit{fill:transparent}.trend .hit:hover+.pt{r:6}
 .trend .lab{font-size:11px;fill:var(--muted)}.mplist{display:flex;flex-direction:column;gap:6px;align-items:stretch}.mplist .b{text-align:left}.mpgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}@media (max-width:760px){.mpgrid{grid-template-columns:1fr}}.mpmap svg{width:100%;height:auto;border-radius:10px;display:block}.mpopt{display:block;width:100%;text-align:left;margin:6px 0}.mpcap{background:rgba(127,127,127,.1);border-radius:8px;padding:10px 12px}
+.bpnew{background:var(--accent);color:#fff;font:800 11px/1 var(--mono, monospace);letter-spacing:.06em;padding:4px 6px;border-radius:6px;margin-left:6px}
+.bprow.isnew{box-shadow:inset 3px 0 0 var(--accent)}
+.bpbadge{display:inline-block;min-width:18px;margin-left:6px;padding:2px 5px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;line-height:14px;text-align:center}
 .bpnews{position:fixed;right:16px;bottom:16px;max-width:420px;z-index:50;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .bprow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.bprow.mine{background:rgba(127,127,127,.06)}.bppos{font:700 1.3rem var(--mono,monospace);min-width:36px;text-align:center}.bpmain{flex:1;min-width:0}.bphead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bphead img{width:28px;height:28px;border-radius:6px}.bpsc{margin-left:auto;font:700 1.1rem var(--mono,monospace)}.bpmain video{width:100%;max-width:560px;border-radius:8px;margin-top:6px;background:#000}
 .gpicks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.gpick{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color:inherit;cursor:pointer;min-width:74px}.gpick img{width:40px;height:40px;border-radius:8px}.gpick.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.gpick small{font-size:.7rem}
@@ -1142,6 +1145,8 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Marcar-les totes com a vistes ({n})": ["Marcarlas todas como vistas ({n})", "Mark all as watched ({n})"],
+  "1 jugada nova": ["1 jugada nueva", "1 new play"], "{n} jugades noves": ["{n} jugadas nuevas", "{n} new plays"],
   "Temporada": ["Temporada", "Season"],
   "Rivals d'aquesta partida": ["Rivales de esta partida", "This game's opponents"],
   "Rivals: analitzar-los a la pantalla de càrrega i avisar dels perillosos": ["Rivales: analizarlos en la pantalla de carga y avisar de los peligrosos", "Opponents: scout them on the loading screen and warn about dangerous ones"],
@@ -2224,6 +2229,18 @@ setInterval(async () => {
     if (!game) speak(msg);
   }
 }, 60000);
+// NEW on the plays you haven't watched: a play counts as seen once its clip has played (or, with no clip, once it
+// has been on screen); your own are seen. The tab shows how many are new.
+const bpSeen = new Set(store.get("bpSeen", []));
+function bpSeenSave(){ store.set("bpSeen", [...bpSeen].slice(-800)); }
+function bpBadge(plays){
+  const n = (plays || []).filter(p => !p.mine && !bpSeen.has(p.id)).length, t = $("#tabB"); if (!t) return;
+  let b = t.querySelector(".bpbadge"); if (!n) { b?.remove(); return; }
+  if (!b) { b = document.createElement("span"); b.className = "bpbadge"; b.setAttribute("data-noi18n", ""); t.appendChild(b); }
+  b.textContent = n; b.title = n === 1 ? "1 jugada nova" : `${n} jugades noves`;
+}
+async function bpBadgeRefresh(){ if (!location.protocol.startsWith("http")) return; try { bpBadge((await (await fetch("/api/ranking", {cache: "no-store"})).json()).plays); } catch (e) {} }
+bpBadgeRefresh(); setInterval(bpBadgeRefresh, 120000);
 async function renderBestPlays(){
   const el = $("#bpAll"); if (!el || !location.protocol.startsWith("http")) return;
   let st; try { st = await (await fetch("/api/ranking", {cache: "no-store"})).json(); } catch (e) { el.innerHTML = `<p class="bad">No he pogut llegir el rànquing.</p>`; return; }
@@ -2237,16 +2254,21 @@ async function renderBestPlays(){
         <div class="keyrow"><input id="bpName" placeholder="El teu nom al rànquing" value="${esc(st.name || "")}" maxlength="24" autocomplete="off"><button class="b" type="button" id="bpOn">Participar</button></div>
         ${st.supported ? "" : `<p class="note">Els clips només es graven a Windows.</p>`}</section>`;
   const medal = i => i < 3 ? ["🥇", "🥈", "🥉"][i] : `${i + 1}`;
-  const rows = list.slice(0, 60).map((p, i) => `<div class="bprow ${p.mine ? "mine" : ""}">
+  const isNew = p => !p.mine && !bpSeen.has(p.id), nNew = (st.plays || []).filter(isNew).length;
+  const rows = list.slice(0, 60).map((p, i) => `<div class="bprow ${p.mine ? "mine" : ""} ${isNew(p) ? "isnew" : ""}" data-id="${esc(p.id)}">
       <div class="bppos" data-noi18n>${medal(i)}</div>
-      <div class="bpmain"><div class="bphead"><img src="${ddChampImg(champId(p.c) || p.c)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(p.n)}</b><span class="note" data-noi18n>${esc(p.c)}</span><span class="bpsc">${p.s}</span></div>
+      <div class="bpmain"><div class="bphead"><img src="${ddChampImg(champId(p.c) || p.c)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(p.n)}</b><span class="note" data-noi18n>${esc(p.c)}</span><span class="bpsc">${p.s}</span>${isNew(p) ? `<span class="bpnew">NEW</span>` : ""}</div>
         <p><b>${esc(p.t || "")}</b>${p.w ? ` <span class="note">${esc(p.w)}</span>` : ""}</p>
         ${p.v ? `<video src="/api/rankfile?id=${p.id}" controls preload="none" playsinline></video>` : `<p class="note">Sense clip (no ha arribat a temps).</p>`}
         <p class="note">${agoTxt(p.at)}</p></div></div>`).join("");
   el.innerHTML = `${join}
-    <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button></div>
+    <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button>${nNew ? `<button class="b" type="button" id="bpAllSeen">Marcar-les totes com a vistes (${nNew})</button>` : ""}</div>
       ${rows || `<p class="note">Encara no hi ha jugades. Quan algú que hi participa fa una jugada de 90 punts o més, surt aquí (l'app mira cada 10 minuts, fora de partida).</p>`}
       <p class="note">Les jugades viatgen pel servei ntfy.sh (el dels temporitzadors compartits). Totes les jugades i els clips queden guardats a GitHub (al repositori de l'app), encara que no tinguis l'app oberta quan es fan.</p></section>`;
+  const seen = id => { if (!id || bpSeen.has(id)) return; bpSeen.add(id); bpSeenSave(); const row = el.querySelector(`.bprow[data-id="${CSS.escape(id)}"]`); row?.classList.remove("isnew"); row?.querySelector(".bpnew")?.remove(); bpBadge(st.plays); };
+  el.querySelectorAll(".bprow.isnew").forEach(row => { const v = row.querySelector("video"); if (v) v.addEventListener("play", () => seen(row.dataset.id), {once: true}); else seen(row.dataset.id); });
+  $("#bpAllSeen")?.addEventListener("click", () => { (st.plays || []).forEach(p => bpSeen.add(p.id)); bpSeenSave(); bpBadge(st.plays); renderBestPlays(); });
+  bpBadge(st.plays);
   const f = $("#bpF"); f.value = bpFilter; f.addEventListener("change", () => { bpFilter = f.value; renderBestPlays(); });
   $("#bpRef").addEventListener("click", async () => { await fetch("/api/ranking?now=1", {method: "POST"}); setTimeout(renderBestPlays, 4000); });
   $("#bpOn")?.addEventListener("click", async () => { const n = $("#bpName").value.trim(); if (!n) { $("#bpName").focus(); return; }
