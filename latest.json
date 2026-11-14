@@ -1,7 +1,7 @@
 {
- "version": "2.2.3",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.2.3.exe",
- "size": 10137088,
- "sha256": "4d77ad9fa7063aeea8fdcfc157aefded05e3aefb10561694b8bf2a9fc54bd9e6",
- "notes": "- Escuts oficials de lliga: més temps per descarregar-los amb connexions lentes, un segon intent, i si no, els agafa del client de LoL"
+ "version": "2.3.0",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.3.0.exe",
+ "size": 10173952,
+ "sha256": "fec74995836b08ef0df9b4d2af466360a1b32d75f225dfb055f484575e524be3",
+ "notes": "- Nova pestanya Best plays: rànquing de les millors jugades de tots els que tenen l'app i hi participen, amb el clip\n- Les teves jugades passen a Best plays › Les meves\n- Participar és opcional i es tria el nom que surt"
 }
