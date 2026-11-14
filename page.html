@@ -280,6 +280,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .map img{position:absolute;inset:0;width:100%;height:100%;display:block}
 .map svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .wz{fill:var(--accent);fill-opacity:.22;stroke:var(--accent);stroke-width:4}.wz.risk{fill:var(--soon);stroke:var(--soon)}.wz.obj{fill:var(--blue);stroke:var(--blue)}
+.jgmin{font:700 24px var(--mono);fill:#fff;paint-order:stroke;stroke:#000;stroke-width:6px}.vitems li{margin-bottom:4px}
 .wzn{font:700 30px var(--mono);fill:var(--fg);paint-order:stroke;stroke:var(--map);stroke-width:7px}
 .wlist{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px;font-size:.9rem}.wlist li::marker{font-family:var(--mono);font-weight:700}
 .mapwrap.wmw{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}@media (max-width:640px){.mapwrap.wmw{grid-template-columns:1fr}}
@@ -4826,20 +4827,66 @@ const WARD_SPOTS = {
     {x: 5800, y: 9400, kind: "obj", t: "Entrada del riu al baró", w: "Un minut abans del baró o del herald."}
   ]
 };
+// The vision of this game, from what really happened: your deaths with no ward placed before, the minutes you went
+// without warding, the objectives the enemy took with no ward from you, and where the enemy jungler really went
+// (his position each minute, from Riot's timeline). Riot doesn't say where you put each ward, only when.
 function reportVision(r){
-  const side = r.map?.side || store.get("side", "blue"), mirror = side === "red";
-  const spots = (WARD_SPOTS[r.role] || WARD_SPOTS._).map(p => mirror ? {...p, x: 14750 - p.x, y: 14860 - p.y} : p);
-  const vis = r.map?.stats?.me?.vision ?? r.vision, pm = vis != null ? vis / minutesOf(r) : null, sup = r.role === "UTILITY";
-  const ref = sup ? 2 : 1, ctrl = r.map?.stats?.me?.control;
-  const zones = spots.map((p, i) => `<circle class="wz ${p.kind === "safe" ? "" : p.kind}" cx="${mx(p.x).toFixed(0)}" cy="${my(p.y).toFixed(0)}" r="42"/><text class="wzn" x="${mx(p.x).toFixed(0)}" y="${(my(p.y) + 11).toFixed(0)}" text-anchor="middle">${i + 1}</text>`).join("");
-  const facts = [];
+  const md = r.map || {}, side = md.side || store.get("side", "blue"), mirror = side === "red";
+  const spots = (WARD_SPOTS[r.role] || WARD_SPOTS._).concat(r.role === "MIDDLE" ? [] : WARD_SPOTS.MIDDLE.filter(x => x.kind === "safe")).map(p => mirror ? {...p, x: 14750 - p.x, y: 14860 - p.y} : p);
+  const vis = md.stats?.me?.vision ?? r.vision, pm = vis != null ? vis / minutesOf(r) : null, sup = r.role === "UTILITY", ref = sup ? 2 : 1, ctrl = md.stats?.me?.control;
+  const jp = md.jg_path || null, wt = md.ward_t || (jp ? [] : null), jgc = md.jg_champ || "el jungla rival", mm = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  const deaths = (md.events || []).filter(e => e.kind === "death"), di = md.death_info || [];
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), art = t => { t = t.toLowerCase(); return /^[aeiouh]/.test(t) ? "l'" + t : /^raptors/.test(t) ? "els " + t : "el " + t; }, aZone = z => !z ? "" : z.startsWith("la ") ? "a " + z : /^(base|part)/.test(z) ? "a la " + z : "al " + z;
+  const facts = [], items = [], marks = [], used = new Map();
   if (pm != null) facts.push(`<b class="${pm >= ref ? "good" : "bad"}">${fmt1(pm)}</b> de visió per minut (referència: ${ref} o més)`);
-  if (ctrl != null) facts.push(`<b class="${ctrl >= 2 ? "good" : ctrl === 0 ? "bad" : ""}">${ctrl}</b> ${ctrl === 1 ? "ward de control" : "wards de control"}`);
-  return `<section class="card"><h2>Visió · on posar els wards</h2>
+  if (wt) facts.push(`<b>${wt.length}</b> wards posats (${wt.filter(w => w[1]).length} de control)`);
+  else if (ctrl != null) facts.push(`<b class="${ctrl >= 2 ? "good" : ctrl === 0 ? "bad" : ""}">${ctrl}</b> ${ctrl === 1 ? "ward de control" : "wards de control"}`);
+  const spotNo = sp => { if (!used.has(sp)) used.set(sp, used.size + 1); return used.get(sp); };
+  // 1. deaths with no ward in the 3 minutes before (laning phase and mid game), and the spot that would have shown it
+  deaths.filter(e => e.t < 1500).forEach(e => {
+    const info = di.find(d => Math.abs(d.t - e.t) < 3); if (!info || info.wards > 0 || /torre|minions/.test(info.killer || "")) return;
+    const sp = spots.filter(p => p.kind !== "obj" || e.t > 300).reduce((a, p) => !a || dist(p, e) < dist(a, e) ? p : a, null); if (!sp || dist(sp, e) > 4500) return;
+    const n = spotNo(sp), jgNear = jp && jp.filter(f => f[0] <= e.t && f[0] >= e.t - 120).some(f => Math.hypot(f[1] - sp.x, f[2] - sp.y) < 3000);
+    marks.push({x: e.x, y: e.y, n, sp});
+    items.push(`<li><b>${mm(e.t)}</b> · vas morir ${esc(aZone(info.zone || e.label || ""))} (${esc(info.killer || "")}${info.helpers?.length ? " i " + esc(info.helpers.join(", ")) : ""}) sense cap ward els 3 minuts abans. Un ward a <b>${esc(art(sp.t))}</b> (${n}) ${jgNear ? `t'hauria ensenyat ${esc(jgc)}: hi va passar just abans` : "t'hauria avisat de qui venia"}.</li>`);
+  });
+  // 2. long stretches without a ward (between minute 2 and the end, or minute 25)
+  if (wt) {
+    const end = Math.min(minutesOf(r) * 60, 1500), times = [90].concat(wt.map(w => w[0]).filter(t => t > 90 && t < end), [end]);
+    for (let i = 1; i < times.length; i++) { const gap = times[i] - times[i - 1];
+      if (gap >= 240) { const dd = deaths.filter(e => e.t > times[i - 1] && e.t < times[i]).length;
+        items.push(`<li>Del <b>${mm(times[i - 1])}</b> al <b>${mm(times[i])}</b> no vas posar cap ward (${Math.round(gap / 60)} minuts)${dd ? `: hi vas morir ${dd === 1 ? "una vegada" : dd + " vegades"}` : ""}. El ward groc es recarrega sol: posa'l cada vegada que el tinguis.</li>`); } }
+    // 3. objectives the enemy took with no ward from you in the 90 s before
+    for (const o of (r.objectives || []).filter(o => !o.ours && /drac|bar|herald|larv/i.test(o.obj || o.label || ""))) {
+      const t = o.t, had = wt.some(w => w[0] >= t - 90 && w[0] <= t);
+      if (!had) { const sp = spots.find(p => p.kind === "obj" && (/drac/i.test(o.obj || o.label) ? /drac/.test(p.t) : /bar/.test(p.t))); const n = sp ? spotNo(sp) : null;
+        items.push(`<li><b>${mm(t)}</b> · el rival va fer ${esc((o.obj || o.label || "un objectiu").toLowerCase())} i no havies posat cap ward el minut i mig abans${sp ? `: el lloc era <b>${esc(art(sp.t))}</b> (${n})` : ""}.</li>`); }
+    }
+  }
+  // 4. where the enemy jungler spent the laning phase (minutes 2-8): your side of the map or the other?
+  let jgLine = "";
+  if (jp && jp.length > 4) {
+    const early = jp.filter(f => f[0] >= 120 && f[0] <= 480), top = early.filter(f => f[2] > f[1] + 1500).length, bot = early.filter(f => f[1] > f[2] + 1500).length;
+    if (top + bot >= 3) { const share = Math.round(100 * Math.max(top, bot) / (top + bot)), sideTxt = top >= bot ? "dalt" : "baix";
+      jgLine = `Fins al minut 8, ${esc(jgc)} va passar el ${share}% del temps a la banda de <b>${sideTxt}</b> del mapa${share >= 65 ? `: el ward groc, a l'arbust del riu de ${sideTxt}` : ": va anar a les dues bandes"}.`; }
+  }
+  // the map: your deaths without vision (X), the spot that would have shown it (number), the jungler's path (dots)
+  const path = jp ? jp.filter(f => f[0] <= 900).map(f => `<circle cx="${mx(f[1]).toFixed(0)}" cy="${my(f[2]).toFixed(0)}" r="9" fill="var(--red)" fill-opacity=".75"/><text class="jgmin" x="${(mx(f[1]) + 12).toFixed(0)}" y="${(my(f[2]) - 10).toFixed(0)}">${Math.round(f[0] / 60)}</text>`).join("") : "";
+  const pathLine = jp ? `<polyline points="${jp.filter(f => f[0] <= 900).map(f => `${mx(f[1]).toFixed(0)},${my(f[2]).toFixed(0)}`).join(" ")}" fill="none" stroke="var(--red)" stroke-opacity=".45" stroke-width="4" stroke-dasharray="10 8"/>` : "";
+  const spotsDraw = [...used.entries()].map(([p, n]) => `<circle class="wz ${p.kind === "safe" ? "" : p.kind}" cx="${mx(p.x).toFixed(0)}" cy="${my(p.y).toFixed(0)}" r="42"/><text class="wzn" x="${mx(p.x).toFixed(0)}" y="${(my(p.y) + 11).toFixed(0)}" text-anchor="middle">${n}</text>`).join("");
+  const links = marks.map(m => `<line x1="${mx(m.sp.x).toFixed(0)}" y1="${my(m.sp.y).toFixed(0)}" x2="${mx(m.x).toFixed(0)}" y2="${my(m.y).toFixed(0)}" stroke="var(--fg)" stroke-width="3" stroke-dasharray="6 6" opacity=".7"/>` + ICON.death(mx(m.x), my(m.y))).join("");
+  const specific = wt || jp || items.length;
+  // with nothing specific to say (old reports, or a clean game): the usual spots for your role
+  if (!items.length) for (const p of spots.filter(p => p.kind !== "safe" || r.role === "MIDDLE").slice(0, 5)) spotNo(p);
+  const spotsAll = [...used.entries()].map(([p, n]) => `<circle class="wz ${p.kind === "safe" ? "" : p.kind}" cx="${mx(p.x).toFixed(0)}" cy="${my(p.y).toFixed(0)}" r="42"/><text class="wzn" x="${mx(p.x).toFixed(0)}" y="${(my(p.y) + 11).toFixed(0)}" text-anchor="middle">${n}</text>`).join("");
+  return `<section class="card"><h2>Visió d'aquesta partida</h2>
     ${facts.length ? `<p>${facts.join(" · ")}</p>` : ""}
-    <div class="mapwrap wmw"><div class="map"><img alt="" src="/map11.png" onerror="this.remove()"><svg viewBox="0 0 1000 1000">${mapImgOk ? "" : mapBase()}${zones}</svg></div>
-    <ol class="wlist">${spots.map(p => `<li><b class="${p.kind === "safe" ? "" : p.kind}">${esc(p.t)}</b>. <span>${esc(p.w)}</span></li>`).join("")}</ol></div>
-    <p class="note">Costat ${side === "red" ? "vermell" : "blau"}. Zones aproximades. Verd: segur, quan l'onada et ve empesa. Taronja: quan empenys tu, com més endins més arriscat. Blau: abans dels objectius. Riot no diu on poses els wards, per això no surten els teus. Fonts: guies de visió de Dignitas, Mobalytics, WeCoach i MetaBot.GG.</p></section>`;
+    <div class="mapwrap wmw"><div class="map"><img alt="" src="/map11.png" onerror="this.remove()"><svg viewBox="0 0 1000 1000">${mapImgOk ? "" : mapBase()}${pathLine}${path}${items.length ? spotsDraw + links : spotsAll}</svg></div>
+    <div>${items.length ? `<ul class="vitems">${items.join("")}</ul>` : `<p>${specific ? "En aquesta partida no hi ha cap mort ni cap objectiu perdut per falta de visió." : "Aquest informe és d'abans que l'app llegís els wards i la ruta del jungla: a partir de la propera partida, aquí sortiran els teus moments concrets."}</p>
+      <ol class="wlist">${[...used.entries()].map(([p, n]) => `<li value="${n}"><b class="${p.kind === "safe" ? "" : p.kind}">${esc(p.t)}</b>. <span>${esc(p.w)}</span></li>`).join("")}</ol>`}
+      ${jgLine ? `<p>${jgLine}</p>` : ""}
+      ${items.length ? `<ol class="wlist">${[...used.entries()].map(([p, n]) => `<li value="${n}"><b class="${p.kind === "safe" ? "" : p.kind}">${esc(p.t)}</b>. <span>${esc(p.w)}</span></li>`).join("")}</ol>` : ""}</div></div>
+    <p class="note">Costat ${side === "red" ? "vermell" : "blau"}.${items.length ? " Creu: on vas morir sense visió; número: on hauria anat el ward." : " Números: els llocs habituals per al teu rol."}${jp ? ` Punts vermells amb el minut: on era ${esc(jgc)} cada minut fins al 15 (dades de Riot).` : ""} Riot diu quan poses cada ward, però no on.</p></section>`;
 }
 
 // ---------- Form with a champion: recent results from the season data ----------

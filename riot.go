@@ -325,9 +325,12 @@ type MapData struct {
 	Board   *Board         `json:"board,omitempty"`   // the scoreboard of the 10 players
 	Gold    [][3]int       `json:"gold,omitempty"`    // each minute: second, your team's gold, the enemy's
 	Lanes14 map[string]int `json:"lanes14,omitempty"` // at minute 14, each lane: your team's gold minus the enemy's (TOP, JUNGLE, MIDDLE, BOT)
-	Fights  []MapFight     `json:"fights,omitempty"`  // every champion kill of the game
-	Deaths  []DeathInfo    `json:"death_info"`        // each of your deaths in detail (for the AI's explanation)
-	Kills   []KillInfo     `json:"kill_info"`         // your kills and assists (when there's no death to explain)
+	WardT   [][2]float64   `json:"ward_t,omitempty"`  // your wards: second, 1 if it was a control ward (Riot doesn't say where)
+	JgPath  [][3]float64   `json:"jg_path,omitempty"` // the enemy jungler each minute until 15: second, x, y (game units)
+	JgChamp string         `json:"jg_champ,omitempty"`
+	Fights  []MapFight     `json:"fights,omitempty"` // every champion kill of the game
+	Deaths  []DeathInfo    `json:"death_info"`       // each of your deaths in detail (for the AI's explanation)
+	Kills   []KillInfo     `json:"kill_info"`        // your kills and assists (when there's no death to explain)
 }
 
 // KillInfo: a kill you took part in
@@ -559,6 +562,32 @@ func fetchMap(rec *Record, endUnix int64) (*MapData, error) {
 			}
 		}
 		md.Queue = m.Info.QueueID
+		// for the vision section: when you placed wards, and where the enemy jungler went during the laning phase
+		ejg := 0
+		for _, p := range m.Info.Participants {
+			if p.TeamID != team && p.TeamPosition == "JUNGLE" {
+				ejg = p.ParticipantID
+			}
+		}
+		for _, f := range tl.Info.Frames {
+			for _, e := range f.Events {
+				if e.Type == "WARD_PLACED" && e.CreatorID == me && e.WardType != "UNDEFINED" {
+					ctrl := 0.0
+					if e.WardType == "CONTROL_WARD" {
+						ctrl = 1
+					}
+					md.WardT = append(md.WardT, [2]float64{float64(e.Timestamp) / 1000, ctrl})
+				}
+			}
+			if ejg != 0 && f.Timestamp >= 55000 && f.Timestamp <= 15*60000+5000 {
+				if pf, ok := f.ParticipantFrames[strconv.Itoa(ejg)]; ok {
+					md.JgPath = append(md.JgPath, [3]float64{float64(f.Timestamp / 1000), pf.Position.X, pf.Position.Y})
+				}
+			}
+		}
+		if ejg != 0 {
+			md.JgChamp = displayName(champs[ejg])
+		}
 		for _, f := range tl.Info.Frames {
 			g := [3]int{int(f.Timestamp / 1000), 0, 0}
 			for k, pf := range f.ParticipantFrames {
