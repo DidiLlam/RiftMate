@@ -224,6 +224,12 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .trend .lab{font-size:11px;fill:var(--muted)}.mplist{display:flex;flex-direction:column;gap:6px;align-items:stretch}.mplist .b{text-align:left}.mpgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}@media (max-width:760px){.mpgrid{grid-template-columns:1fr}}.mpmap svg{width:100%;height:auto;border-radius:10px;display:block}.mpopt{display:block;width:100%;text-align:left;margin:6px 0}.mpcap{background:rgba(127,127,127,.1);border-radius:8px;padding:10px 12px}
 .bpnew{background:var(--accent);color:#fff;font:800 11px/1 var(--mono, monospace);letter-spacing:.06em;padding:4px 6px;border-radius:6px;margin-left:6px}
 .play.isnew{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.gabil video.gav{display:none;width:100%;max-width:420px;border-radius:8px;margin-top:6px;background:#000}.gabil video.gav.on{display:block}
+.gavp{margin-top:6px}
+.gcvw{position:relative;max-width:520px;margin-top:8px}.gcvw video{width:100%;border-radius:8px;background:#000;display:block}
+.gcvk{position:absolute;left:10px;top:8px;font:800 28px/1 var(--mono, monospace);color:#fff;text-shadow:0 0 6px #000}
+.gseq .gk.on{background:var(--accent);color:#fff}
+.gyt a{text-decoration:none}
 .bprow.isnew{box-shadow:inset 3px 0 0 var(--accent)}
 .bpbadge{display:inline-block;min-width:18px;margin-left:6px;padding:2px 5px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;line-height:14px;text-align:center}
 .bpnews{position:fixed;right:16px;bottom:16px;max-width:420px;z-index:50;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -1147,6 +1153,14 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "▶ Vídeo": ["▶ Vídeo", "▶ Video"], "❚❚ Aturar": ["❚❚ Parar", "❚❚ Stop"], "▶ Veure-ho": ["▶ Verlo", "▶ Watch"], "Vídeos": ["Vídeos", "Videos"], "Professionals": ["Profesionales", "Pros"],
+  "Pro view": ["Pro view", "Pro view"], "Combos": ["Combos", "Combos"], "Gestió de la línia": ["Gestión de la línea", "Laning"], "Jugades": ["Jugadas", "Plays"],
+  "Les teves millors": ["Tus mejores", "Your best"], "De la comunitat": ["De la comunidad", "From the community"],
+  "Buscant jugades amb {x}…": ["Buscando jugadas con {x}…", "Looking for plays with {x}…"],
+  "Encara no tens cap jugada guardada amb {x}.": ["Aún no tienes ninguna jugada guardada con {x}.", "You don't have any saved plays with {x} yet."],
+  "Aquest combo no té habilitats amb vídeo.": ["Este combo no tiene habilidades con vídeo.", "This combo has no abilities with a video."],
+  "Vídeos oficials de Riot de cada habilitat, en l'ordre del combo (es repeteix). Al joc van molt més seguides.": ["Vídeos oficiales de Riot de cada habilidad, en el orden del combo (se repite). En el juego van mucho más seguidas.", "Riot's official clips of each ability, in combo order (it loops). In game they come much faster."],
+  "S'obren a YouTube: les partides de jugadors Challenger amb la seva càmera (pro view) són la millor manera de veure com es mouen, quan van a fer gank i com fan els combos de veritat.": ["Se abren en YouTube: las partidas de jugadores Challenger con su cámara (pro view) son la mejor manera de ver cómo se mueven, cuándo van a gankear y cómo hacen los combos de verdad.", "They open on YouTube: Challenger players' games from their own camera (pro view) are the best way to see how they move, when they roam and how they really do the combos."],
   "Tornar-ho a provar": ["Volver a intentarlo", "Try again"], "Fent la guia…": ["Haciendo la guía…", "Writing the guide…"],
   "1 de visió per minut (2 de suport)": ["1 de visión por minuto (2 de support)", "1 vision score per minute (2 as support)"],
   "Marcar-les totes com a vistes ({n})": ["Marcarlas todas como vistas ({n})", "Mark all as watched ({n})"],
@@ -6755,8 +6769,9 @@ async function renderGuides(){
     $("#gRetry")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Fent la guia…"; renderGuides(); });
     $("#gRemove")?.addEventListener("click", () => { store.set("guideChamps", guideChamps().filter(x => x !== guideSel)); guideSel = null; renderGuides(); }); return; }
   const keys = ["Q", "W", "E", "R"];
-  const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p></div></li>`,
-    ...dd.spells.map((sp, i) => `<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${sp.image.full}" alt=""><div><b><span class="gk">${keys[i]}</span> ${esc(sp.name)}</b> <small class="note">recàrrega ${esc(sp.cooldownBurn)} s</small><p class="note">${esc(stripTags(sp.description))}</p></div></li>`)].join("")
+  const vid = k => abilVideo(dd, k) ? `<video class="gav" muted loop playsinline preload="none" data-k="${k}">${abilVideo(dd, k)}</video><button class="b small gavp" type="button" data-k="${k}">▶ Vídeo</button>` : "";
+  const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p>${vid("P")}</div></li>`,
+    ...dd.spells.map((sp, i) => `<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${sp.image.full}" alt=""><div><b><span class="gk">${keys[i]}</span> ${esc(sp.name)}</b> <small class="note">recàrrega ${esc(sp.cooldownBurn)} s</small><p class="note">${esc(stripTags(sp.description))}</p>${vid(keys[i])}</div></li>`)].join("")
     : `<li class="note">No he pogut carregar les habilitats de Riot (sense connexió?).</li>`;
   const bc = (benchData?.champs || []).find(x => norm(x.champ) === norm(guideSel) && x.games > 0);
   const icons = list => (list || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
@@ -6780,10 +6795,13 @@ async function renderGuides(){
       <div class="keyrow"><span>Flash a la tecla</span><select id="gFlash"><option value="D">D</option><option value="F">F</option></select></div>
       <div class="gcombos">${g.combos.map((c, i) => `<div class="gcombo"><div><b>${esc(c.n)}</b> <span class="tg ${GLVL[c.l][1]}">${GLVL[c.l][0]}</span></div>
         <div class="gseq">${c.s.map(k => `<span class="gk">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">${esc(c.how)}</p>
-        <button class="b" type="button" data-train="${i}">Entrenar</button></div>`).join("")}</div>
+        <div class="bar"><button class="b" type="button" data-train="${i}">Entrenar</button>${dd?.key ? `<button class="b" type="button" data-cvid="${i}">▶ Veure-ho</button>` : ""}</div><div class="gcv" hidden></div></div>`).join("")}</div>
       <div id="gTrain" hidden></div>
       <p class="note">${esc(g.practice)}</p></section>
     <section class="card"><h2>Habilitats <small class="note">(pedaç ${esc(iconVer)})</small></h2><ul class="gabil">${abil}</ul></section>
+    <section class="card"><h2>Vídeos</h2><div id="gVids"><p class="note">Buscant jugades amb ${esc(displayChamp(guideSel))}…</p></div>
+      <h3>Professionals</h3><div class="bar gyt">${ytLinks(displayChamp(guideSel))}</div>
+      <p class="note">S'obren a YouTube: les partides de jugadors Challenger amb la seva càmera (pro view) són la millor manera de veure com es mouen, quan van a fer gank i com fan els combos de veritat.</p></section>
     <section class="card"><h2>Build i runes dels millors</h2>${build}</section>
     <p class="note">Habilitats: Data Dragon de Riot, del pedaç actual. ${g.ai ? "Claus i combos: la IA, a partir d'aquestes habilitats." : "Combos: llistes de Mobalytics, resumits."} Maestria: iTero (1M+ partides).</p>`;
   try { $("#gFlash").value = store.get("flashKey", "D"); } catch (e) {}
@@ -6796,7 +6814,58 @@ async function renderGuides(){
     renderGuides();
   });
   el.querySelectorAll("[data-train]").forEach(b => b.addEventListener("click", () => comboTrain(g.combos[+b.dataset.train])));
+  el.querySelectorAll(".gavp").forEach(b => b.addEventListener("click", () => { const v = b.previousElementSibling; if (v.paused) { v.hidden = false; v.classList.add("on"); v.play().catch(() => {}); b.textContent = "❚❚ Aturar"; } else { v.pause(); b.textContent = "▶ Vídeo"; } }));
+  el.querySelectorAll("video.gav").forEach(v => v.addEventListener("error", () => { v.nextElementSibling?.remove(); v.remove(); }, true));
+  el.querySelectorAll("[data-cvid]").forEach(b => b.addEventListener("click", () => comboVideo(b.closest(".gcombo").querySelector(".gcv"), dd, g.combos[+b.dataset.cvid])));
+  guideVideos(guideSel);
   loadRunes(); fillRunes(); i18nAll();
+}
+// Riot's own clip of each ability (the ones on leagueoflegends.com's champion pages): webm, mp4 if that fails
+function abilVideo(dd, k){
+  if (!dd?.key) return "";
+  const id = String(dd.key).padStart(4, "0"), u = ext => `https://d28xe8vt774jo5.cloudfront.net/champion-abilities/${id}/ability_${id}_${k}1.${ext}`;
+  return `<source src="${u("webm")}" type="video/webm"><source src="${u("mp4")}" type="video/mp4">`;
+}
+// a combo, seen: the clips of its abilities one after the other, with the key on top (the basic attack, Flash and
+// items have no clip: they show as a step of text)
+function comboVideo(box, dd, c){
+  if (!box) return;
+  if (!box.hidden) { box.hidden = true; box.innerHTML = ""; return; }
+  const steps = c.s.map((k, j) => /^[QWER]/.test(k) ? j : -1).filter(j => j >= 0); // positions in the combo with a clip
+  if (!steps.length) { box.hidden = false; box.innerHTML = `<p class="note">Aquest combo no té habilitats amb vídeo.</p>`; return; }
+  box.hidden = false;
+  box.innerHTML = `<div class="gcvw"><video muted playsinline autoplay></video><span class="gcvk"></span></div><div class="gseq">${c.s.map((k, i) => `<span class="gk" data-i="${i}">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">Vídeos oficials de Riot de cada habilitat, en l'ordre del combo (es repeteix). Al joc van molt més seguides.</p>`;
+  const v = box.querySelector("video"), lab = box.querySelector(".gcvk");
+  let i = 0;
+  const play = () => {
+    if (!box.isConnected || box.hidden) return;
+    const pos = steps[i % steps.length], k = c.s[pos][0], id = String(dd.key).padStart(4, "0");
+    box.querySelectorAll(".gseq .gk").forEach(e => e.classList.toggle("on", +e.dataset.i === pos));
+    lab.textContent = k; v.src = `https://d28xe8vt774jo5.cloudfront.net/champion-abilities/${id}/ability_${id}_${k}1.webm`; v.play().catch(() => {});
+  };
+  v.addEventListener("ended", () => { i++; play(); });
+  v.addEventListener("error", () => { if (v.src.endsWith(".webm")) { v.src = v.src.replace(/\.webm$/, ".mp4"); v.play().catch(() => {}); } else { i++; if (i < steps.length * 2) play(); } });
+  play();
+}
+// pro views and guides: YouTube searches (the app doesn't host other people's videos)
+function ytLinks(name){
+  const q = s => `https://www.youtube.com/results?search_query=${encodeURIComponent(s)}`;
+  return [["Pro view", `${name} pro view challenger`], ["Combos", `${name} combos guide`], ["Gestió de la línia", `${name} mid laning guide`], ["Jugades", `${name} montage`]]
+    .map(([t, s]) => `<a class="b" href="${q(s)}" target="_blank" rel="noopener">${t}</a>`).join("");
+}
+// your clips and everybody's (Best plays) with this champion
+async function guideVideos(id){
+  const box = $("#gVids"); if (!box) return;
+  const want = norm(displayChamp(id)), same = c => norm(displayChamp(c || "")) === want || norm(c || "") === norm(id);
+  let mine = [], all = [];
+  try { mine = ((await (await fetch("/api/plays", {cache: "no-store"})).json()).plays || []).filter(p => same(p.champ)).sort((a, b) => b.score - a.score).slice(0, 4); } catch (e) {}
+  try { all = ((await (await fetch("/api/ranking", {cache: "no-store"})).json()).plays || []).filter(p => !p.mine && p.v && same(p.c)).sort((a, b) => b.s - a.s).slice(0, 4); } catch (e) {}
+  if (!$("#gVids") || guideSel !== id) return;
+  box.innerHTML = (mine.length ? `<h3>Les teves millors</h3><div class="plays">${mine.map(p => playItem(p, 0, !mySeen.has(`${p.stamp}:${p.n}`))).join("")}</div>` : `<p class="note">Encara no tens cap jugada guardada amb ${esc(displayChamp(id))}.</p>`)
+    + (all.length ? `<h3>De la comunitat</h3><div class="plays">${all.map(p => `<div class="play"><video src="/api/rankfile?id=${esc(p.id)}" controls preload="none" playsinline></video><div><span class="pscore">${p.s}</span> <b>${esc(p.t || "")}</b></div><div class="note" data-noi18n>${esc(p.n || "")}</div></div>`).join("")}</div>` : "");
+  box.querySelectorAll("[data-pdel]").forEach(b => b.remove()); // deleting is done in Best plays
+  box.querySelectorAll(".play.isnew video").forEach(v => v.addEventListener("play", () => { const id = v.closest(".play").dataset.pid; mySeen.add(id); store.set("mySeen", [...mySeen].slice(-800)); v.closest(".play").classList.remove("isnew"); v.closest(".play").querySelector(".bpnew")?.remove(); bpBadgeRefresh(); }, {once: true}));
+  i18nAll();
 }
 // the trainer: the keys of the combo in order, as fast as you can; a mistake starts it again
 let ctr = null;
