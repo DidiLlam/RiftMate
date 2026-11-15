@@ -1,7 +1,7 @@
 {
- "version": "2.4.4",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.4.4.exe",
+ "version": "2.4.5",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.4.5.exe",
  "size": 10236416,
- "sha256": "b12fb14b25108a5535d2c0fd4df611f22efc964f681de824f601cb673731d71b",
- "notes": "- Guies: 'Millors jugades' del campió (teves i de la comunitat) en un reproductor com el dels combos: una darrere l'altra, pantalla completa i què va passar sobre el vídeo"
+ "sha256": "844a31c8b75d934d77030a4e896ac7785954829132cb7b91fba9c187e81be9c9",
+ "notes": "- Guies: només es reprodueix un combo alhora"
 }
