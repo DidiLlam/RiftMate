@@ -1,7 +1,7 @@
 {
- "version": "2.4.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.4.0.exe",
- "size": 10228736,
- "sha256": "c45c44c4aee9784c9c2ba17a52bb9e77d0e8cf2c4c6e0ca7a8da7179b665d989",
- "notes": "- Guies amb vídeo: clip oficial de cada habilitat, combos en vídeo pas a pas, les teves millors jugades i les de la comunitat amb el campió, i enllaços a pro views"
+ "version": "2.4.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.4.1.exe",
+ "size": 10230784,
+ "sha256": "4333723513606d6d417815e9bdff368b563783c8239daa8559fc2596f79de705",
+ "notes": "- Guies: botó de pantalla completa als vídeos de combos i d'habilitats (també amb doble clic)"
 }
