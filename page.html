@@ -6861,6 +6861,7 @@ function abilVideo(dd, k){
 function comboVideo(box, dd, c){
   if (!box) return;
   if (!box.hidden) { box.hidden = true; box.innerHTML = ""; return; }
+  document.querySelectorAll(".gcv").forEach(o => { if (o !== box) { o.hidden = true; o.innerHTML = ""; } }); // one combo at a time
   // one clip per ability: a key that comes back later in the combo (W and then W↩ to return, Q twice) is the same
   // clip, so it plays once, with every place it appears lit up
   const steps = [];
