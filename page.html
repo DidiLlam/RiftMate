@@ -228,6 +228,14 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .gavp{margin-top:6px}
 .gcvw{position:relative;max-width:520px;margin-top:8px}.gcvw video{width:100%;border-radius:8px;background:#000;display:block}
 .gcvk{position:absolute;left:10px;top:8px;font:800 28px/1 var(--mono, monospace);color:#fff;text-shadow:0 0 6px #000}
+.gavw{max-width:420px;margin-top:6px}.gavw video.gav{margin-top:0}
+.gfsb{position:absolute;right:8px;bottom:8px;width:34px;height:34px;border:0;border-radius:8px;background:rgba(0,0,0,.6);color:#fff;font-size:20px;line-height:1;cursor:pointer}
+.gfsb:hover{background:rgba(0,0,0,.85)}
+.gcvw:fullscreen,.gcvw.gfs{max-width:none;margin:0;background:#000;display:flex;align-items:center;justify-content:center}
+.gcvw.gfs{position:fixed;inset:0;z-index:9999}
+.gcvw:fullscreen video,.gcvw.gfs video{display:block;width:100%;height:100%;object-fit:contain;border-radius:0}
+.gcvw:fullscreen .gcvk,.gcvw.gfs .gcvk{font-size:72px;left:32px;top:24px}
+.gcvw:fullscreen .gfsb,.gcvw.gfs .gfsb{width:52px;height:52px;font-size:30px;right:24px;bottom:24px}
 .gseq .gk.on{background:var(--accent);color:#fff}
 .gyt a{text-decoration:none}
 .bprow.isnew{box-shadow:inset 3px 0 0 var(--accent)}
@@ -1153,6 +1161,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Pantalla completa": ["Pantalla completa", "Full screen"],
   "▶ Vídeo": ["▶ Vídeo", "▶ Video"], "❚❚ Aturar": ["❚❚ Parar", "❚❚ Stop"], "▶ Veure-ho": ["▶ Verlo", "▶ Watch"], "Vídeos": ["Vídeos", "Videos"], "Professionals": ["Profesionales", "Pros"],
   "Pro view": ["Pro view", "Pro view"], "Combos": ["Combos", "Combos"], "Gestió de la línia": ["Gestión de la línea", "Laning"], "Jugades": ["Jugadas", "Plays"],
   "Les teves millors": ["Tus mejores", "Your best"], "De la comunitat": ["De la comunidad", "From the community"],
@@ -6769,7 +6778,7 @@ async function renderGuides(){
     $("#gRetry")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Fent la guia…"; renderGuides(); });
     $("#gRemove")?.addEventListener("click", () => { store.set("guideChamps", guideChamps().filter(x => x !== guideSel)); guideSel = null; renderGuides(); }); return; }
   const keys = ["Q", "W", "E", "R"];
-  const vid = k => abilVideo(dd, k) ? `<video class="gav" muted loop playsinline preload="none" data-k="${k}">${abilVideo(dd, k)}</video><button class="b small gavp" type="button" data-k="${k}">▶ Vídeo</button>` : "";
+  const vid = k => abilVideo(dd, k) ? `<div class="gcvw gavw"><video class="gav" muted loop playsinline preload="none" data-k="${k}">${abilVideo(dd, k)}</video><button class="gfsb" type="button" title="Pantalla completa" hidden>⛶</button></div><button class="b small gavp" type="button" data-k="${k}">▶ Vídeo</button>` : "";
   const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p>${vid("P")}</div></li>`,
     ...dd.spells.map((sp, i) => `<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${sp.image.full}" alt=""><div><b><span class="gk">${keys[i]}</span> ${esc(sp.name)}</b> <small class="note">recàrrega ${esc(sp.cooldownBurn)} s</small><p class="note">${esc(stripTags(sp.description))}</p>${vid(keys[i])}</div></li>`)].join("")
     : `<li class="note">No he pogut carregar les habilitats de Riot (sense connexió?).</li>`;
@@ -6814,8 +6823,9 @@ async function renderGuides(){
     renderGuides();
   });
   el.querySelectorAll("[data-train]").forEach(b => b.addEventListener("click", () => comboTrain(g.combos[+b.dataset.train])));
-  el.querySelectorAll(".gavp").forEach(b => b.addEventListener("click", () => { const v = b.previousElementSibling; if (v.paused) { v.hidden = false; v.classList.add("on"); v.play().catch(() => {}); b.textContent = "❚❚ Aturar"; } else { v.pause(); b.textContent = "▶ Vídeo"; } }));
-  el.querySelectorAll("video.gav").forEach(v => v.addEventListener("error", () => { v.nextElementSibling?.remove(); v.remove(); }, true));
+  el.querySelectorAll(".gavp").forEach(b => b.addEventListener("click", () => { const w = b.previousElementSibling, v = w.querySelector("video"); if (v.paused) { v.classList.add("on"); w.querySelector(".gfsb").hidden = false; v.play().catch(() => {}); b.textContent = "❚❚ Aturar"; } else { v.pause(); b.textContent = "▶ Vídeo"; } }));
+  el.querySelectorAll(".gavw").forEach(bindFull);
+  el.querySelectorAll("video.gav").forEach(v => v.addEventListener("error", () => { const w = v.closest(".gavw"); w.nextElementSibling?.remove(); w.remove(); }, true));
   el.querySelectorAll("[data-cvid]").forEach(b => b.addEventListener("click", () => comboVideo(b.closest(".gcombo").querySelector(".gcv"), dd, g.combos[+b.dataset.cvid])));
   guideVideos(guideSel);
   loadRunes(); fillRunes(); i18nAll();
@@ -6834,8 +6844,9 @@ function comboVideo(box, dd, c){
   const steps = c.s.map((k, j) => /^[QWER]/.test(k) ? j : -1).filter(j => j >= 0); // positions in the combo with a clip
   if (!steps.length) { box.hidden = false; box.innerHTML = `<p class="note">Aquest combo no té habilitats amb vídeo.</p>`; return; }
   box.hidden = false;
-  box.innerHTML = `<div class="gcvw"><video muted playsinline autoplay></video><span class="gcvk"></span></div><div class="gseq">${c.s.map((k, i) => `<span class="gk" data-i="${i}">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">Vídeos oficials de Riot de cada habilitat, en l'ordre del combo (es repeteix). Al joc van molt més seguides.</p>`;
+  box.innerHTML = `<div class="gcvw"><video muted playsinline autoplay></video><span class="gcvk"></span><button class="gfsb" type="button" title="Pantalla completa">⛶</button></div><div class="gseq">${c.s.map((k, i) => `<span class="gk" data-i="${i}">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">Vídeos oficials de Riot de cada habilitat, en l'ordre del combo (es repeteix). Al joc van molt més seguides.</p>`;
   const v = box.querySelector("video"), lab = box.querySelector(".gcvk");
+  bindFull(box.querySelector(".gcvw"));
   let i = 0;
   const play = () => {
     if (!box.isConnected || box.hidden) return;
@@ -6847,6 +6858,22 @@ function comboVideo(box, dd, c){
   v.addEventListener("error", () => { if (v.src.endsWith(".webm")) { v.src = v.src.replace(/\.webm$/, ".mp4"); v.play().catch(() => {}); } else { i++; if (i < steps.length * 2) play(); } });
   play();
 }
+// full screen for a guide video (the key on top stays): the browser's, or the whole window if the app's window can't
+function bindFull(w){
+  if (!w) return;
+  const btn = w.querySelector(".gfsb"), v = w.querySelector("video");
+  const exit = () => { if (document.fullscreenElement === w) document.exitFullscreen().catch(() => {}); w.classList.remove("gfs"); };
+  const go = () => {
+    if (document.fullscreenElement === w || w.classList.contains("gfs")) return exit();
+    const p = w.requestFullscreen ? w.requestFullscreen() : Promise.reject();
+    p.catch(() => w.classList.add("gfs"));
+    if (v.paused) v.play().catch(() => {});
+  };
+  btn?.addEventListener("click", e => { e.stopPropagation(); go(); });
+  v?.addEventListener("dblclick", go);
+  w.addEventListener("click", e => { if (w.classList.contains("gfs") && e.target !== btn) exit(); });
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".gcvw.gfs").forEach(w => w.classList.remove("gfs")); });
 // pro views and guides: YouTube searches (the app doesn't host other people's videos)
 function ytLinks(name){
   const q = s => `https://www.youtube.com/results?search_query=${encodeURIComponent(s)}`;
