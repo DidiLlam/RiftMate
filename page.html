@@ -235,6 +235,12 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .gcvw.gfs{position:fixed;inset:0;z-index:9999}
 .gcvw:fullscreen video,.gcvw.gfs video{display:block;width:100%;height:100%;object-fit:contain;border-radius:0}
 .gcvw:fullscreen .gcvk,.gcvw.gfs .gcvk{font-size:72px;left:32px;top:24px}
+.gcvseq,.gcvname{display:none}.gavk{display:none}.gavw:has(video.on) .gavk,.gcvw.gavw:fullscreen .gavk{display:block}
+.gcvw:fullscreen .gcvseq,.gcvw.gfs .gcvseq{display:flex;position:absolute;left:50%;bottom:40px;transform:translateX(-50%);gap:10px;align-items:center;padding:14px 22px;border-radius:14px;background:rgba(0,0,0,.65);margin:0}
+.gcvw:fullscreen .gcvseq .gk,.gcvw.gfs .gcvseq .gk{font-size:30px;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;transition:transform .15s,background .15s}
+.gcvw:fullscreen .gcvseq .gk.on,.gcvw.gfs .gcvseq .gk.on{background:var(--accent);transform:scale(1.18)}
+.gcvw:fullscreen .gcvseq i,.gcvw.gfs .gcvseq i{color:#fff;font-size:28px;font-style:normal;opacity:.7}
+.gcvw:fullscreen .gcvname,.gcvw.gfs .gcvname{display:block;position:absolute;right:32px;top:28px;color:#fff;font-weight:800;font-size:28px;text-shadow:0 0 8px #000}
 .gcvw:fullscreen .gfsb,.gcvw.gfs .gfsb{width:52px;height:52px;font-size:30px;right:24px;bottom:24px}
 .gseq .gk.on{background:var(--accent);color:#fff}
 .gyt a{text-decoration:none}
@@ -6778,9 +6784,9 @@ async function renderGuides(){
     $("#gRetry")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Fent la guia…"; renderGuides(); });
     $("#gRemove")?.addEventListener("click", () => { store.set("guideChamps", guideChamps().filter(x => x !== guideSel)); guideSel = null; renderGuides(); }); return; }
   const keys = ["Q", "W", "E", "R"];
-  const vid = k => abilVideo(dd, k) ? `<div class="gcvw gavw"><video class="gav" muted loop playsinline preload="none" data-k="${k}">${abilVideo(dd, k)}</video><button class="gfsb" type="button" title="Pantalla completa" hidden>⛶</button></div><button class="b small gavp" type="button" data-k="${k}">▶ Vídeo</button>` : "";
-  const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p>${vid("P")}</div></li>`,
-    ...dd.spells.map((sp, i) => `<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${sp.image.full}" alt=""><div><b><span class="gk">${keys[i]}</span> ${esc(sp.name)}</b> <small class="note">recàrrega ${esc(sp.cooldownBurn)} s</small><p class="note">${esc(stripTags(sp.description))}</p>${vid(keys[i])}</div></li>`)].join("")
+  const vid = (k, name) => abilVideo(dd, k) ? `<div class="gcvw gavw"><video class="gav" muted loop playsinline preload="none" data-k="${k}">${abilVideo(dd, k)}</video><span class="gcvk gavk">${k}</span><div class="gcvname">${esc(name || "")}</div><button class="gfsb" type="button" title="Pantalla completa" hidden>⛶</button></div><button class="b small gavp" type="button" data-k="${k}">▶ Vídeo</button>` : "";
+  const abil = dd ? [`<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/passive/${dd.passive.image.full}" alt=""><div><b><span class="gk">P</span> ${esc(dd.passive.name)}</b><p class="note">${esc(stripTags(dd.passive.description))}</p>${vid("P", dd.passive.name)}</div></li>`,
+    ...dd.spells.map((sp, i) => `<li><img src="https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${sp.image.full}" alt=""><div><b><span class="gk">${keys[i]}</span> ${esc(sp.name)}</b> <small class="note">recàrrega ${esc(sp.cooldownBurn)} s</small><p class="note">${esc(stripTags(sp.description))}</p>${vid(keys[i], sp.name)}</div></li>`)].join("")
     : `<li class="note">No he pogut carregar les habilitats de Riot (sense connexió?).</li>`;
   const bc = (benchData?.champs || []).find(x => norm(x.champ) === norm(guideSel) && x.games > 0);
   const icons = list => (list || []).map(id => `<img src="${itemIcon(id)}" alt="" title="${esc(itemName(id))}" onerror="this.remove()">`).join("→");
@@ -6847,7 +6853,8 @@ function comboVideo(box, dd, c){
   c.s.forEach((x, j) => { if (!/^[QWER]/.test(x)) return; const k = x[0], st = steps.find(y => y.k === k); st ? st.pos.push(j) : steps.push({k, pos: [j]}); });
   if (!steps.length) { box.hidden = false; box.innerHTML = `<p class="note">Aquest combo no té habilitats amb vídeo.</p>`; return; }
   box.hidden = false;
-  box.innerHTML = `<div class="gcvw"><video muted playsinline autoplay></video><span class="gcvk"></span><button class="gfsb" type="button" title="Pantalla completa">⛶</button></div><div class="gseq">${c.s.map((k, i) => `<span class="gk" data-i="${i}">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">Vídeos oficials de Riot de cada habilitat, un cop cadascuna, en l'ordre del combo; després torna a començar. Al joc van molt més seguides.</p>`;
+  const seq = cls => `<div class="gseq ${cls}">${c.s.map((k, i) => `<span class="gk" data-i="${i}">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div>`;
+  box.innerHTML = `<div class="gcvw"><video muted playsinline autoplay></video><span class="gcvk"></span><div class="gcvname">${esc(c.n)}</div>${seq("gcvseq")}<button class="gfsb" type="button" title="Pantalla completa">⛶</button></div>${seq("")}<p class="note">Vídeos oficials de Riot de cada habilitat, un cop cadascuna, en l'ordre del combo; després torna a començar. Al joc van molt més seguides.</p>`;
   const v = box.querySelector("video"), lab = box.querySelector(".gcvk");
   bindFull(box.querySelector(".gcvw"));
   let i = 0;
