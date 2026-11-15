@@ -235,6 +235,17 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .gcvw.gfs{position:fixed;inset:0;z-index:9999}
 .gcvw:fullscreen video,.gcvw.gfs video{display:block;width:100%;height:100%;object-fit:contain;border-radius:0}
 .gcvw:fullscreen .gcvk,.gcvw.gfs .gcvk{font-size:72px;left:32px;top:24px}
+.greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
+.greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
+.greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
+.greelwhy{display:none}
+.gcvw.greel:fullscreen .greelwhy,.gcvw.greel.gfs .greelwhy{display:block;position:absolute;left:50%;bottom:90px;transform:translateX(-50%);max-width:70%;padding:12px 20px;border-radius:12px;background:rgba(0,0,0,.6);color:#fff;font-size:22px;text-align:center}
+.greelwhy:empty{display:none!important}
+.greelnav{display:flex;gap:8px;align-items:center;margin-top:8px;max-width:760px}
+.greellist{display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:4px}
+.greelit{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-start;gap:2px;max-width:170px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);cursor:pointer;text-align:left;font-size:12px}
+.greelit.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.greelit b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
 .gcvseq,.gcvname{display:none}.gavk{display:none}.gavw:has(video.on) .gavk,.gcvw.gavw:fullscreen .gavk{display:block}
 .gcvw:fullscreen .gcvseq,.gcvw.gfs .gcvseq{display:flex;position:absolute;left:50%;bottom:40px;transform:translateX(-50%);gap:10px;align-items:center;padding:14px 22px;border-radius:14px;background:rgba(0,0,0,.65);margin:0}
 .gcvw:fullscreen .gcvseq .gk,.gcvw.gfs .gcvseq .gk{font-size:30px;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;transition:transform .15s,background .15s}
@@ -1167,6 +1178,9 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Millors jugades": ["Mejores jugadas", "Best plays"], "‹ Anterior": ["‹ Anterior", "‹ Previous"], "Següent ›": ["Siguiente ›", "Next ›"],
+  "Encara no hi ha cap jugada amb {x}: ni teva ni de ningú de la comunitat. Quan n'hi hagi, sortiran aquí.": ["Aún no hay ninguna jugada con {x}: ni tuya ni de nadie de la comunidad. Cuando haya, saldrán aquí.", "There are no plays with {x} yet, neither yours nor the community's. They'll show up here."],
+  "{n} teves i {m} de la comunitat, de més a menys puntuació. Quan se n'acaba una, passa a la següent.": ["{n} tuyas y {m} de la comunidad, de más a menos puntuación. Cuando se acaba una, pasa a la siguiente.", "{n} yours and {m} from the community, best score first. When one ends, the next one plays."],
   "Pantalla completa": ["Pantalla completa", "Full screen"],
   "▶ Vídeo": ["▶ Vídeo", "▶ Video"], "❚❚ Aturar": ["❚❚ Parar", "❚❚ Stop"], "▶ Veure-ho": ["▶ Verlo", "▶ Watch"], "Vídeos": ["Vídeos", "Videos"], "Professionals": ["Profesionales", "Pros"],
   "Pro view": ["Pro view", "Pro view"], "Combos": ["Combos", "Combos"], "Gestió de la línia": ["Gestión de la línea", "Laning"], "Jugades": ["Jugadas", "Plays"],
@@ -6814,7 +6828,7 @@ async function renderGuides(){
       <div id="gTrain" hidden></div>
       <p class="note">${esc(g.practice)}</p></section>
     <section class="card"><h2>Habilitats <small class="note">(pedaç ${esc(iconVer)})</small></h2><ul class="gabil">${abil}</ul></section>
-    <section class="card"><h2>Vídeos</h2><div id="gVids"><p class="note">Buscant jugades amb ${esc(displayChamp(guideSel))}…</p></div>
+    <section class="card"><h2>Millors jugades</h2><div id="gVids"><p class="note">Buscant jugades amb ${esc(displayChamp(guideSel))}…</p></div>
       <h3>Professionals</h3><div class="bar gyt">${ytLinks(displayChamp(guideSel))}</div>
       <p class="note">S'obren a YouTube: les partides de jugadors Challenger amb la seva càmera (pro view) són la millor manera de veure com es mouen, quan van a fer gank i com fan els combos de veritat.</p></section>
     <section class="card"><h2>Build i runes dels millors</h2>${build}</section>
@@ -6899,10 +6913,32 @@ async function guideVideos(id){
   try { mine = ((await (await fetch("/api/plays", {cache: "no-store"})).json()).plays || []).filter(p => same(p.champ)).sort((a, b) => b.score - a.score).slice(0, 4); } catch (e) {}
   try { all = ((await (await fetch("/api/ranking", {cache: "no-store"})).json()).plays || []).filter(p => !p.mine && p.v && same(p.c)).sort((a, b) => b.s - a.s).slice(0, 4); } catch (e) {}
   if (!$("#gVids") || guideSel !== id) return;
-  box.innerHTML = (mine.length ? `<h3>Les teves millors</h3><div class="plays">${mine.map(p => playItem(p, 0, !mySeen.has(`${p.stamp}:${p.n}`))).join("")}</div>` : `<p class="note">Encara no tens cap jugada guardada amb ${esc(displayChamp(id))}.</p>`)
-    + (all.length ? `<h3>De la comunitat</h3><div class="plays">${all.map(p => `<div class="play"><video src="/api/rankfile?id=${esc(p.id)}" controls preload="none" playsinline></video><div><span class="pscore">${p.s}</span> <b>${esc(p.t || "")}</b></div><div class="note" data-noi18n>${esc(p.n || "")}</div></div>`).join("")}</div>` : "");
-  box.querySelectorAll("[data-pdel]").forEach(b => b.remove()); // deleting is done in Best plays
-  box.querySelectorAll(".play.isnew video").forEach(v => v.addEventListener("play", () => { const id = v.closest(".play").dataset.pid; mySeen.add(id); store.set("mySeen", [...mySeen].slice(-800)); v.closest(".play").classList.remove("isnew"); v.closest(".play").querySelector(".bpnew")?.remove(); bpBadgeRefresh(); }, {once: true}));
+  // one reel, like the combo videos: the best with this champion (yours and everybody's), one after the other,
+  // with full screen and what happened on top
+  const reel = mine.map(p => ({src: playVideo(p), s: p.score, t: p.title, w: p.why, who: "Tu", min: p.t, pid: `${p.stamp}:${p.n}`}))
+    .concat(all.map(p => ({src: `/api/rankfile?id=${encodeURIComponent(p.id)}`, s: p.s, t: p.t, w: p.w, who: p.n, k: p.k})))
+    .sort((a, b) => b.s - a.s).slice(0, 8);
+  if (!reel.length) { box.innerHTML = `<p class="note">Encara no hi ha cap jugada amb ${esc(displayChamp(id))}: ni teva ni de ningú de la comunitat. Quan n'hi hagi, sortiran aquí.</p>`; i18nAll(); return; }
+  box.innerHTML = `<div class="gcvw greel"><video playsinline preload="metadata" controls controlslist="nofullscreen" disablepictureinpicture></video><span class="gcvk"></span><div class="gcvname"></div><div class="greelwhy"></div><button class="gfsb" type="button" title="Pantalla completa">⛶</button></div>
+    <div class="greelnav"><button class="b small" type="button" data-rv="-1">‹ Anterior</button><div class="greellist">${reel.map((r, i) => `<button type="button" class="greelit" data-ri="${i}"><span class="pscore">${r.s}</span> <b>${esc(r.t || "")}</b><small class="note" data-noi18n>${esc(r.who)}</small>${r.pid && !mySeen.has(r.pid) ? `<span class="bpnew">NEW</span>` : ""}</button>`).join("")}</div><button class="b small" type="button" data-rv="1">Següent ›</button></div>
+    <p class="note">${mine.length ? `${mine.length} ${mine.length === 1 ? "teva" : "teves"}` : "Cap teva"}${all.length ? ` i ${all.length} de la comunitat` : ""}, de més a menys puntuació. Quan se n'acaba una, passa a la següent.</p>`;
+  const w = box.querySelector(".greel"), v = w.querySelector("video");
+  let cur = 0;
+  const show = (i, auto) => {
+    cur = (i + reel.length) % reel.length; const r = reel[cur];
+    v.src = r.src; if (auto) v.play().catch(() => {});
+    w.querySelector(".gcvk").textContent = `${r.s} · ${cur + 1}/${reel.length}`;
+    w.querySelector(".gcvname").textContent = `${r.t || ""} · ${r.who}`;
+    w.querySelector(".greelwhy").textContent = r.w || "";
+    box.querySelectorAll(".greelit").forEach(b => b.classList.toggle("on", +b.dataset.ri === cur));
+  };
+  v.addEventListener("play", () => { const r = reel[cur]; if (r.pid && !mySeen.has(r.pid)) { mySeen.add(r.pid); store.set("mySeen", [...mySeen].slice(-800)); box.querySelector(`.greelit[data-ri="${cur}"] .bpnew`)?.remove(); bpBadgeRefresh(); } });
+  v.addEventListener("ended", () => { if (reel.length > 1) show(cur + 1, true); });
+  v.addEventListener("error", () => { if (reel.length > 1 && !v.paused) show(cur + 1, true); });
+  box.querySelectorAll("[data-ri]").forEach(b => b.addEventListener("click", () => show(+b.dataset.ri, true)));
+  box.querySelectorAll("[data-rv]").forEach(b => b.addEventListener("click", () => show(cur + +b.dataset.rv, true)));
+  bindFull(w);
+  show(0, false);
   i18nAll();
 }
 // the trainer: the keys of the combo in order, as fast as you can; a mistake starts it again
