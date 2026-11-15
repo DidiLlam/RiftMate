@@ -145,7 +145,8 @@ h1{font-family:var(--display);font-size:1.5rem;margin:0;letter-spacing:.02em}
 .t select{font:600 .9rem var(--body);background:transparent;color:var(--fg);border:none;text-align:center;cursor:pointer}
 .t:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button.b{font:600 .9rem var(--body);border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:8px;padding:8px 12px;cursor:pointer}
+button.b,a.b{font:600 .9rem var(--body);border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:8px;padding:8px 12px;cursor:pointer}
+a.b{display:inline-block;text-decoration:none}a.b:hover{border-color:var(--accent)}
 .note{font-size:.82rem;color:var(--muted)}
 .note.warn{color:var(--soon)}
 .micstate{display:inline-flex;align-items:center;font-size:.86rem;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
@@ -1186,6 +1187,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Google no deixa fer cerques a internet gratuïtes amb la teva clau ara mateix (he provat tots els models). Si és el límit del dia, es reinicia a les 9 del matí. Mentrestant, tens les cerques de YouTube de sota.": ["Google no deja hacer búsquedas gratuitas en internet con tu clave ahora mismo (he probado todos los modelos). Si es el límite del día, se reinicia a las 9 de la mañana. Mientras tanto, tienes las búsquedas de YouTube de abajo.", "Google won't allow free web searches with your key right now (I tried every model). If it's the daily limit, it resets at 9 am. Meanwhile, you have the YouTube searches below."],
   "Vídeos de pros": ["Vídeos de pros", "Pro videos"], "Més a YouTube": ["Más en YouTube", "More on YouTube"], "Guia": ["Guía", "Guide"], "Obrir a YouTube": ["Abrir en YouTube", "Open on YouTube"], "Buscar-ne de nous": ["Buscar nuevos", "Find new ones"],
   "Buscant vídeos de pros amb {x} a internet…": ["Buscando vídeos de pros con {x} en internet…", "Looking for pro videos with {x} online…"],
   "Trobats el {x} per la IA a internet; tots comprovats a YouTube.": ["Encontrados el {x} por la IA en internet; todos comprobados en YouTube.", "Found on {x} by the AI online; all checked on YouTube."],

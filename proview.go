@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -72,53 +73,128 @@ func ytCheck(id, champ string) (proVid, bool) {
 	return proVid{ID: id, Title: o.Title, Author: o.Author}, true
 }
 
+// searchModels: the models to try for a search, best first. Searching with Google isn't free on every model (on
+// some the free quota for it is zero), so when one says "quota" the next is tried; the one that worked is kept.
+var searchModel string
+
+func searchModels(key string) []string {
+	first, _ := pickGeminiModel(key)
+	names := []string{}
+	req, _ := http.NewRequest("GET", gemBase()+"/v1beta/models?pageSize=200", nil)
+	req.Header.Set("x-goog-api-key", key)
+	if r, err := aiHTTP.Do(req); err == nil {
+		var out struct {
+			Models []struct {
+				Name    string   `json:"name"`
+				Methods []string `json:"supportedGenerationMethods"`
+			} `json:"models"`
+		}
+		json.NewDecoder(r.Body).Decode(&out)
+		r.Body.Close()
+		for _, m := range out.Models {
+			n := strings.TrimPrefix(m.Name, "models/")
+			ok := false
+			for _, x := range m.Methods {
+				ok = ok || x == "generateContent"
+			}
+			if ok && strings.Contains(n, "flash") && !strings.Contains(n, "image") && !strings.Contains(n, "tts") && !strings.Contains(n, "live") && !strings.Contains(n, "audio") {
+				names = append(names, n)
+			}
+		}
+	}
+	// the free tier has searches on the 2.5 and 2.0 Flash models: those go first after the one that worked before
+	rank := func(n string) int {
+		switch {
+		case n == searchModel:
+			return 0
+		case n == "gemini-2.5-flash":
+			return 1
+		case n == "gemini-2.5-flash-lite":
+			return 2
+		case n == "gemini-2.0-flash":
+			return 3
+		case n == first:
+			return 4
+		case strings.Contains(n, "preview") || strings.Contains(n, "exp"):
+			return 9
+		}
+		return 5
+	}
+	if first != "" && !contains(names, first) {
+		names = append(names, first)
+	}
+	sort.SliceStable(names, func(i, j int) bool { return rank(names[i]) < rank(names[j]) })
+	if len(names) > 6 {
+		names = names[:6]
+	}
+	return names
+}
+
 // gemSearch: one question to Gemini with Google Search on; the plain text of the answer
 func gemSearch(key, prompt string) (string, error) {
-	model, err := pickGeminiModel(key)
-	if err != nil {
-		return "", err
+	models := searchModels(key)
+	if len(models) == 0 {
+		return "", fmt.Errorf("no hi ha cap model disponible")
 	}
 	body, _ := json.Marshal(map[string]any{
 		"contents":         []map[string]any{{"role": "user", "parts": []map[string]string{{"text": prompt}}}},
 		"tools":            []map[string]any{{"google_search": map[string]any{}}},
 		"generationConfig": map[string]any{"maxOutputTokens": 4096, "temperature": 0.2},
 	})
-	req, _ := http.NewRequest("POST", gemBase()+"/v1beta/models/"+model+":generateContent", bytes.NewReader(body))
-	req.Header.Set("x-goog-api-key", key)
-	req.Header.Set("content-type", "application/json")
-	t0 := time.Now()
-	r, err := searchHTTP.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer r.Body.Close()
-	raw, _ := io.ReadAll(io.LimitReader(r.Body, 2<<20))
-	if r.StatusCode != 200 {
-		return "", fmt.Errorf("HTTP %d: %.200s", r.StatusCode, raw)
-	}
-	aiUsedToday(1)
-	var out struct {
-		Candidates []struct {
-			Content struct {
-				Parts []struct {
-					Text    string `json:"text"`
-					Thought bool   `json:"thought"`
-				} `json:"parts"`
-			} `json:"content"`
-		} `json:"candidates"`
-	}
-	json.Unmarshal(raw, &out)
-	var sb strings.Builder
-	if len(out.Candidates) > 0 {
-		for _, p := range out.Candidates[0].Content.Parts {
-			if !p.Thought {
-				sb.WriteString(p.Text)
+	var lastErr error
+	for _, model := range models {
+		req, _ := http.NewRequest("POST", gemBase()+"/v1beta/models/"+model+":generateContent", bytes.NewReader(body))
+		req.Header.Set("x-goog-api-key", key)
+		req.Header.Set("content-type", "application/json")
+		t0 := time.Now()
+		r, err := searchHTTP.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		raw, _ := io.ReadAll(io.LimitReader(r.Body, 2<<20))
+		r.Body.Close()
+		if r.StatusCode != 200 {
+			quota := ""
+			if m := regexp.MustCompile(`"quotaId":\s*"([^"]+)"`).FindSubmatch(raw); m != nil {
+				quota = string(m[1])
+			}
+			logf("IA amb cerca: %s HTTP %d %s", model, r.StatusCode, quota)
+			if r.StatusCode == 429 {
+				lastErr = errQuota
+			} else {
+				lastErr = fmt.Errorf("HTTP %d", r.StatusCode)
+			}
+			continue // quota or a model without search: the next one
+		}
+		aiUsedToday(1)
+		var out struct {
+			Candidates []struct {
+				Content struct {
+					Parts []struct {
+						Text    string `json:"text"`
+						Thought bool   `json:"thought"`
+					} `json:"parts"`
+				} `json:"content"`
+			} `json:"candidates"`
+		}
+		json.Unmarshal(raw, &out)
+		var sb strings.Builder
+		if len(out.Candidates) > 0 {
+			for _, p := range out.Candidates[0].Content.Parts {
+				if !p.Thought {
+					sb.WriteString(p.Text)
+				}
 			}
 		}
+		searchModel = model
+		logf("IA amb cerca (%s, %.1f s)", model, time.Since(t0).Seconds())
+		return sb.String(), nil
 	}
-	logf("IA amb cerca (%s, %.1f s)", model, time.Since(t0).Seconds())
-	return sb.String(), nil
+	return "", lastErr
 }
+
+var errQuota = fmt.Errorf("quota")
 
 func proVidsFile(champ string) string {
 	return profileFile("pro_videos_" + regexp.MustCompile(`[^A-Za-z0-9]`).ReplaceAllString(champ, "") + ".json")
@@ -181,7 +257,11 @@ Answer only with JSON, no other text: [{"url":"https://www.youtube.com/watch?v=.
 				reply(cached)
 				return
 			}
-			reply(proVids{Champ: champ, Error: "La IA no ha pogut buscar vídeos: " + err.Error()})
+			msg := "La IA no ha pogut buscar vídeos: " + err.Error()
+			if err == errQuota {
+				msg = "Google no deixa fer cerques a internet gratuïtes amb la teva clau ara mateix (he provat tots els models). Si és el límit del dia, es reinicia a les 9 del matí. Mentrestant, tens les cerques de YouTube de sota."
+			}
+			reply(proVids{Champ: champ, Error: msg})
 			return
 		}
 		// the kind next to each link, when the answer is the JSON asked for
