@@ -1,7 +1,7 @@
 {
- "version": "2.5.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.5.0.exe",
- "size": 10262528,
- "sha256": "13b8a1ef23253857be8ba72777e354aca4b4e0238cd2aa9b8eb45745221c1301",
- "notes": "- Guies: vídeos de pros (pro view, jugades i guies) que la IA busca a internet per a cada campió, comprovats a YouTube i reproduïts dins l'app; ja no hi surten les teves jugades"
+ "version": "2.5.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.5.1.exe",
+ "size": 10269696,
+ "sha256": "0360d8b957cf4e8ad7e5a220848ccab69d6acaf36fffbda5d5403508672cf29d",
+ "notes": "- Vídeos de pros: si un model de la IA no té cerques gratuïtes, prova els altres (2.5 Flash primer); missatge clar si cap en té; enllaços de YouTube com a botons"
 }
