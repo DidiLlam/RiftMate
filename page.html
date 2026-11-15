@@ -1168,7 +1168,7 @@ const I18N = {
   "Buscant jugades amb {x}…": ["Buscando jugadas con {x}…", "Looking for plays with {x}…"],
   "Encara no tens cap jugada guardada amb {x}.": ["Aún no tienes ninguna jugada guardada con {x}.", "You don't have any saved plays with {x} yet."],
   "Aquest combo no té habilitats amb vídeo.": ["Este combo no tiene habilidades con vídeo.", "This combo has no abilities with a video."],
-  "Vídeos oficials de Riot de cada habilitat, en l'ordre del combo (es repeteix). Al joc van molt més seguides.": ["Vídeos oficiales de Riot de cada habilidad, en el orden del combo (se repite). En el juego van mucho más seguidas.", "Riot's official clips of each ability, in combo order (it loops). In game they come much faster."],
+  "Vídeos oficials de Riot de cada habilitat, un cop cadascuna, en l'ordre del combo; després torna a començar. Al joc van molt més seguides.": ["Vídeos oficiales de Riot de cada habilidad, una vez cada una, en el orden del combo; después vuelve a empezar. En el juego van mucho más seguidas.", "Riot's official clip of each ability, once each, in combo order; then it starts again. In game they come much faster."],
   "S'obren a YouTube: les partides de jugadors Challenger amb la seva càmera (pro view) són la millor manera de veure com es mouen, quan van a fer gank i com fan els combos de veritat.": ["Se abren en YouTube: las partidas de jugadores Challenger con su cámara (pro view) son la mejor manera de ver cómo se mueven, cuándo van a gankear y cómo hacen los combos de verdad.", "They open on YouTube: Challenger players' games from their own camera (pro view) are the best way to see how they move, when they roam and how they really do the combos."],
   "Tornar-ho a provar": ["Volver a intentarlo", "Try again"], "Fent la guia…": ["Haciendo la guía…", "Writing the guide…"],
   "1 de visió per minut (2 de suport)": ["1 de visión por minuto (2 de support)", "1 vision score per minute (2 as support)"],
@@ -6841,20 +6841,24 @@ function abilVideo(dd, k){
 function comboVideo(box, dd, c){
   if (!box) return;
   if (!box.hidden) { box.hidden = true; box.innerHTML = ""; return; }
-  const steps = c.s.map((k, j) => /^[QWER]/.test(k) ? j : -1).filter(j => j >= 0); // positions in the combo with a clip
+  // one clip per ability: a key that comes back later in the combo (W and then W↩ to return, Q twice) is the same
+  // clip, so it plays once, with every place it appears lit up
+  const steps = [];
+  c.s.forEach((x, j) => { if (!/^[QWER]/.test(x)) return; const k = x[0], st = steps.find(y => y.k === k); st ? st.pos.push(j) : steps.push({k, pos: [j]}); });
   if (!steps.length) { box.hidden = false; box.innerHTML = `<p class="note">Aquest combo no té habilitats amb vídeo.</p>`; return; }
   box.hidden = false;
-  box.innerHTML = `<div class="gcvw"><video muted playsinline autoplay></video><span class="gcvk"></span><button class="gfsb" type="button" title="Pantalla completa">⛶</button></div><div class="gseq">${c.s.map((k, i) => `<span class="gk" data-i="${i}">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">Vídeos oficials de Riot de cada habilitat, en l'ordre del combo (es repeteix). Al joc van molt més seguides.</p>`;
+  box.innerHTML = `<div class="gcvw"><video muted playsinline autoplay></video><span class="gcvk"></span><button class="gfsb" type="button" title="Pantalla completa">⛶</button></div><div class="gseq">${c.s.map((k, i) => `<span class="gk" data-i="${i}">${esc(k === "AA" ? "Cop" : k === "F" ? "Flash" : k)}</span>`).join("<i>›</i>")}</div><p class="note">Vídeos oficials de Riot de cada habilitat, un cop cadascuna, en l'ordre del combo; després torna a començar. Al joc van molt més seguides.</p>`;
   const v = box.querySelector("video"), lab = box.querySelector(".gcvk");
   bindFull(box.querySelector(".gcvw"));
   let i = 0;
   const play = () => {
     if (!box.isConnected || box.hidden) return;
-    const pos = steps[i % steps.length], k = c.s[pos][0], id = String(dd.key).padStart(4, "0");
-    box.querySelectorAll(".gseq .gk").forEach(e => e.classList.toggle("on", +e.dataset.i === pos));
-    lab.textContent = k; v.src = `https://d28xe8vt774jo5.cloudfront.net/champion-abilities/${id}/ability_${id}_${k}1.webm`; v.play().catch(() => {});
+    const st = steps[i % steps.length], k = st.k, id = String(dd.key).padStart(4, "0");
+    box.querySelectorAll(".gseq .gk").forEach(e => e.classList.toggle("on", st.pos.includes(+e.dataset.i)));
+    lab.textContent = `${k} · ${i % steps.length + 1}/${steps.length}`; v.src = `https://d28xe8vt774jo5.cloudfront.net/champion-abilities/${id}/ability_${id}_${k}1.webm`; v.play().catch(() => {});
   };
-  v.addEventListener("ended", () => { i++; play(); });
+  // a short black pause before the combo starts again, so the loop is clear
+  v.addEventListener("ended", () => { i++; if (i % steps.length) play(); else { lab.textContent = "↻"; setTimeout(play, 900); } });
   v.addEventListener("error", () => { if (v.src.endsWith(".webm")) { v.src = v.src.replace(/\.webm$/, ".mp4"); v.play().catch(() => {}); } else { i++; if (i < steps.length * 2) play(); } });
   play();
 }
