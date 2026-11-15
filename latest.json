@@ -1,7 +1,7 @@
 {
- "version": "2.4.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.4.1.exe",
- "size": 10230784,
- "sha256": "4333723513606d6d417815e9bdff368b563783c8239daa8559fc2596f79de705",
- "notes": "- Guies: botó de pantalla completa als vídeos de combos i d'habilitats (també amb doble clic)"
+ "version": "2.4.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.4.2.exe",
+ "size": 10231296,
+ "sha256": "7aca490022bdd6c62d428444ee234ad2085bc7cd57a99e48ca2374e50e7022d9",
+ "notes": "- Guies: als vídeos de combos cada habilitat surt un sol cop per volta (W i W↩ són el mateix clip), amb comptador i pausa abans de tornar a començar"
 }
