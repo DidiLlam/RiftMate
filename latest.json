@@ -1,7 +1,7 @@
 {
- "version": "2.5.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.5.1.exe",
- "size": 10269696,
- "sha256": "0360d8b957cf4e8ad7e5a220848ccab69d6acaf36fffbda5d5403508672cf29d",
- "notes": "- Vídeos de pros: si un model de la IA no té cerques gratuïtes, prova els altres (2.5 Flash primer); missatge clar si cap en té; enllaços de YouTube com a botons"
+ "version": "2.6.0",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.0.exe",
+ "size": 10293760,
+ "sha256": "43129dc73ff6e99842d2ae14e9a2ecbf426533da6c3abedcce81938f830955cc",
+ "notes": "- Diversos comptes: quan entres amb un compte nou, l'app pregunta si és teu o d'una altra persona. Els teus comptes comparteixen informes, errors, objectius i jugades; la lliga, els LP, el MMR i la temporada són de cada compte. A Ajustos → Els meus comptes"
 }
