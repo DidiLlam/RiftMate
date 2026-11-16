@@ -27,7 +27,7 @@ var (
 	histFiles = map[string]map[string]histMatch{}
 )
 
-func histFile() string { return profileFile("historial.json") }
+func histFile() string { return accountFile("historial.json") }
 
 func loadHist() map[string]histMatch {
 	f := histFile()

@@ -64,7 +64,7 @@ var (
 
 // The rank at the start of each game and the games still waiting for their LP are kept on disk: closing or
 // updating the app in the minutes after a game (while Riot updates the rank) doesn't lose that game's LP.
-func lpStateFile() string { return profileFile("lp_pendent.json") }
+func lpStateFile() string { return accountFile("lp_pendent.json") }
 
 func loadLPState() {
 	if lpLoaded {

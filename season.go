@@ -48,7 +48,7 @@ var (
 	seasonLastOK time.Time
 )
 
-func seasonFile() string { return profileFile("temporada.json") }
+func seasonFile() string { return accountFile("temporada.json") }
 
 func loadSeason() seasonCache {
 	var c seasonCache

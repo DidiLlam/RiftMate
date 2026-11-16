@@ -18,6 +18,8 @@ type meInfo struct {
 	Icon    int    `json:"icon"`
 	Version string `json:"version,omitempty"`
 	Owner   bool   `json:"owner"`
+	Ask     bool   `json:"ask,omitempty"` // an account the app doesn't know yet: is it the owner's or someone else's?
+	Main    string `json:"main,omitempty"`
 }
 
 var (
@@ -47,6 +49,11 @@ func meJSON() []byte {
 	}
 	out.Version = version
 	out.Owner = out.Name == "" || isOwner(out.Name+"#"+out.Tag)
+	if !out.Owner {
+		c := loadConfig()
+		out.Ask = !contains(c.NotMine, strings.ToLower(out.Name+"#"+out.Tag))
+		out.Main = c.Owner
+	}
 	b, _ := json.Marshal(out)
 	return b
 }

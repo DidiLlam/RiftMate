@@ -244,6 +244,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .pvth{position:relative;display:block;aspect-ratio:16/9;background:#000}.pvth img{width:100%;height:100%;object-fit:cover;display:block}
 .pvth i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:34px;color:#fff;text-shadow:0 0 10px #000;opacity:.85}
 .pvth em{position:absolute;left:6px;top:6px;font-style:normal;font-size:11px;font-weight:800;padding:3px 6px;border-radius:6px;background:rgba(0,0,0,.7);color:#fff}
+.acctrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.acctrow.cur b{color:var(--accent)}.acctb{margin-left:auto;display:flex;gap:6px}
+.acctask{border-color:var(--accent)}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -466,6 +468,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabB" aria-selected="false">Best plays</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabG" aria-selected="false">Guies</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabM" aria-selected="false">MMR</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
   <div class="updbar" id="updBar" hidden></div>
   <div class="session" id="session" hidden></div>
+  <section class="card acctask" id="acctAsk" hidden></section>
   <div class="view" id="viewT">
     <section class="card welcome" id="welcome" hidden></section>
     <section class="card news" id="news" hidden></section>
@@ -603,6 +606,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <p class="note">Després de dir "coach", parla amb naturalitat, en català o en castellà. El que es pot saber de la partida (quan surt el drac o el baró, quant li falta al Flash d'un rival, qui no té Flash, on s'ha vist el jungla rival, com aneu, si un rival és mort, què porta o quin nivell té) et respon a l'instant i sense IA. També pots dir "Zed ha gastat el flash", "repeteix" o "calla". La resta de preguntes, i les que demanen un consell, van a la IA.</p>
     <div class="keyrow"><input type="text" id="aiTyped" placeholder="O escriu-hi una pregunta"><button class="b" id="aiSend" type="button">Preguntar</button></div>
   </section>
+  <section class="card" id="acctCard"><h2>Els meus comptes</h2><div id="acctList"><p class="note">Carregant…</p></div>
+    <p class="note">Si jugues amb més d'un compte (per exemple tres partides a cada un per canviar d'aires), marca'ls com a teus: l'app els tracta com la mateixa persona. Els informes, els errors, els objectius, el focus de la setmana, les jugades, les guies i les preguntes del mòbil es comparteixen; la lliga, els LP, el MMR i la temporada són de cada compte. Els comptes d'una altra persona (un germà que juga al teu PC) van completament a part.</p></section>
   <section class="card" id="riotCard"><h2>Clau de Riot</h2>
     <p class="note">El mapa amb les morts i els kills surt de l'API oficial de Riot. Necessita una clau gratuïta: entra a developer.riotgames.com amb el teu compte de Riot i copia la "Development API key" (caduca cada 24 hores) o demana una "Personal API key" (no caduca, cal que Riot l'aprovi).</p>
     <div class="keyrow"><input type="password" id="riotKey" placeholder="RGAPI-…" autocomplete="off"><select id="riotRegion" aria-label="Regió"><option value="europe">Europa</option><option value="americas">Amèrica</option><option value="asia">Àsia</option><option value="sea">Sud-est asiàtic</option></select><select id="riotPlatform" aria-label="Servidor"><option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="tr1">TR</option><option value="ru">RU</option><option value="na1">NA</option><option value="br1">BR</option><option value="la1">LAN</option><option value="la2">LAS</option><option value="kr">KR</option><option value="jp1">JP</option><option value="oc1">OCE</option></select><button class="b" id="riotSave" type="button">Desar</button></div>
@@ -1187,6 +1192,11 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Els meus comptes": ["Mis cuentas", "My accounts"], "Compte principal": ["Cuenta principal", "Main account"], "Teu": ["Tuya", "Yours"], "D'una altra persona": ["De otra persona", "Someone else's"], "Sense decidir": ["Sin decidir", "Undecided"], "És meu": ["Es mía", "It's mine"],
+  "És meu: compartir el que aprèn el coach": ["Es mía: compartir lo que aprende el coach", "It's mine: share what the coach learns"], "És d'una altra persona": ["Es de otra persona", "It's someone else's"],
+  "Encara no hi ha cap compte: obre el client del LoL.": ["Aún no hay ninguna cuenta: abre el cliente del LoL.", "No accounts yet: open the League client."],
+  "Si és teu, els informes, els errors i els objectius es comparteixen entre els dos comptes; la lliga, els LP i el MMR seran de cada compte. Ho pots canviar a Ajustos → Els meus comptes.": ["Si es tuya, los informes, los errores y los objetivos se comparten entre las dos cuentas; la liga, los LP y el MMR serán de cada cuenta. Lo puedes cambiar en Ajustes → Mis cuentas.", "If it's yours, reports, mistakes and goals are shared between both accounts; league, LP and MMR stay each account's. You can change it in Settings → My accounts."],
+  "Si jugues amb més d'un compte (per exemple tres partides a cada un per canviar d'aires), marca'ls com a teus: l'app els tracta com la mateixa persona. Els informes, els errors, els objectius, el focus de la setmana, les jugades, les guies i les preguntes del mòbil es comparteixen; la lliga, els LP, el MMR i la temporada són de cada compte. Els comptes d'una altra persona (un germà que juga al teu PC) van completament a part.": ["Si juegas con más de una cuenta (por ejemplo tres partidas en cada una para cambiar de aires), márcalas como tuyas: la app las trata como la misma persona. Los informes, los errores, los objetivos, el foco de la semana, las jugadas, las guías y las preguntas del móvil se comparten; la liga, los LP, el MMR y la temporada son de cada cuenta. Las cuentas de otra persona (un hermano que juega en tu PC) van completamente aparte.", "If you play on more than one account (say three games on each to change air), mark them as yours: the app treats them as the same person. Reports, mistakes, goals, weekly focus, plays, guides and phone questions are shared; league, LP, MMR and season stay each account's. Someone else's accounts (a brother playing on your PC) stay completely apart."],
   "Google no deixa fer cerques a internet gratuïtes amb la teva clau ara mateix (he provat tots els models). Si és el límit del dia, es reinicia a les 9 del matí. Mentrestant, tens les cerques de YouTube de sota.": ["Google no deja hacer búsquedas gratuitas en internet con tu clave ahora mismo (he probado todos los modelos). Si es el límite del día, se reinicia a las 9 de la mañana. Mientras tanto, tienes las búsquedas de YouTube de abajo.", "Google won't allow free web searches with your key right now (I tried every model). If it's the daily limit, it resets at 9 am. Meanwhile, you have the YouTube searches below."],
   "Vídeos de pros": ["Vídeos de pros", "Pro videos"], "Més a YouTube": ["Más en YouTube", "More on YouTube"], "Guia": ["Guía", "Guide"], "Obrir a YouTube": ["Abrir en YouTube", "Open on YouTube"], "Buscar-ne de nous": ["Buscar nuevos", "Find new ones"],
   "Buscant vídeos de pros amb {x} a internet…": ["Buscando vídeos de pros con {x} en internet…", "Looking for pro videos with {x} online…"],
@@ -2369,7 +2379,7 @@ function csLine(min, cs){
 const MMR_K = 12;
 function mmrRank(v){ const n = absName(Math.max(0, Math.round(v))); return `${tierTxt({tier: n.tier, rank: n.rank})} · ${n.lp} LP`; }
 function mmrData(){
-  const solo = histCache.filter(r => !r.error && r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number");
+  const solo = acctGames(histCache).filter(r => !r.error && r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number");
   const last = solo.slice(0, 20), w = last.filter(r => r.lp.delta > 0).map(r => r.lp.delta), l = last.filter(r => r.lp.delta < 0).map(r => -r.lp.delta);
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
   const W = avg(w), L = avg(l);
@@ -2401,7 +2411,7 @@ function mmrChart(h){
 // what comes next: LP for the next win or loss, and games to the next division at your current rate
 function mmrForecast(d){
   if (d.W == null || d.L == null || myRankAbs == null) return "";
-  const solo = histCache.filter(r => !r.error && r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number").slice(0, 20);
+  const solo = acctGames(histCache).filter(r => !r.error && r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number").slice(0, 20);
   const p = solo.filter(r => r.lp.delta > 0).length / Math.max(1, solo.length), per = p * d.W - (1 - p) * d.L, even = d.L / (d.W + d.L);
   const n = absName(myRankAbs), need = myRankAbs >= 2800 ? 0 : 100 - n.lp, next = absName(Math.min(2800, myRankAbs - n.lp + 100));
   const f = x => x.toFixed(1).replace(".", ",");
@@ -4294,10 +4304,44 @@ function renderNews(ver){
 $("#welcomeShow").addEventListener("click", () => { showTab("T"); renderWelcome(true); window.scrollTo({top: 0, behavior: "smooth"}); });
 
 // ---------- Per-account settings: champions and role belong to the account logged in ----------
-let acctId = "", acctOwner = true;
+let acctId = "", acctOwner = true, acctMain = "";
+// the games of the account in use (rank, LP and MMR are each account's, even among the player's own accounts);
+// very old reports have no account: they're the first account's
+const acctOf = r => r.acct || acctMain || "";
+const acctGames = list => (list || []).filter(r => !acctId || !acctOf(r) || acctOf(r).toLowerCase() === acctId.toLowerCase());
+async function loadAccounts(post){
+  let d; try { d = await (await fetch("/api/accounts", post ? {method: "POST", body: JSON.stringify(post)} : {cache: "no-store"})).json(); } catch (e) { return; }
+  acctMain = d.owner || "";
+  const el = $("#acctList"); if (!el) return;
+  const rows = (d.accounts || []).map(a => {
+    const st = a.main ? "Compte principal" : a.linked ? "Teu" : a.notmine ? "D'una altra persona" : "Sense decidir";
+    const btns = a.main ? "" : `${a.linked ? "" : `<button class="b small" type="button" data-acc="${esc(a.id)}" data-mine="1">És meu</button>`}${a.notmine ? "" : `<button class="b small" type="button" data-acc="${esc(a.id)}" data-mine="0">D'una altra persona</button>`}`;
+    return `<div class="acctrow${a.current ? " cur" : ""}"><b data-noi18n>${esc(a.id)}</b><span class="note">${st}${a.current ? " · ara" : ""} · ${a.games} ${a.games === 1 ? "partida" : "partides"}</span><span class="acctb">${btns}</span></div>`;
+  }).join("");
+  el.innerHTML = rows || `<p class="note">Encara no hi ha cap compte: obre el client del LoL.</p>`;
+  el.querySelectorAll("[data-acc]").forEach(b => b.addEventListener("click", () => acctDecide(b.dataset.acc, b.dataset.mine === "1")));
+  i18nAll();
+}
+async function acctDecide(id, mine){
+  await loadAccounts({id, mine});
+  $("#acctAsk").hidden = true;
+  meLoaded = 0; loadMe(); loadHistory();
+}
+let meLoaded = 0;
 const acctKey = k => acctOwner || !acctId ? k : `${k}@${acctId.toLowerCase()}`;
 function applyAccount(m){
   const id = m.name ? `${m.name}#${m.tag}` : "", owner = m.owner !== false;
+  const ask = $("#acctAsk");
+  if (m.ask && id) {
+    ask.hidden = false;
+    ask.innerHTML = `<h2>Compte nou: <span data-noi18n>${esc(id)}</span></h2><p>Fins ara jugaves amb <b data-noi18n>${esc(m.main || "un altre compte")}</b>. Aquest compte també és teu, o és d'una altra persona?</p>
+      <div class="bar"><button class="b primary" type="button" id="acctMine">És meu: compartir el que aprèn el coach</button><button class="b" type="button" id="acctOther">És d'una altra persona</button></div>
+      <p class="note">Si és teu, els informes, els errors i els objectius es comparteixen entre els dos comptes; la lliga, els LP i el MMR seran de cada compte. Ho pots canviar a Ajustos → Els meus comptes.</p>`;
+    $("#acctMine").addEventListener("click", () => acctDecide(id, true));
+    $("#acctOther").addEventListener("click", () => acctDecide(id, false));
+    i18nAll();
+  } else ask.hidden = true;
+  if (id !== acctId) loadAccounts();
   if (id === acctId && owner === acctOwner) return;
   acctId = id; acctOwner = owner;
   $("#pool").value = store.get(acctKey("pool"), "");
@@ -4492,7 +4536,7 @@ async function loadMe(){
   $("#meImg").style.opacity = 1; $("#meImg").src = `https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/profileicon/${m.icon || 29}.png`;
   $("#meChip").hidden = false;
 }
-loadMe(); setInterval(() => { if (!game) loadMe(); }, 180000);
+loadAccounts(); loadMe(); setInterval(() => { if (!game) loadMe(); }, 180000);
 setTimeout(() => loadBench(false), 4000);
 setTimeout(() => loadWhen().then(() => renderSession(histCache, false)), 5000);   // for the AI: the Challenger numbers of your champions
 // ---------- Season win rate per champion (Riot match history, kept on disk by the program) ----------
@@ -5051,7 +5095,7 @@ let lpChartData = null;
 let lpRange = store.get("lpRange", "15"), lpSeason = null, lpSeasonAsked = "", lpRankSig = "";
 const LP_RANGES = [["15", "Últimes 15"], ["7", "Setmana"], ["30", "Mes"], ["182", "6 mesos"], ["365", "Any"]];
 function lpSeries(){
-  const real = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number");
+  const real = acctGames(histCache).filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && typeof r.lp.delta === "number");
   const want = lpRange === "15" ? "60" : lpRange;
   if (!lpSeason || lpSeason.days !== want) return {items: real.slice(0, 15).reverse(), est: false};
   const avg = (a, d) => a.length >= 3 ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : d;
@@ -5377,7 +5421,7 @@ function lpGoal(){
   const q = mySolo; if (!q) return null;
   const ti = TIER_ORDER.indexOf(q.tier); if (ti < 0 || ti >= 7) return null;   // Master and above: no divisions
   const div = {IV: 0, III: 1, II: 2, I: 3}[q.rank] ?? 0;
-  const d = histCache.filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && r.lp.delta != null).slice(0, 20).map(r => r.lp.delta);
+  const d = acctGames(histCache).filter(r => r.lp?.queue === "RANKED_SOLO_5x5" && r.lp.delta != null).slice(0, 20).map(r => r.lp.delta);
   const win = d.filter(x => x > 0), loss = d.filter(x => x < 0);
   const gain = win.length >= 3 ? win.reduce((a, b) => a + b, 0) / win.length : 25, lose = loss.length >= 3 ? -loss.reduce((a, b) => a + b, 0) / loss.length : 22;
   // your current form: the last 20 games with the app (Solo/Duo), or the season's win rate when there are fewer than 10
@@ -5635,6 +5679,12 @@ let histCache = [];
 // a game whose LP Riot didn't give in time: the change between its rank and the previous game's, when they are
 // consecutive games of the same queue (one game apart in wins + losses)
 function lpBackfill(list){
+  // each account on its own: the rank after one account's game says nothing about another account's
+  const accs = [...new Set(list.map(acctOf))];
+  if (accs.length > 1) { for (const a of accs) lpBackfill1(list.filter(r => acctOf(r) === a)); return; }
+  lpBackfill1(list);
+}
+function lpBackfill1(list){
   const solo = list.filter(r => r.lp?.after && r.lp.queue).sort((a, b) => a.date < b.date ? -1 : 1);
   const TIERS = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER"];
   const abs = e => { const t = Math.max(0, TIERS.indexOf(e?.tier)); return t >= 7 ? 2800 + (e.leaguePoints || 0) : t * 400 + ({IV: 0, III: 100, II: 200, I: 300}[e?.rank] || 0) + (e?.leaguePoints || 0); };

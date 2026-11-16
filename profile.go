@@ -39,7 +39,17 @@ func setMyRiotID(id string) {
 // currentID: the account in use now (League client, else the last one seen); never calls Riot.
 func currentID() string { return loadConfig().MyRiotID }
 
-func isOwner(id string) bool { o := ownerID(); return o == "" || id == "" || sameID(o, id) }
+// isOwner: is this account the owner's, or one of the owner's other accounts? (what the player learns, their
+// reports, goals and plays are shared by all their accounts)
+func isOwner(id string) bool { o := ownerID(); return o == "" || id == "" || sameID(o, id) || isAlt(id) }
+
+// isOwnerAccount: the owner's first account exactly (rank, LP, season and MMR belong to each account)
+func isOwnerAccount(id string) bool { o := ownerID(); return o == "" || id == "" || sameID(o, id) }
+
+func isAlt(id string) bool { _, ok := loadConfig().Alts[strings.ToLower(strings.TrimSpace(id))]; return ok }
+
+// samePlayer: two accounts of the same person (the same one, or the owner and one of the owner's accounts)
+func samePlayer(a, b string) bool { return sameID(a, b) || (isOwner(a) && isOwner(b)) }
 
 // slug: a file-name-safe version of a Riot ID
 func slug(id string) string {
@@ -71,6 +81,17 @@ func profileFile(name string) string {
 	return filepath.Join(root, strings.TrimSuffix(name, ext)+"-"+slug(id)+ext)
 }
 
+// accountFile: like profileFile, but one per account even among the owner's own accounts: rank, LP, season
+func accountFile(name string) string {
+	root := filepath.Dir(dataDir())
+	id := currentID()
+	if isOwnerAccount(id) {
+		return filepath.Join(root, name)
+	}
+	ext := filepath.Ext(name)
+	return filepath.Join(root, strings.TrimSuffix(name, ext)+"-"+slug(id)+ext)
+}
+
 // reportAccount: the Riot ID of the player of a saved report file ("" for very old reports).
 func reportAccount(b []byte) string {
 	var f struct {
@@ -94,12 +115,12 @@ func reportIsMine(b []byte, cur string) bool {
 	if acc == "" || !strings.Contains(acc, "#") {
 		return isOwner(cur)
 	}
-	return cur == "" || sameID(acc, cur)
+	return cur == "" || samePlayer(acc, cur)
 }
 
 // peaksFor: the highest rank seen this season by an account (the owner keeps the original field).
 func peaksFor(c *Config, id string) map[string]leagueEntry {
-	if isOwner(id) {
+	if isOwnerAccount(id) {
 		if c.Peaks == nil {
 			c.Peaks = map[string]leagueEntry{}
 		}

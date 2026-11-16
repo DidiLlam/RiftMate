@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	_ "embed"
@@ -29,7 +30,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.5.1"
+	version = "2.6.0"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -317,6 +318,15 @@ func history() []json.RawMessage {
 			continue
 		}
 		if json.Unmarshal(b, &f) == nil && len(f.Report) > 0 {
+			// the account it was played on: with several accounts of the same player, rank and LP are each account's
+			if acc := reportAccount(b); strings.Contains(acc, "#") && len(f.Report) > 1 && f.Report[0] == '{' {
+				q, _ := json.Marshal(acc)
+				r := append([]byte(`{"acct":`), q...)
+				if len(bytes.TrimSpace(f.Report[1:])) > 1 {
+					r = append(r, ',')
+				}
+				f.Report = append(r, f.Report[1:]...)
+			}
 			out = append(out, f.Report)
 		}
 	}
@@ -512,6 +522,7 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/learn", learnHandler)
 	mux.HandleFunc("/api/guideai", guideAIHandler)
 	mux.HandleFunc("/api/provids", proVidsHandler)
+	mux.HandleFunc("/api/accounts", accountsHandler)
 	mux.HandleFunc("/api/study", studyHandler)
 	mux.HandleFunc("/api/ranking", bpHandler)
 	mux.HandleFunc("/api/rankfile", rankFileHandler)

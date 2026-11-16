@@ -31,7 +31,9 @@ type Config struct {
 	Me         *meInfo                           `json:"me,omitempty"`
 	Owner      string                            `json:"owner,omitempty"`       // first account of this PC (its data keeps the original files)
 	VoiceAlias map[string][]string               `json:"voice_alias,omitempty"` // champion -> how you say it (learnt or trained)
-	PeaksBy    map[string]map[string]leagueEntry `json:"peaks_by,omitempty"`    // peaks of the other accounts    // last known summoner name, level and icon (shown in the header)
+	PeaksBy    map[string]map[string]leagueEntry `json:"peaks_by,omitempty"`
+	Alts       map[string]string                 `json:"alts,omitempty"`     // other accounts of the same player (lowercase Riot ID -> Riot ID as written)
+	NotMine    []string                          `json:"not_mine,omitempty"` // accounts seen here that are someone else's (lowercase)    // peaks of the other accounts    // last known summoner name, level and icon (shown in the header)
 }
 
 var cfgMu sync.Mutex
