@@ -1,7 +1,7 @@
 {
- "version": "2.6.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.1.exe",
- "size": 10299904,
- "sha256": "59a46aef96f907e38a6cc2f90f964a236c2a8edd70e41457fad19eeb64b9ad50",
- "notes": "- Death timers: els rivals morts surten en gris amb els segons que els falten (temporitzador, overlay i mòbil); el coach diu quant tarden a tornar i què fer (empènyer i base, drac, larves, baró, 5 contra 4)"
+ "version": "2.6.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.2.exe",
+ "size": 10297344,
+ "sha256": "f3014d65a4f9eee8fda8dd0c9d46d523fc6e9d2dd40421f0a99c7285b4c8ce11",
+ "notes": "- Death timers: fora els comptadors de pantalla (ja surten al joc); el coach avisa també del minut 14 al 25 quan el jungla o l'ADC rival estan morts 25 s o més, i de qualsevol rival mort 40 s o més"
 }
