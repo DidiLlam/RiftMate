@@ -1,7 +1,7 @@
 {
- "version": "2.6.4",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.4.exe",
- "size": 10302464,
- "sha256": "a1045f4f2382a603b7f935c9f7556fb843a73772c7cfbc8b6141f7b5a51a8ce2",
- "notes": "- Campions amb nom diferent en castellà (Bardo, Maestro Yi, Nunu y Willump): ara surten amb la seva cara i la seva ulti al temporitzador i a l'overlay"
+ "version": "2.6.5",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.5.exe",
+ "size": 10303488,
+ "sha256": "dd2dafe955a752c4201e492096e7d0fd2ddaadb0f18cf612c0fe638af0c85391",
+ "notes": "- Best plays: totes les jugades tenen miniatura (es carreguen a mesura que apareixen a la pantalla)"
 }
