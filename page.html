@@ -1194,6 +1194,15 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Minut {n}: portes {m} de farm.": ["Minuto {n}: llevas {m} de farmeo.", "Minute {n}: you have {m} CS."],
+  "Minut {n}: portes entre {m} i {k} de farm.": ["Minuto {n}: llevas entre {m} y {k} de farmeo.", "Minute {n}: you have between {m} and {k} CS."],
+  "{x} en porta {n}.": ["{x} lleva {n}.", "{x} has {n}."],
+  "L'objectiu era {n}.": ["El objetivo era {n}.", "The goal was {n}."], "Bon ritme.": ["Buen ritmo.", "Good pace."],
+  "A les teves victòries, al {n} en portes {m}.": ["En tus victorias, al {n} llevas {m}.", "In your wins, at {n} you have {m}."],
+  "Minut {n}: portes {m} de puntuació de visió, l'objectiu és {k}.": ["Minuto {n}: llevas {m} de puntuación de visión, el objetivo es {k}.", "Minute {n}: your vision score is {m}, the goal is {k}."],
+  "Minut {n}: portes {m} de puntuació de visió.": ["Minuto {n}: llevas {m} de puntuación de visión.", "Minute {n}: your vision score is {m}."],
+  "Minut {n}: portes {m} de farm i {k} ganks amb èxit.": ["Minuto {n}: llevas {m} de farmeo y {k} ganks con éxito.", "Minute {n}: you have {m} CS and {k} successful ganks."],
+  "Minut {n}: portes {m} de farm i {k} gank amb èxit.": ["Minuto {n}: llevas {m} de farmeo y {k} gank con éxito.", "Minute {n}: you have {m} CS and {k} successful gank."],
   "Repàs de 5 minuts": ["Repaso de 5 minutos", "5-minute review"], "Veure la resposta": ["Ver la respuesta", "See the answer"], "Repetició": ["Repetición", "Replay"],
   "Els {n} moments que més val la pena tornar a veure. Obre la repetició (▶), mira-ho i respon-te la pregunta abans de mirar la resposta.": ["Los {n} momentos que más vale la pena volver a ver. Abre la repetición (▶), míralo y respóndete la pregunta antes de mirar la respuesta.", "The {n} moments most worth watching again. Open the replay (▶), watch it and answer the question before looking at the answer."],
   "Repassats: {n} de {m}.": ["Repasados: {n} de {m}.", "Reviewed: {n} of {m}."],
@@ -2412,10 +2421,16 @@ async function renderBestPlays(){
 }
 // The game only tells your farm in steps of ten while you play (78 arrives as 70): so it says "between 70 and 79"
 // instead of a number that's lower than what you have
-function csLine(min, cs){
-  const goal = min * 8, ok = cs >= goal, exact = cs % 10 !== 0 || cs === 0;
+// the farm goal at a minute: the waves that have reached the lane by then (80 at 10, as the goal), then 8 a minute
+const csGoal = m => m <= 10 ? Math.round(Math.max(0, m * 60 - 90) / 510 * 80) : m * 8;
+function csLine(min, cs, opp, opCs){
+  const goal = csGoal(min), ok = cs >= goal, exact = cs % 10 !== 0 || cs === 0;
   const amount = exact ? `${cs}` : `entre ${cs} i ${cs + 9}`;
-  return `Minut ${min}: portes ${amount} de farm. ${ok ? "Bon ritme." : `L'objectiu era ${goal}.`}`;
+  const vs = opp && opCs != null && Math.abs(cs - opCs) >= 5 ? ` ${opp.championName} en porta ${opCs}.` : "";
+  // your own won games at this minute (3 or more with the data)
+  const won = histCache.filter(r => !r.error && r.result === "Victòria" && r.role === game?.role && r.cs?.[String(min)] != null).slice(0, 15).map(r => r.cs[String(min)]);
+  const mine = won.length >= 3 ? ` A les teves victòries, al ${min} en portes ${Math.round(won.reduce((a, b) => a + b, 0) / won.length)}.` : "";
+  return `Minut ${min}: portes ${amount} de farm.${vs} ${ok ? "Bon ritme." : `L'objectiu era ${goal}.`}${mine}`;
 }
 // ---------- MMR: an estimate (Riot never shows it) ----------
 // Two clues: (1) the LP you win against what you lose: Riot gives more than it takes when your hidden MMR is above
@@ -3374,14 +3389,12 @@ function coachTick(data){
   const myCs = me?.scores?.creepScore ?? null, opCs = opp?.scores?.creepScore ?? null;
   const once = (k, text) => { if (!coach.said.has(k)) { coach.said.add(k); coachSay(text); coach.lastSaidAt = t; return true; } return false; };
 
-  // fixed moments
-  if (t >= 600 && myCs != null && useData) {
-    if (game.role === "UTILITY") once("t600", `Minut deu: portes ${Math.round(me?.scores?.wardScore ?? 0)} de puntuació de visió.`);
-    else if (game.role === "JUNGLE") once("t600", `Minut deu: portes ${myCs} de farm i ${coach.ganks} ganks amb èxit.`);
-    else once("t600", csLine(10, myCs));
+  // a checkpoint every 5 minutes (5, 10, 15, 20...): your farm against the goal, your opponent and your own wins
+  for (let m = 5; m <= 45; m += 5) if (t >= m * 60 && t < m * 60 + 90 && myCs != null && useData) {
+    if (game.role === "UTILITY") once("t" + m * 60, `Minut ${m}: portes ${Math.round(me?.scores?.wardScore ?? 0)} de puntuació de visió${m >= 10 ? `, l'objectiu és ${2 * m}` : ""}.`);
+    else if (game.role === "JUNGLE") once("t" + m * 60, `Minut ${m}: portes ${myCs} de farm i ${coach.ganks} ${coach.ganks === 1 ? "gank" : "ganks"} amb èxit.`);
+    else once("t" + m * 60, csLine(m, myCs, opp, opCs));
   }
-  // and at 20, 30 and 40 minutes (8 a minute is the goal, as the 80 at ten)
-  for (const m of [20, 30, 40]) if (t >= m * 60 && t < m * 60 + 90 && myCs != null && useData && game.role !== "UTILITY") once("t" + m * 60, csLine(m, myCs));
   if (t >= 840) once("t840", "Minut catorze. Comença la mitja partida: pensa en cicles d'onades.");
   if (t >= 1500) once("t1500", "Minut vint-i-cinc. Fase final: una mort pot costar la partida.");
 

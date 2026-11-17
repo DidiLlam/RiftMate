@@ -292,8 +292,8 @@ func analyse(rec *Record) map[string]any {
 	oppCsOf := func(s Snap) *int { return s.OppCS }
 	cs := map[string]*int{}
 	ocs := map[string]*int{}
-	// every 5 minutes from minute 10 until the end of the game
-	for m := 10; float64(m*60) <= dur; m += 5 {
+	// every 5 minutes from minute 5 until the end of the game
+	for m := 5; float64(m*60) <= dur; m += 5 {
 		k := fmt.Sprint(m)
 		cs[k] = valueAt(snaps, float64(m*60), csOf)
 		ocs[k] = valueAt(snaps, float64(m*60), oppCsOf)

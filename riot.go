@@ -549,7 +549,7 @@ func fetchMap(rec *Record, endUnix int64) (*MapData, error) {
 			ok2 := fmt.Sprint(oppID)
 			for _, f := range tl.Info.Frames {
 				mn := int(f.Timestamp / 60000)
-				if (mn == 10 || mn == 15 || mn == 20) && f.Timestamp%60000 < 30000 {
+				if mn >= 5 && mn%5 == 0 && f.Timestamp%60000 < 30000 { // every 5 minutes: 5, 10, 15, 20...
 					a, okA := f.ParticipantFrames[key]
 					b, okB := f.ParticipantFrames[ok2]
 					if okA && okB {
