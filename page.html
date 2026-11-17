@@ -246,6 +246,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .pvth em{position:absolute;left:6px;top:6px;font-style:normal;font-size:11px;font-weight:800;padding:3px 6px;border-radius:6px;background:rgba(0,0,0,.7);color:#fff}
 .acctrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.acctrow.cur b{color:var(--accent)}.acctb{margin-left:auto;display:flex;gap:6px}
 .acctask{border-color:var(--accent)}
+.rvit{padding:8px 0;border-bottom:1px solid var(--line)}.rvit.done>p{opacity:.65}.rvit.done>p b:first-child::after{content:" ✓";color:var(--accent)}
+.rvit details{margin-top:4px}.rvit summary{cursor:pointer;color:var(--accent);font-weight:700}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -1192,6 +1194,9 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Repàs de 5 minuts": ["Repaso de 5 minutos", "5-minute review"], "Veure la resposta": ["Ver la respuesta", "See the answer"], "Repetició": ["Repetición", "Replay"],
+  "Els {n} moments que més val la pena tornar a veure. Obre la repetició (▶), mira-ho i respon-te la pregunta abans de mirar la resposta.": ["Los {n} momentos que más vale la pena volver a ver. Abre la repetición (▶), míralo y respóndete la pregunta antes de mirar la respuesta.", "The {n} moments most worth watching again. Open the replay (▶), watch it and answer the question before looking at the answer."],
+  "Repassats: {n} de {m}.": ["Repasados: {n} de {m}.", "Reviewed: {n} of {m}."],
   "Un per un amb {x}: no està malament, cap dels dos perd res. En reaparèixer, mira com està l'onada.": ["Uno por uno con {x}: no está mal, ninguno de los dos pierde nada. Al reaparecer, mira cómo está la oleada.", "One for one with {x}: not bad, neither of you loses anything. When you respawn, check the wave."],
   "Has mort, però t'has endut {x}: intercanvi igualat.": ["Has muerto, pero te has llevado a {x}: intercambio igualado.", "You died, but you took {x} with you: an even trade."],
   "Bon intercanvi: {x} per tu. Surt guanyant el teu equip.": ["Buen intercambio: {x} por ti. Sale ganando tu equipo.", "Good trade: {x} for you. Your team comes out ahead."],
@@ -2720,7 +2725,9 @@ function sayPump(){
   if (synth.paused) synth.resume();
   synth.speak(u);
   t1 = setTimeout(() => { if (sayCur === u && !started) { plog("La veu s'havia encallat: la reinicio"); synth.cancel(); sayHold = Date.now() + 350; sayCur = null; if (++sayStuck <= 2) sayQ.unshift(item); else item.cb?.("lost"); sayPump(); } }, 4000);
-  t2 = setTimeout(() => { if (sayCur === u) { synth.cancel(); done(); } }, 30000);
+  // a voice that never says it finished is let go, but not before a long sentence could be said whole (it used to
+  // cut at 30 s: the matchup summary stopped at "the last time against Ahri")
+  t2 = setTimeout(() => { if (sayCur === u) { synth.cancel(); done(); } }, Math.max(30000, 8000 + String(text).length * 110));
 }
 // interrupt everything queued (an answer of the AI, the spoken report)
 function sayCancel(){ sayQ.length = 0; sayCur = null; sayHold = Date.now() + 350; if (synth) synth.cancel(); }
@@ -5088,7 +5095,7 @@ function reportVision(r){
     const sp = spots.filter(p => p.kind !== "obj" || e.t > 300).reduce((a, p) => !a || dist(p, e) < dist(a, e) ? p : a, null); if (!sp || dist(sp, e) > 4500) return;
     const n = spotNo(sp), jgNear = jp && jp.filter(f => f[0] <= e.t && f[0] >= e.t - 120).some(f => Math.hypot(f[1] - sp.x, f[2] - sp.y) < 3000);
     marks.push({x: e.x, y: e.y, n, sp});
-    items.push(`<li><b>${mm(e.t)}</b> · vas morir ${esc(aZone(info.zone || e.label || ""))} (${esc(info.killer || "")}${info.helpers?.length ? " i " + esc(info.helpers.join(", ")) : ""}) sense cap ward els 3 minuts abans. Un ward a <b>${esc(art(sp.t))}</b> (${n}) ${jgNear ? `t'hauria ensenyat ${esc(jgc)}: hi va passar just abans` : "t'hauria avisat de qui venia"}.</li>`);
+    items.push(`<li><b>${mm(e.t)}</b>${watchBtn(r, e.t)} · vas morir ${esc(aZone(info.zone || e.label || ""))} (${esc(info.killer || "")}${info.helpers?.length ? " i " + esc(info.helpers.join(", ")) : ""}) sense cap ward els 3 minuts abans. Un ward a <b>${esc(art(sp.t))}</b> (${n}) ${jgNear ? `t'hauria ensenyat ${esc(jgc)}: hi va passar just abans` : "t'hauria avisat de qui venia"}.</li>`);
   });
   // 2. long stretches without a ward (between minute 2 and the end, or minute 25)
   if (wt) {
@@ -5101,7 +5108,7 @@ function reportVision(r){
     for (const o of (r.objectives || []).filter(o => !o.ours && /drac|bar|herald|larv/i.test(o.obj || o.label || ""))) {
       const t = o.t, had = wt.some(w => w[0] >= t - 90 && w[0] <= t);
       if (!had) { const sp = spots.find(p => p.kind === "obj" && (/drac/i.test(o.obj || o.label) ? /drac/.test(p.t) : /bar/.test(p.t))); const n = sp ? spotNo(sp) : null;
-        items.push(`<li><b>${mm(t)}</b> · el rival va fer ${esc((o.obj || o.label || "un objectiu").toLowerCase())} i no havies posat cap ward el minut i mig abans${sp ? `: el lloc era <b>${esc(art(sp.t))}</b> (${n})` : ""}${lensT && t > lensT ? ". Amb la lent, el ward de control és el que hi has de posar, i la lent per treure els seus" : ""}.</li>`); }
+        items.push(`<li><b>${mm(t)}</b>${watchBtn(r, t - 50)} · el rival va fer ${esc((o.obj || o.label || "un objectiu").toLowerCase())} i no havies posat cap ward el minut i mig abans${sp ? `: el lloc era <b>${esc(art(sp.t))}</b> (${n})` : ""}${lensT && t > lensT ? ". Amb la lent, el ward de control és el que hi has de posar, i la lent per treure els seus" : ""}.</li>`); }
     }
   }
   // 4. where the enemy jungler spent the laning phase (minutes 2-8): your side of the map or the other?
@@ -5814,7 +5821,8 @@ function showMatchup(mine, opp){
       say.push(`L'última vegada contra ${opp}: ${l}`); } }
   if (!lines.length) lines.push(`<p class="note">Encara no hi ha dades d'aquest enfrontament. Es guardaran a partir d'aquesta partida.</p>`);
   $("#mTitle").textContent = `${mine} contra ${opp}`; $("#mBody").innerHTML = lines.join(""); $("#mCard").hidden = false;
-  if (say.length && on("vMatchup")) setTimeout(() => coachSay(say.join(" ")), 2500);
+  // each part on its own: a short pause between them, and one that fails doesn't take the rest with it
+  if (say.length && on("vMatchup")) setTimeout(() => { plog("Coach: " + say.join(" ")); for (const x of say) speak(x); }, 2500);
 }
 
 // ---------- Session guard (anti-tilt) ----------
@@ -7497,6 +7505,39 @@ function reportTop(r){
   ${reportCompare(r)}`;
 }
 
+// Guided review: the 3 moments of the game most worth watching again (deaths, an objective lost blind, where the
+// game was lost), each with the replay at that minute and a question to answer before seeing what the app read.
+// Answering first (and only then checking) is what makes a review stick; the ones done are kept.
+function reviewCard(r, dr){
+  if (!r.map?.match_id) return "";
+  const md = r.map, di = md.death_info || [], items = [], mm2 = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  r.deaths.forEach((d, i) => {
+    const info = di.find(x => Math.abs(x.t - d.t) < 8), w = dr[i];
+    if ((info?.traded?.length || 0) > (info?.helpers?.length || 0)) return;   // an even or good trade: not the point
+    const ans = [w?.why, info?.jg_was ? `El jungla rival, el minut d'abans, era ${info.jg_was}.` : "", info ? `Wards teus els 3 minuts d'abans: ${info.wards}.` : "",
+      (r.video?.deaths || []).find(x => Math.abs(x.t - d.t) < 15)?.fix].filter(Boolean).join(" ");
+    items.push({t: d.t, w: d.t < 840 ? 3 : 2, q: `${mm2(d.t)} · mort (${d.kind}${d.by?.length ? `, ${d.by.join(", ")}` : ""}). Mira-ho des de 10 segons abans: ${/gank|jungla/.test(d.kind) ? "on era el jungla rival i com l'havies pogut veure venir?" : /1v1|contra el rival/.test(d.kind) ? "qui tenia avantatge (nivell, or, habilitats) i podies evitar el duel o esperar?" : /baralla|equip/.test(d.kind) ? "on eres tu a la baralla, i hi havies d'entrar o esperar?" : "per què eres allà i què havies de fer tu?"}`, a: ans || "L'app no en té més detall: fixa't en la posició i en el minimapa."});
+  });
+  for (const o of (r.objectives || []).filter(o => !o.ours && /drac|bar|herald|larv/i.test(o.obj || o.label || ""))) {
+    const had = (md.ward_t || []).some(w => w[0] >= o.t - 90 && w[0] <= o.t);
+    if (md.ward_t && !had) items.push({t: o.t - 50, w: 2, q: `${mm2(o.t)} · el rival fa ${String(o.obj || o.label).toLowerCase()}. Mira el minut d'abans: on era cadascú i qui ho podia haver vist venir?`, a: "No havies posat cap ward el minut i mig abans. El ward (o la lent i el de control) a l'entrada del riu, 1 minut abans que surti l'objectiu, és el que hauria canviat la jugada."});
+  }
+  const km = keyMoments(r).find(k => k.bad);
+  if (km) items.push({t: km.t0 + 10, w: 1, q: `${mm2(km.t0)} · on es va perdre més or. Què va passar i on eres tu?`, a: km.text});
+  const pick = items.sort((a, b) => b.w - a.w || a.t - b.t).slice(0, 3).sort((a, b) => a.t - b.t);
+  if (!pick.length) return "";
+  const done = store.get("reviewed", {})[r.date] || [];
+  return `<section class="card rvcard"><h2>Repàs de 5 minuts</h2><p class="note">Els ${pick.length} moments que més val la pena tornar a veure. Obre la repetició (▶), mira-ho i respon-te la pregunta abans de mirar la resposta.</p>
+    ${pick.map((x, i) => `<div class="rvit${done.includes(i) ? " done" : ""}" data-i="${i}"><p><b>${i + 1}.</b> ${esc(x.q)}${watchBtn(r, x.t, "Repetició")}</p><details data-rv="${i}"><summary>Veure la resposta</summary><p>${esc(x.a)}</p></details></div>`).join("")}
+    <p class="note rvcount">${done.length ? `Repassats: ${done.length} de ${pick.length}.` : ""}</p></section>`;
+}
+document.addEventListener("toggle", e => {
+  const d = e.target; if (!d.matches?.("details[data-rv]") || !d.open || !curReport) return;
+  const all = store.get("reviewed", {}), k = curReport.date, list = all[k] || [], i = +d.dataset.rv;
+  if (!list.includes(i)) { list.push(i); all[k] = list; const ks = Object.keys(all); if (ks.length > 60) delete all[ks[0]]; store.set("reviewed", all); }
+  d.closest(".rvit")?.classList.add("done");
+  const c = d.closest(".rvcard")?.querySelector(".rvcount"), n = d.closest(".rvcard")?.querySelectorAll(".rvit").length; if (c) c.textContent = `Repassats: ${list.length} de ${n}.`;
+}, true);
 // "watch it": the moment in the game's own replay (the client downloads it and the game jumps to 10 s before)
 function watchBtn(r, t, label){
   const m = r?.map?.match_id; if (!m || t == null) return "";
@@ -7662,6 +7703,7 @@ function renderReport(r){
     <p class="note">Abans del minut 14: kills o assistències a altres línies. ${r.rival_roams.length ? "El rival ha ajudat a matar: " + r.rival_roams.map(x => `${esc(x.victim)} (${mm(x.t)})`).join(", ") + "." : ""}</p>
   </section>
   ${(() => { if (r.map?.match_id && !r.map.gold && !goldTried.has(r.date)) { goldTried.add(r.date); setTimeout(() => requestMap(r.date), 500); }   // older reports: the teams' gold is read once
+    const rv = reviewCard(r, dr); if (rv) return rv + (() => { const km = keyMoments(r); return km.length ? `<section class="card"><h2>Moments clau</h2>${km.map(k => `<p class="kmom ${k.bad ? "bad" : "good"}"><b>${k.bad ? "On es va perdre" : "On es va guanyar"}</b> ${esc(k.text)}${watchBtn(r, k.t0 + 10, "Veure-ho")}</p>`).join("")}<p class="note">Amb l'or de cada equip minut a minut (Riot): els dos minuts que més van canviar la partida.</p></section>` : ""; })();
     const km = keyMoments(r); return km.length ? `<section class="card"><h2>Moments clau</h2>${km.map(k => `<p class="kmom ${k.bad ? "bad" : "good"}"><b>${k.bad ? "On es va perdre" : "On es va guanyar"}</b> ${esc(k.text)}${watchBtn(r, k.t0 + 10, "Veure-ho")}</p>`).join("")}<p class="note">Amb l'or de cada equip minut a minut (Riot): els dos minuts que més van canviar la partida.</p></section>` : ""; })()}
   <section class="card"><h2>Morts</h2>${deaths}</section>
   <section class="card"><h2>Kills i assistències</h2>${kaT}</section>
