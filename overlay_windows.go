@@ -126,8 +126,9 @@ type ovState struct {
 			End   float64 `json:"end"`
 			Icon  string  `json:"icon"`
 		} `json:"spells"`
-		Ult *ovTimer `json:"ult"`
-		Zh  *ovTimer `json:"zh"`
+		Ult  *ovTimer `json:"ult"`
+		Zh   *ovTimer `json:"zh"`
+		Dead float64  `json:"dead"` // when they come back to life (ms since 1970), 0 if alive
 	} `json:"rows"`
 	Obj []struct {
 		Name string  `json:"name"`
@@ -153,6 +154,7 @@ type ovFace struct {
 	r    ovRect
 	name string
 	icon string
+	dead float64 // seconds until they come back (death timer), 0 if alive
 }
 
 var (
@@ -400,7 +402,11 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 	for _, r := range st.Rows {
 		pl := ovRect{0, y, w, y + sc(ovPortrait) + 2*pad}
 		plates = append(plates, pl)
-		faces = append(faces, ovFace{r: ovRect{pad, y + pad, pad + sc(ovPortrait), y + pad + sc(ovPortrait)}, name: r.Name, icon: r.Icon})
+		dead := 0.0
+		if r.Dead > 0 {
+			dead = math.Max(0, (r.Dead-nowMs)/1000)
+		}
+		faces = append(faces, ovFace{r: ovRect{pad, y + pad, pad + sc(ovPortrait), y + pad + sc(ovPortrait)}, name: r.Name, icon: r.Icon, dead: dead})
 		var list []ovChip
 		for _, sp := range r.Spells {
 			list = append(list, ovChip{row: r.Row, kind: sp.Kind, label: sp.Spell, left: leftOf(sp.Left, sp.End), icon: sp.Icon})
@@ -432,7 +438,7 @@ func ovLayout(h uintptr) (sig string, plates []ovRect, header string, faces []ov
 	var b strings.Builder
 	b.WriteString(head)
 	for _, f := range faces {
-		fmt.Fprint(&b, "|", f.name, f.r.T, ovImg(f.icon) != nil)
+		fmt.Fprint(&b, "|", f.name, f.r.T, ovImg(f.icon) != nil, int(math.Ceil(f.dead)))
 	}
 	for _, cp := range chips {
 		v := "ok"
@@ -511,7 +517,7 @@ func ovPaintAll(h uintptr) {
 	}
 	for _, f := range faces {
 		n := f.r.R - f.r.L
-		if b := ovBitmap(f.icon, n, false); b != 0 {
+		if b := ovBitmap(f.icon, n, f.dead > 0); b != 0 { // grey while dead
 			ovBlit(mdc, b, f.r.L, f.r.T, n)
 		} else { // no picture (yet): the first letters of the name
 			box(f.r, rgb(30, 44, 39), sc(6))
@@ -520,6 +526,9 @@ func ovPaintAll(h uintptr) {
 				nm = nm[:3]
 			}
 			text(string(nm), f.r, fSmall, rgb(238, 244, 241), dtCenter|dtVCenter|dtSingle|dtNoPrefix)
+		}
+		if f.dead > 0 { // the death timer, in red over the grey portrait
+			outlined(fmt.Sprint(int(math.Ceil(f.dead))), f.r, fBig, rgb(255, 90, 72), dtCenter|dtVCenter|dtSingle|dtNoPrefix)
 		}
 	}
 	for _, cp := range chips {

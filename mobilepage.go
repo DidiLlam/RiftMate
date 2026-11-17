@@ -23,6 +23,6 @@ async function tap(row,kind){try{await fetch("/m/tap?t="+T+"&row="+row+"&kind="+
 function draw(){const el=document.getElementById("rows");if(!st||!st.rows||!st.rows.length){el.innerHTML='<p class="empty">Esperant la partida…</p>';document.getElementById("obj").innerHTML="";document.getElementById("t").textContent="";return}
  const dt=(Date.now()-got)/1000;document.getElementById("t").textContent=st.time!=null?fmt(st.time+dt):"";
  document.getElementById("obj").innerHTML=(st.obj||[]).map(o=>"<div>"+o.name+" "+(o.left-dt>0?fmt(o.left-dt):"ja")+"</div>").join("");
- el.innerHTML=st.rows.map(r=>'<div class="row"><div class="n">'+r.name+'<small>'+(r.lane||"")+'</small></div>'+r.spells.map(s=>{const l=s.left-dt;return '<button class="'+(l>0?"run":"")+'" onclick="tap('+r.row+',\''+s.kind+'\')">'+(l>0?fmt(l):"llest")+"<span>"+s.spell+"</span></button>"}).join("")+"</div>").join("")}
+ el.innerHTML=st.rows.map(r=>{const dd=r.dead?Math.ceil((r.dead-Date.now())/1000):0;return '<div class="row'+(dd>0?' dead':'')+'"><div class="n">'+r.name+'<small>'+(dd>0?'<b style="color:#ff5a48">MORT '+dd+' s</b>':(r.lane||""))+'</small></div>'+r.spells.map(s=>{const l=s.left-dt;return '<button class="'+(l>0?"run":"")+'" onclick="tap('+r.row+',\''+s.kind+'\')">'+(l>0?fmt(l):"llest")+"<span>"+s.spell+"</span></button>"}).join("")+"</div>"}).join("")}
 poll();setInterval(poll,1000);setInterval(draw,250);
 </script></body></html>`
