@@ -1,7 +1,7 @@
 {
- "version": "2.6.5",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.5.exe",
- "size": 10303488,
- "sha256": "dd2dafe955a752c4201e492096e7d0fd2ddaadb0f18cf612c0fe638af0c85391",
- "notes": "- Best plays: totes les jugades tenen miniatura (es carreguen a mesura que apareixen a la pantalla)"
+ "version": "2.7.0",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.0.exe",
+ "size": 10309120,
+ "sha256": "3e368beecf1838f10001613cd64b2462b23f8efa2e668687c6b34caacf3d3a38",
+ "notes": "- Repàs de 5 minuts a cada informe: els 3 moments clau amb la repetició i una pregunta abans de la resposta\n- Botons de repetició també a la visió\n- Resum de l'enfrontament: ja no es talla a mitja frase"
 }
