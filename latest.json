@@ -1,7 +1,7 @@
 {
- "version": "2.7.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.0.exe",
- "size": 10309120,
- "sha256": "3e368beecf1838f10001613cd64b2462b23f8efa2e668687c6b34caacf3d3a38",
- "notes": "- Repàs de 5 minuts a cada informe: els 3 moments clau amb la repetició i una pregunta abans de la resposta\n- Botons de repetició també a la visió\n- Resum de l'enfrontament: ja no es talla a mitja frase"
+ "version": "2.7.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.1.exe",
+ "size": 10311168,
+ "sha256": "4cb72261c7e1f797272f7fea68f25c933d3b7ab54d7fbb1639f24ec3bae9d661",
+ "notes": "- Punts de control cada 5 minuts (5, 10, 15, 20...): el coach diu el farm, el del rival i l'objectiu\n- Informe: farm i diferències d'or, experiència i farm cada 5 minuts"
 }
