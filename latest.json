@@ -1,7 +1,7 @@
 {
- "version": "2.7.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.1.exe",
- "size": 10311168,
- "sha256": "4cb72261c7e1f797272f7fea68f25c933d3b7ab54d7fbb1639f24ec3bae9d661",
- "notes": "- Punts de control cada 5 minuts (5, 10, 15, 20...): el coach diu el farm, el del rival i l'objectiu\n- Informe: farm i diferències d'or, experiència i farm cada 5 minuts"
+ "version": "2.7.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.2.exe",
+ "size": 10314752,
+ "sha256": "6a71c420b6b83f6c667d2d85965ce0ae0eb699e13801a4989d2d062ba94e20bc",
+ "notes": "- Veu del coach: tria femenina o masculina, o una veu concreta, a Ajustos → La veu del coach"
 }
