@@ -2256,8 +2256,28 @@ document.addEventListener("click", async e => {
 if (location.protocol.startsWith("http")) { playsRefresh(); setInterval(() => { if ($("#playsState")?.offsetParent) playsRefresh(); }, 3000); }
 const playStamp = d => String(d || "").replace(":", "").replace(" ", "_");
 const playVideo = p => `/api/playfile?g=${encodeURIComponent(p.stamp)}&f=${encodeURIComponent(p.file)}`;
+// the clips' first frame as a thumbnail: the browser only loads a few videos at a time, so with many clips the
+// last ones stayed black. Now each clip loads its first frame when it comes into view, one after another.
+const thumbQ = []; let thumbBusy = 0;
+function thumbNext(){
+  while (thumbBusy < 2 && thumbQ.length) {
+    const v = thumbQ.shift(); if (!v.isConnected || v.src) continue;
+    thumbBusy++;
+    let done = false; const fin = () => { if (done) return; done = true; thumbBusy--; thumbNext(); };
+    v.addEventListener("loadeddata", fin, {once: true}); v.addEventListener("error", fin, {once: true}); setTimeout(fin, 8000);
+    v.preload = "metadata"; v.src = v.dataset.src + "#t=0.5";
+  }
+}
+const thumbIO = "IntersectionObserver" in window ? new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { thumbIO.unobserve(e.target); thumbQ.push(e.target); } thumbNext(); }, {rootMargin: "300px"}) : null;
+new MutationObserver(() => {
+  for (const v of document.querySelectorAll("video.lazyv:not([data-obs])")) {
+    v.dataset.obs = 1;
+    v.addEventListener("play", () => { if (!v.src) { v.src = v.dataset.src; v.play().catch(() => {}); } }, {once: true});
+    if (thumbIO) thumbIO.observe(v); else { thumbQ.push(v); thumbNext(); }
+  }
+}).observe(document.body, {childList: true, subtree: true});
 function playItem(p, rank, isNew){
-  return `<div class="play${isNew ? " isnew" : ""}" data-pid="${esc(p.stamp)}:${p.n}"><video controls preload="${!rank || rank <= 6 ? "metadata" : "none"}" src="${playVideo(p)}"></video>
+  return `<div class="play${isNew ? " isnew" : ""}" data-pid="${esc(p.stamp)}:${p.n}"><video class="lazyv" controls preload="none" data-src="${playVideo(p)}"></video>
     <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b>${isNew ? `<span class="bpnew">NEW</span>` : ""}</div>
     <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}
     <div><button class="b small" type="button" data-pdel="${esc(p.stamp)}:${p.n}">Esborrar</button></div></div></div>`;
@@ -2368,7 +2388,7 @@ async function renderBestPlays(){
       <div class="bppos" data-noi18n>${medal(i)}</div>
       <div class="bpmain"><div class="bphead"><img src="${ddChampImg(champId(p.c) || p.c)}" alt="" onerror="this.style.visibility='hidden'"><b data-noi18n>${esc(p.n)}</b><span class="note" data-noi18n>${esc(p.c)}</span><span class="bpsc">${p.s}</span>${isNew(p) ? `<span class="bpnew">NEW</span>` : ""}</div>
         <p><b>${esc(p.t || "")}</b>${p.w ? ` <span class="note">${esc(p.w)}</span>` : ""}</p>
-        ${p.v ? `<video src="/api/rankfile?id=${p.id}" controls preload="none" playsinline></video>` : `<p class="note">Sense clip (no ha arribat a temps).</p>`}
+        ${p.v ? `<video class="lazyv" data-src="/api/rankfile?id=${p.id}" controls preload="none" playsinline></video>` : `<p class="note">Sense clip (no ha arribat a temps).</p>`}
         <p class="note">${agoTxt(p.at)}</p></div></div>`).join("");
   el.innerHTML = `${join}
     <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button>${nNew ? `<button class="b" type="button" id="bpAllSeen">Marcar-les totes com a vistes (${nNew})</button>` : ""}</div>
