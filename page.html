@@ -2007,10 +2007,19 @@ const DD_SPECIAL = {"Kai'Sa": "Kaisa", "Cho'Gath": "Chogath", "Kha'Zix": "Khazix
 // "..._Seraphine_Name" or similar, so take the word right after "displayname_", never a trailing "Name"
 function rawChampId(p){ const m = String(p?.rawChampionName || "").match(/displayname_([A-Za-z]+)/i) || String(p?.rawChampionName || "").match(/_([A-Za-z]+)$/); const id = m?.[1]; return id && !/^name$/i.test(id) ? id : ""; }
 const champId = name => DD_SPECIAL[name] || name.replace(/[^A-Za-z0-9]/g, "");
+// the client in Spanish names a few champions differently ("Bardo", "Maestro Yi"): the English name, the one the
+// app's lists and Data Dragon use. The game's raw name decides first when a game is on.
+const ES_NAMES = {"bardo": "Bard", "maestro yi": "Master Yi", "nunu y willump": "Nunu & Willump", "renata glasc": "Renata"};
+function knownChamp(name, i){
+  const n = String(name || "").trim().toLowerCase(); if (!n) return null;
+  const c = CHAMPS.find(c => c.toLowerCase() === n) || ES_NAMES[n]; if (c) return c;
+  if (i != null && typeof rowEnglish === "function") { const e = rowEnglish(i); if (e) return e; }
+  return CHAMPS.find(c => c.replace(/[^a-z]/gi, "").toLowerCase() === n.replace(/[^a-z]/g, "")) || null;
+}
 function setChampFace(i){
   const img = $(`#cimg${i}`); if (!img) return;
   const name = $(`#name${i}`).value.trim();
-  const known = CHAMPS.find(c => c.toLowerCase() === name.toLowerCase()) || (name === "Renata Glasc" ? name : null);
+  const known = knownChamp(name, i);
   if (!known) { img.removeAttribute("src"); img.style.display = "none"; return; }
   img.style.display = ""; img.onerror = () => { img.style.display = "none"; };
   img.src = `https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/champion/${encodeURIComponent(champId(known))}.png`;
@@ -2020,12 +2029,12 @@ function setChampFace(i){
 const ULT = {};
 function loadUlt(i){
   const im = $(`#i${i}-R`), btn = $(`#t${i}-R`); if (!im) return;
-  const name = $(`#name${i}`).value.trim(), known = CHAMPS.find(c => c.toLowerCase() === name.toLowerCase());
+  const name = $(`#name${i}`).value.trim(), known = knownChamp(name, i);
   cancel(`${i}-R`);
   if (!known) { im.removeAttribute("src"); im.style.display = "none"; btn.querySelector(".nm.alt").style.display = "block"; btn.title = ""; return; }
   const lang = LANG === "en" ? "en_US" : "es_ES", key = known + "/" + lang;
   const apply = u => {
-    if ($(`#name${i}`).value.trim().toLowerCase() !== known.toLowerCase()) return;
+    if (knownChamp($(`#name${i}`).value, i) !== known) return;
     if (!u || !u.img) { im.style.display = "none"; btn.querySelector(".nm.alt").style.display = "block"; return; }
     btn.querySelector(".nm.alt").style.display = "none";
     setIcon(im, `https://ddragon.leagueoflegends.com/cdn/${iconVer}/img/spell/${encodeURIComponent(u.img)}`);
@@ -2038,7 +2047,7 @@ function loadUlt(i){
 // Base cooldown for the champion's current level. Ultimates rank up at 6/11/16; ultimates with more ranks
 // (Udyr, Jayce, Elise, Nidalee, Karma...) are spread over levels 1-18. Item and rune haste aren't known for rivals.
 function ultCooldown(i){
-  const name = $(`#name${i}`).value.trim(), known = CHAMPS.find(c => c.toLowerCase() === name.toLowerCase());
+  const name = $(`#name${i}`).value.trim(), known = knownChamp(name, i);
   const u = known && (ULT[known + "/es_ES"] || ULT[known + "/en_US"]); if (!u || !u.cd || !u.cd.length) return 0;
   const lvl = game?.levels?.[i] || 6, n = u.cd.length;
   const rank = n === 3 ? (lvl >= 16 ? 2 : lvl >= 11 ? 1 : 0) : Math.min(n - 1, Math.floor((lvl - 1) * n / 18));
@@ -2190,7 +2199,7 @@ function mirrorPush(){
   const now = Date.now(), rows = [];
   for (let i = 0; i < 5; i++) { const name = $(`#name${i}`)?.value.trim(); if (!name) continue;
     const sps = [$(`#s1-${i}`)?.value, $(`#s2-${i}`)?.value].filter(Boolean);
-    const known = CHAMPS.find(c => c.toLowerCase() === name.toLowerCase()), ri = $(`#i${i}-R`);
+    const known = knownChamp(name, i), ri = $(`#i${i}-R`);
     rows.push({row: i, name, lane: LANE_NAMES[i], icon: known ? champImg(champId(known)) : "", spells: sps.map((sp, k) => { const t = timers[`${i}-${slotFor(i, sp)}`];
       return {spell: sp, icon: SPELL_IMG[sp] ? spellIcon(sp) : "", kind: sp === "Flash" ? "flash" : sps.includes("Flash") ? "other" : k === 0 ? "flash" : "other", left: t ? Math.max(0, (t.end - now) / 1000) : 0, end: t ? t.end : 0}; }),
       ult: {left: timers[`${i}-R`] ? Math.max(0, (timers[`${i}-R`].end - now) / 1000) : 0, end: timers[`${i}-R`]?.end || 0, has: true, icon: ri && ri.style.display !== "none" && ri.src ? ri.src : ""},
@@ -2822,7 +2831,7 @@ function findEnemy(words, used){
   const li = learnedRow(words, used); if (li >= 0) return li;
   let bi = -1, bd = Infinity;
   for (let i = 0; i < NROWS; i++) { const n = $(`#name${i}`).value.trim(); if (!n) continue;
-    const names = [CHAMPS.find(c => norm(c) === norm(n)) || n, rowEnglish(i)].filter(Boolean);
+    const names = [knownChamp(n) || n, rowEnglish(i)].filter(Boolean);
     const d = Math.min(...names.map(x => champDistance(words, used, x)));
     if (d < bd) { bd = d; bi = i; } }
   if (bi >= 0) return bi;
@@ -3000,7 +3009,7 @@ async function startNative(){
     const st = await (await fetch("/api/voice", {cache: "no-store", headers: {"X-RiftMate": "2"}})).json();
     voiceSince = st.lines.length ? st.lines[st.lines.length - 1].seq : voiceSince;
     if (!st.supported) return fallbackWeb("aquest sistema no té veu de Windows");
-    const champs = [...new Set([...Array(NROWS).keys()].flatMap(i => { const n = $(`#name${i}`).value.trim(); return n ? [CHAMPS.find(c => norm(c) === norm(n)) || n, rowEnglish(i)] : []; }).filter(Boolean))];
+    const champs = [...new Set([...Array(NROWS).keys()].flatMap(i => { const n = $(`#name${i}`).value.trim(); return n ? [knownChamp(n) || n, rowEnglish(i)] : []; }).filter(Boolean))];
     const r = await (await fetch("/api/voice/start", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({champs, lanes: !game, lang: $("#lang").value})})).json();
     if (r.error) return fallbackWeb(r.error);
   } catch (e) { return fallbackWeb("no hi ha connexió amb el programa"); }
@@ -3470,7 +3479,7 @@ function renderBuilds(){
 $("#buildList").addEventListener("click", e => { const c = e.target.closest("[data-del]")?.dataset.del; if (!c) return;
   const b = getBuilds(), m = getManual(); delete b[c]; delete m[c]; store.set("builds", b); store.set("buildsManual", m); renderBuilds(); });
 $("#bSave").addEventListener("click", () => {
-  const champ = CHAMPS.find(c => norm(c) === norm($("#bChamp").value)); if (!champ) { $("#bChamp").focus(); return; }
+  const champ = knownChamp($("#bChamp").value); if (!champ) { $("#bChamp").focus(); return; }
   const byName = new Map(Object.entries(ITEMS).filter(([, i]) => i.final).map(([id, i]) => [norm(i.name), +id]));
   const ids = [], bad = [];
   for (const part of $("#bItems").value.split(",").map(x => x.trim()).filter(Boolean)) { const id = byName.get(norm(part)); id ? ids.push(id) : bad.push(part); }
@@ -4408,7 +4417,7 @@ function seasonNow(d = new Date()){
 }
 const skinCache = {};
 async function splashFor(champ, season){
-  const id = champId(CHAMPS.find(c => norm(c) === norm(champ)) || champ);
+  const id = champId(knownChamp(champ) || champ);
   let skins = skinCache[id];
   if (!skins) {
     try { const j = await (await fetch(`https://ddragon.leagueoflegends.com/cdn/${iconVer}/data/en_US/champion/${encodeURIComponent(id)}.json`)).json(); skins = skinCache[id] = Object.values(j.data)[0].skins.map(x => ({num: x.num, name: x.name})); }
@@ -5106,14 +5115,14 @@ function reportVision(r){
 const formDots = f => f ? `<span class="fdots" title="Últimes partides: la més recent és la de la dreta, marcada">${[...f.slice(0, 5)].reverse().map((x, i, a) => `<i class="${x === "W" ? "w" : ""}${i === a.length - 1 ? " last" : ""}"></i>`).join("")}</span>` : "";
 function formOf(champ){
   const fm = seasonData?.form; if (!fm || !champ) return null;
-  const key = norm(champId(CHAMPS.find(c => norm(c) === norm(champ)) || champ));
+  const key = norm(champId(knownChamp(champ) || champ));
   for (const [k, v] of Object.entries(fm)) if (norm(k) === key || norm(v.name) === norm(champ)) return v;
   return null;
 }
 // sentences about the form with a champion, most important first ([] when there is too little to say)
 function formFacts(champ){
   const f = formOf(champ); if (!f || f.form.length < 3) return [];
-  const C = CHAMPS.find(c => norm(c) === norm(champ)) || displayChamp(champ), n = f.form.length, w = [...f.form].filter(x => x === "W").length, wr = w / n, out = [];
+  const C = knownChamp(champ) || displayChamp(champ), n = f.form.length, w = [...f.form].filter(x => x === "W").length, wr = w / n, out = [];
   if (wr >= .65) out.push(`Amb ${C} vas molt bé: ${w} victòries de les últimes ${n} partides.`);
   else if (wr >= .55) out.push(`Amb ${C} vas bé: ${w} victòries de les últimes ${n} partides.`);
   else if (wr <= .35) out.push(`Amb ${C} últimament et costa: només ${w} victòries de les últimes ${n} partides.`);
@@ -6396,7 +6405,7 @@ function trainNext(){
 }
 function trainStart(list){ unlockAudio(); trainList = list; trainOn = true; $("#trainStop").hidden = false; tone([880, 1175], .2); trainNext(); }
 $("#trainHard").addEventListener("click", () => trainStart(TRICKY.slice()));
-$("#trainOne").addEventListener("click", () => { const v = $("#trainChamp").value.trim(), c = CHAMPS.find(x => norm(x) === norm(v)) || bestChampion(norm(v)); if (c) trainStart([c, c]); });
+$("#trainOne").addEventListener("click", () => { const v = $("#trainChamp").value.trim(), c = knownChamp(v) || bestChampion(norm(v)); if (c) trainStart([c, c]); });
 $("#trainStop").addEventListener("click", () => { trainOn = false; trainList = []; $("#trainStop").hidden = true; $("#trainBox").innerHTML = ""; });
 setTimeout(() => { $("#trainChampList").innerHTML = CHAMPS.map(c => `<option value="${esc(c)}">`).join(""); }, 0);
 // ---------- Ajustos: one group at a time ----------
@@ -6686,7 +6695,7 @@ async function loadBench(run){
 }
 // your own numbers with a champion, from the app's reports
 function myChampStats(champ){
-  const list = histCache.filter(r => !r.error && norm(champId(CHAMPS.find(c => norm(c) === norm(r.champion)) || r.champion)) === norm(champ)).slice(0, 20);
+  const list = histCache.filter(r => !r.error && norm(champId(knownChamp(r.champion) || r.champion)) === norm(champ)).slice(0, 20);
   if (!list.length) return null;
   const avg = f => { const v = list.map(f).filter(x => x != null && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   return {n: list.length, wr: Math.round(100 * list.filter(r => r.result === "Victòria").length / Math.max(1, list.filter(r => r.result).length)),
@@ -6915,7 +6924,7 @@ async function renderGuides(){
     + `<span class="gadd"><input id="gAdd" list="gAddList" placeholder="Afegir campió…" autocomplete="off"><datalist id="gAddList">${CHAMPS.filter(c => !ids.includes(champId(c) || c)).map(c => `<option value="${esc(c)}">`).join("")}</datalist></span>`;
   const bindPick = () => {
     el.querySelectorAll(".gpick").forEach(b => b.addEventListener("click", () => { guideSel = b.dataset.id; store.set("guideSel", guideSel); comboStop(); renderGuides(); }));
-    $("#gAdd")?.addEventListener("change", e => { const name = CHAMPS.find(c => norm(c) === norm(e.target.value)); if (!name) return; const id = champId(name) || name;
+    $("#gAdd")?.addEventListener("change", e => { const name = knownChamp(e.target.value); if (!name) return; const id = champId(name) || name;
       const l = guideChamps(); if (!l.includes(id)) { l.push(id); store.set("guideChamps", l); } guideSel = id; store.set("guideSel", id); renderGuides(); });
   };
   if (!guideSel) { el.innerHTML = `<div class="gpicks">${pick}</div><p class="note">Afegeix els campions que vulguis aprendre o millorar.</p>`; bindPick(); return; }
@@ -7297,7 +7306,7 @@ function benchText(onlyChamp){
   const out = [];
   const nums = o => BENCH_ROWS.filter(([, k]) => o?.[k] != null).map(([label, k, , d]) => `${label.toLowerCase()} ${benchFmt(o[k], d)}`).join(", ");
   for (const c of benchData?.champs || []) {
-    if (!c.games || (onlyChamp && norm(c.champ) !== norm(champId(CHAMPS.find(x => norm(x) === norm(onlyChamp)) || onlyChamp)))) continue;
+    if (!c.games || (onlyChamp && norm(c.champ) !== norm(champId(knownChamp(onlyChamp) || onlyChamp)))) continue;
     const me = benchMe(c), gp = benchGaps(c, me);
     out.push(`${c.name}: Challenger/GM (${c.games} partides): ${nums(c)}; build ${(c.build || []).map(itemName).join(" > ")}; maximitzen primer la ${c.skills || "?"}; encanteris ${c.spells}.` +
       (me ? ` El jugador (${me.n} partides): ${nums(me)}${me.build?.length ? `; build ${me.build.map(itemName).join(" > ")}` : ""}${me.skills ? `; maximitza primer la ${me.skills}` : ""}.` : "") +
@@ -7438,7 +7447,7 @@ function reportVerdict(r){
 function reportTop(r){
   const win = r.result === "Victòria", grades = reportGrades(r), pos = reportPositives(r), narr = reportNarrative(r);
   const tips = (r.tips || []);
-  const face = name => name ? `<img class="rpf" src="${champImg(champId(CHAMPS.find(c => norm(c) === norm(name)) || name))}" alt="" onerror="this.style.visibility='hidden'">` : "";
+  const face = name => name ? `<img class="rpf" src="${champImg(champId(knownChamp(name) || name))}" alt="" onerror="this.style.visibility='hidden'">` : "";
   return `
   <section class="card rphero ${win ? "win" : r.result === "Derrota" ? "lose" : ""}">
     <div class="rph">
