@@ -1,7 +1,7 @@
 {
- "version": "2.6.3",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.3.exe",
- "size": 10301952,
- "sha256": "0b1f3ead18df9a87fa0d5c3116afbe9ee553408ee7a13bc54777f9d09283847d",
- "notes": "- Morts amb intercanvi: si mores però t'emportes el rival (1 per 1, o més), el coach ho diu com a intercanvi i no com a error; l'anàlisi de les morts de després de la partida també ho té en compte"
+ "version": "2.6.4",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.6.4.exe",
+ "size": 10302464,
+ "sha256": "a1045f4f2382a603b7f935c9f7556fb843a73772c7cfbc8b6141f7b5a51a8ce2",
+ "notes": "- Campions amb nom diferent en castellà (Bardo, Maestro Yi, Nunu y Willump): ara surten amb la seva cara i la seva ulti al temporitzador i a l'overlay"
 }
