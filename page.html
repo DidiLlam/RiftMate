@@ -586,6 +586,8 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   </section>
   <section class="card" id="ttsCard"><h2>La veu del coach i els avisos</h2>
     <div class="row2"><label for="ttsLang">Idioma de la veu</label><select id="ttsLang"><option value="auto">Automàtic (el que soni millor)</option><option value="ca">Català</option><option value="es">Castellà</option><option value="en">Anglès</option></select></div>
+    <div class="row2"><label for="ttsGender">Veu</label><select id="ttsGender"><option value="auto">La que soni millor</option><option value="f">Femenina</option><option value="m">Masculina</option></select>
+      <select id="ttsVoiceName" aria-label="Veu concreta"><option value="">Automàtica</option></select><button type="button" class="b small" id="ttsTry">Provar</button></div>
     <p class="note" id="ttsVoice"></p>
     <div class="row2"><label for="voiceLag">Temps que tardes a dir-ho</label><input type="number" id="voiceLag" min="0" max="30" value="10"><span>segons</span></div>
     <p class="note">Quan dius "flash Ahri", "ulti Darius" o "zhonya mid", el compte enrere comença amb aquests segons ja descomptats, perquè normalment el rival l'ha gastat una mica abans. Si el toques amb el ratolí, no es resta res.</p>
@@ -1194,6 +1196,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Veu": ["Voz", "Voice"], "La que soni millor": ["La que suene mejor", "Whichever sounds best"], "Femenina": ["Femenina", "Female"], "Masculina": ["Masculina", "Male"], "Automàtica": ["Automática", "Automatic"], "Provar": ["Probar", "Try"],
   "Minut {n}: portes {m} de farm.": ["Minuto {n}: llevas {m} de farmeo.", "Minute {n}: you have {m} CS."],
   "Minut {n}: portes entre {m} i {k} de farm.": ["Minuto {n}: llevas entre {m} y {k} de farmeo.", "Minute {n}: you have between {m} and {k} CS."],
   "{x} en porta {n}.": ["{x} lleva {n}.", "{x} has {n}."],
@@ -2670,15 +2673,24 @@ const synth = window.speechSynthesis;
 // old desktop ones; Catalan text read by a Spanish voice sounds wrong, so "automatic" only speaks Catalan with a
 // good Catalan voice and otherwise speaks Spanish.
 function voiceScore(v){ const n = v.name; return /Natural/i.test(n) ? 3 : /Online/i.test(n) ? 2 : /Google/i.test(n) ? 1 : 0; }
+// a voice's gender, from its name (the browser doesn't say): Windows, Edge and Google voices in ca, es and en
+const VOICE_F = /\b(Elvira|Helena|Laura|Abril|Esperanza|Dalia|Ximena|Paloma|Triana|Irene|Lia|Estrella|Vera|Elena|Catalina|Salom[eé]|Valentina|Sabela|Teresa|Beatriz|Candela|Carlota|Larissa|Marina|Renata|Nuria|Yolanda|Camila|Karina|Andrea|Joana|Alba|Montserrat|Aria|Jenny|Zira|Ava|Emma|Michelle|Ana|Libby|Sonia|Maisie|Natasha|Hazel|Susan|Samantha|Monica|Paulina|Google español|Google US English)\b/i;
+const VOICE_M = /\b(Alvaro|Álvaro|Pablo|Jorge|Raul|Raúl|Gerardo|Arnau|Dario|Darío|Elias|Elías|Nil|Saul|Saúl|Teo|Alonso|Tomas|Tomás|Lorenzo|Federico|Gonzalo|Mateo|Cecilio|Emilio|Enric|Guy|David|Mark|Andrew|Brian|Christopher|Eric|Roger|Steffan|Ryan|Thomas|George|Diego|Juan|Google UK English Male)\b/i;
+const voiceGender = v => VOICE_F.test(v.name) ? "f" : VOICE_M.test(v.name) ? "m" : "";
 function bestVoice(lang){
   const vs = (synth ? synth.getVoices() : []).filter(v => v.lang.toLowerCase().replace("_", "-").startsWith(lang));
+  // a voice chosen by name wins; then the gender chosen, if there's one of that gender for the language
+  const named = store.get("ttsVoiceName", ""), byName = named && vs.find(v => v.name === named); if (byName) return byName;
+  const g = store.get("ttsGender", "auto"), gs = g !== "auto" ? vs.filter(v => voiceGender(v) === g) : [];
+  const pool = gs.length ? gs : vs;
   const pref = lang === "es" ? (v => /es-es/i.test(v.lang.replace("_", "-")) ? 0.5 : 0) : () => 0;
-  return vs.sort((a, b) => (voiceScore(b) + pref(b)) - (voiceScore(a) + pref(a)))[0] || null;
+  return pool.sort((a, b) => (voiceScore(b) + pref(b)) - (voiceScore(a) + pref(a)))[0] || null;
 }
 function speechChoice(){
   const want = store.get("ttsLang", "auto");
   if (want !== "auto") { const v = bestVoice(want); if (v || want !== "ca") return {lang: want, voice: v}; return {lang: "es", voice: bestVoice("es")}; }
-  if (LANG === "ca") { const v = bestVoice("ca"); if (v && voiceScore(v) >= 2) return {lang: "ca", voice: v}; return {lang: "es", voice: bestVoice("es")}; }
+  // automatic language: Catalan only with a good voice (and of the gender chosen, if one was); else Spanish
+  if (LANG === "ca") { const v = bestVoice("ca"), g = store.get("ttsGender", "auto"); if (v && voiceScore(v) >= 2 && (g === "auto" || voiceGender(v) === g || store.get("ttsVoiceName", "") === v.name)) return {lang: "ca", voice: v}; return {lang: "es", voice: bestVoice("es")}; }
   return {lang: LANG, voice: bestVoice(LANG)};
 }
 // Chrome's speech synthesis sometimes gets stuck (it says it is speaking but nothing comes out) until
@@ -2748,9 +2760,21 @@ function sayPump(){
 function sayCancel(){ sayQ.length = 0; sayCur = null; sayHold = Date.now() + 350; if (synth) synth.cancel(); }
 function showVoice(){
   const el = $("#ttsVoice"); if (!el) return;
-  const c = speechChoice();
-  el.textContent = c.voice ? `Veu: ${c.voice.name}` : "No trobo cap veu per a aquest idioma.";
+  const c = speechChoice(), g = store.get("ttsGender", "auto");
+  // the voices of the language in use, to pick one by name
+  const sel = $("#ttsVoiceName");
+  if (sel && synth) {
+    const vs = synth.getVoices().filter(v => v.lang.toLowerCase().replace("_", "-").startsWith(c.lang)).sort((a, b) => voiceScore(b) - voiceScore(a));
+    const cur = store.get("ttsVoiceName", "");
+    sel.innerHTML = `<option value="">Automàtica</option>` + vs.map(v => `<option value="${esc(v.name)}">${esc(v.name.replace(/^Microsoft\s+/, "").replace(/\s*-\s*[^-]+$/, ""))}${voiceGender(v) ? ` (${voiceGender(v) === "f" ? "dona" : "home"})` : ""}</option>`).join("");
+    sel.value = vs.some(v => v.name === cur) ? cur : "";
+  }
+  const missing = c.voice && g !== "auto" && !store.get("ttsVoiceName", "") && voiceGender(c.voice) !== g;
+  el.textContent = c.voice ? `Veu: ${c.voice.name}` + (missing ? ` · no hi ha cap veu ${g === "f" ? "femenina" : "masculina"} d'aquest idioma a l'ordinador (Windows en pot instal·lar: Configuració → Hora i idioma → Veu)` : "") : "No trobo cap veu per a aquest idioma.";
 }
+{ const g = $("#ttsGender"); if (g) { g.value = store.get("ttsGender", "auto"); g.addEventListener("change", () => { store.set("ttsGender", g.value); store.set("ttsVoiceName", ""); showVoice(); speak("Flash d'Ahri disponible."); }); }
+  const n = $("#ttsVoiceName"); n?.addEventListener("change", () => { store.set("ttsVoiceName", n.value); showVoice(); speak("Flash d'Ahri disponible."); });
+  $("#ttsTry")?.addEventListener("click", () => speak("Flash d'Ahri disponible.")); }
 if (synth) { synth.addEventListener?.("voiceschanged", showVoice); setTimeout(() => {
   showVoice();
   const vs = synth.getVoices().filter(v => /^(ca|es|en)/i.test(v.lang)).map(v => `${v.name} [${v.lang}]`);
