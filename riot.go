@@ -359,6 +359,7 @@ type DeathInfo struct {
 	Enemies int       `json:"enemies"`           // enemies within ~2000 units, the minute before
 	JgWas   string    `json:"jg_was,omitempty"`  // where the enemy jungler was the minute before
 	Wards   int       `json:"wards"`             // wards you had placed in the 3 minutes before
+	Traded  []string  `json:"traded,omitempty"`  // enemies you killed or helped kill within 10 s of it: a trade, not a plain mistake
 }
 type DmgPart struct {
 	Champ string `json:"champ"`
@@ -994,6 +995,21 @@ func deathDetails(tl *timelineDTO, me, team int, teams map[int]int, champs map[i
 			for _, w := range wards {
 				if w <= e.Timestamp && w > e.Timestamp-180000 {
 					d.Wards++
+				}
+			}
+			// the trade: who you took with you (10 s before or after)
+			for _, f2 := range frames {
+				for _, k := range f2.Events {
+					if k.Type != "CHAMPION_KILL" || teams[k.VictimID] == team || k.Timestamp < e.Timestamp-10000 || k.Timestamp > e.Timestamp+10000 {
+						continue
+					}
+					in := k.KillerID == me
+					for _, x := range k.AssistingParticipantIDs {
+						in = in || x == me
+					}
+					if in {
+						d.Traded = append(d.Traded, displayName(champs[k.VictimID]))
+					}
 				}
 			}
 			out = append(out, d)

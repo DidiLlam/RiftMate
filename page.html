@@ -1192,6 +1192,10 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Un per un amb {x}: no està malament, cap dels dos perd res. En reaparèixer, mira com està l'onada.": ["Uno por uno con {x}: no está mal, ninguno de los dos pierde nada. Al reaparecer, mira cómo está la oleada.", "One for one with {x}: not bad, neither of you loses anything. When you respawn, check the wave."],
+  "Has mort, però t'has endut {x}: intercanvi igualat.": ["Has muerto, pero te has llevado a {x}: intercambio igualado.", "You died, but you took {x} with you: an even trade."],
+  "Bon intercanvi: {x} per tu. Surt guanyant el teu equip.": ["Buen intercambio: {x} por ti. Sale ganando tu equipo.", "Good trade: {x} for you. Your team comes out ahead."],
+  "Bon intercanvi: {x} per {n} dels vostres. Surt guanyant el teu equip.": ["Buen intercambio: {x} por {n} de los vuestros. Sale ganando tu equipo.", "Good trade: {x} for {n} of yours. Your team comes out ahead."],
   "Ha mort {x}, torna en {n} segons: és el moment del drac si el vostre jungla hi pot anar.": ["Ha muerto {x}, vuelve en {n} segundos: es el momento del dragón si vuestro jungla puede ir.", "{x} is dead for {n} seconds: it's the moment for dragon if your jungler can go."],
   "Ha mort {x}, torna en {n} segons: és el moment de les larves si el vostre jungla hi pot anar.": ["Ha muerto {x}, vuelve en {n} segundos: es el momento de las larvas si vuestro jungla puede ir.", "{x} is dead for {n} seconds: it's the moment for the grubs if your jungler can go."],
   "Ha mort {x}, torna en {n} segons: empeny l'onada fins a la torre sense por.": ["Ha muerto {x}, vuelve en {n} segundos: empuja la oleada hasta la torre sin miedo.", "{x} is dead for {n} seconds: push the wave to the tower safely."],
@@ -3370,12 +3374,29 @@ function coachTick(data){
       if (ev.EventName === "ChampionKill") {
         if (isMe(ev.VictimName)) {
           coach.myDeaths++;
-          const k = champOf(ev.KillerName), n = 1 + helpers.filter(h => champOf(h)?.team === k?.team).length;
-          setTimeout(() => aiAfterDeath(k, helpers.map(champOf), t), 1500);
-          if (t < 900 && coach.myDeaths === 2) coachSay("Dues morts abans del quinze. Juga més segur fins que tornis a estar al nivell.", 1);
-          else if (t < 840 && n >= 2) coachSay(game.role === "JUNGLE" ? "T'han agafat entre dos. Abans d'entrar a la seva jungla, mira on són les seves línies." : "T'han gankejat. Quan el jungla rival no es veu, no empenyis sense visió.", 1);
-          else if (k && opp && pid(k) === pid(opp) && n === 1) coachSay(`${opp.championName} t'ha guanyat l'u contra u. Respecta el seu nivell i espera que gasti habilitats.`, 1);
+          const k = champOf(ev.KillerName), n = 1 + helpers.filter(h => champOf(h)?.team === k?.team).length, hs = helpers.map(champOf), oppNow = opp, meId = game.me;
           coach.lastSaidAt = t;
+          // wait a moment: the kill you got in the same fight can arrive a second later; if you took them with you,
+          // it was a trade, not a mistake
+          setTimeout(() => {
+            if (!coach || !game) return;   // the game ended meanwhile
+            const tr = tradeAround(lastData, t, meId);
+            if (tr.kills.length) {
+              const names = tr.kills.map(p => p.championName).join(" i ");
+              let line;
+              if (tr.kills.length > tr.lost) line = `Bon intercanvi: ${names} per ${tr.lost === 1 ? "tu" : `${tr.lost} dels vostres`}. Surt guanyant el teu equip.`;
+              else if (tr.kills.length === tr.lost && oppNow && tr.kills.some(p => pid(p) === pid(oppNow)) && t < 840) line = `Un per un amb ${oppNow.championName}: no està malament, cap dels dos perd res. En reaparèixer, mira com està l'onada.`;
+              else if (tr.kills.length === tr.lost) line = `Has mort, però t'has endut ${names}: intercanvi igualat.`;
+              else line = null;
+              if (line) { coachSay(line, 1); coach.tradeAt = t; return; }
+              aiAfterDeath(k, hs, t, `Abans de morir, en la mateixa baralla, he matat o ajudat a matar ${names}; els meus han perdut ${tr.lost}.`);
+              return;
+            }
+            aiAfterDeath(k, hs, t);
+            if (t < 900 && coach.myDeaths === 2) coachSay("Dues morts abans del quinze. Juga més segur fins que tornis a estar al nivell.", 1);
+            else if (t < 840 && n >= 2) coachSay(game.role === "JUNGLE" ? "T'han agafat entre dos. Abans d'entrar a la seva jungla, mira on són les seves línies." : "T'han gankejat. Quan el jungla rival no es veu, no empenyis sense visió.", 1);
+            else if (k && oppNow && pid(k) === pid(oppNow) && n === 1) coachSay(`${oppNow.championName} t'ha guanyat l'u contra u. Respecta el seu nivell i espera que gasti habilitats.`, 1);
+          }, 3000);
         } else if (opp && t < 840) {
           const v = champOf(ev.VictimName), meP = playerBy(data, game.me);
           const oppIn = [ev.KillerName, ...helpers].some(n => { const p = champOf(n); return p && pid(p) === pid(opp); });
@@ -3963,13 +3984,26 @@ function localDeath(killer, helpers, t){
   if (jg && t >= 840 && n >= 2) return "Has mort perquè hi era el jungla rival: abans d'avançar, pensa on va aparèixer per última vegada.";
   return "";
 }
-function aiAfterDeath(killer, helpers, t){
+// a trade: the enemies you killed or helped kill within 10 s of your death (before or after), and how many of
+// yours died in it (you included)
+function tradeAround(data, t, meId){
+  const evs = data?.events?.Events || [], me = data?.allPlayers && playerBy(data, meId), champOf = n => playerNamed(data, n);
+  const out = {kills: [], lost: 0}; if (!me) return out;
+  for (const e of evs) {
+    if (e.EventName !== "ChampionKill" || Math.abs((e.EventTime ?? -99) - t) > 10) continue;
+    const v = champOf(e.VictimName); if (!v) continue;
+    if (v.team === me.team) { out.lost++; continue; }
+    if ([e.KillerName, ...(e.Assisters || [])].some(n => { const p = champOf(n); return p && pid(p) === meId; })) out.kills.push(v);
+  }
+  return out;
+}
+function aiAfterDeath(killer, helpers, t, note){
   if (!game || t < 60) return;
   // without the AI (no key, limit used up, or keeping it for the end of the game): the app's own reading
   if (!aiHasKey || Date.now() < aiLimitUntil || !aiBudgetOk("mort") || !$("#cAiAuto")?.checked) { const l = localDeath(killer, helpers, t); if (l && Date.now() - (game.localDeathAt || 0) > 60000) { game.localDeathAt = Date.now(); coachSay(l, 1); } return; }
   if (Date.now() - aiAutoAt < 120000) return;
   const by = [killer, ...helpers].filter(Boolean).map(p => p.championName).filter((x, i, a) => x && a.indexOf(x) === i);
-  aiProactive("mort", `M'acaben de matar al minut ${fmtClock(t)}${by.length ? `: ${by.join(", ")}` : ""}. En una sola frase: per què probablement he mort, amb el que portem cadascú, i què he de fer diferent.`);
+  aiProactive("mort", `M'acaben de matar al minut ${fmtClock(t)}${by.length ? `: ${by.join(", ")}` : ""}.${note ? " " + note + " Tingues-ho en compte: un intercanvi pot estar bé." : ""} En una sola frase: per què probablement he mort, amb el que portem cadascú, i què he de fer diferent.`);
 }
 
 // what the AI should remember: the last 10 games (patterns, not one game)
