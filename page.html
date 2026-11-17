@@ -246,8 +246,6 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .pvth em{position:absolute;left:6px;top:6px;font-style:normal;font-size:11px;font-weight:800;padding:3px 6px;border-radius:6px;background:rgba(0,0,0,.7);color:#fff}
 .acctrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.acctrow.cur b{color:var(--accent)}.acctb{margin-left:auto;display:flex;gap:6px}
 .acctask{border-color:var(--accent)}
-.enemy .champ{position:relative}.enemy .champ.dead img{filter:grayscale(1) brightness(.55)}
-.deadt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 20px/1 var(--mono, monospace);color:#ff5a48;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -2181,24 +2179,6 @@ function loadQR(){ if (window.QRCode) return Promise.resolve(true);
   return qrP ??= new Promise(res => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; s.onload = () => res(!!window.QRCode); s.onerror = () => { qrP = null; res(false); }; document.head.appendChild(s); }); }
 $("#cMobile")?.addEventListener("change", e => mobRefresh(`?on=${e.target.checked ? 1 : 0}`));
 document.addEventListener("click", e => { if (e.target.id === "mobNew") mobRefresh("?new=1"); });
-// death timers: when each enemy comes back (ms since 1970), from the game's data; 0 if alive
-function deadEnd(i){
-  const name = $(`#name${i}`)?.value.trim(); if (!name || !lastData?.allPlayers || !game) return 0;
-  const me = lastData.allPlayers.find(p => pid(p) === game.me), want = norm(name);
-  const p = lastData.allPlayers.find(x => (!me || x.team !== me.team) && norm(x.championName || "") === want);
-  return p?.isDead && p.respawnTimer > 0 ? lastDataAt + p.respawnTimer * 1000 : 0;
-}
-function deadTick(){
-  const now = Date.now();
-  for (let i = 0; i < 5; i++) {
-    const c = $(`#cimg${i}`)?.parentElement; if (!c) continue;
-    const end = deadEnd(i), left = Math.ceil((end - now) / 1000);
-    c.classList.toggle("dead", left > 0);
-    let b = c.querySelector(".deadt"); if (!b) { b = document.createElement("b"); b.className = "deadt"; b.setAttribute("data-noi18n", ""); c.appendChild(b); }
-    b.textContent = left > 0 ? left : "";
-  }
-}
-setInterval(deadTick, 500);
 // what the phone and the overlay show: the enemy rows with their two spells and the objectives, every second
 const LANE_NAMES = ["Top", "Jungla", "Mig", "ADC", "Suport"];
 function mirrorPush(){
@@ -2210,8 +2190,7 @@ function mirrorPush(){
     rows.push({row: i, name, lane: LANE_NAMES[i], icon: known ? champImg(champId(known)) : "", spells: sps.map((sp, k) => { const t = timers[`${i}-${slotFor(i, sp)}`];
       return {spell: sp, icon: SPELL_IMG[sp] ? spellIcon(sp) : "", kind: sp === "Flash" ? "flash" : sps.includes("Flash") ? "other" : k === 0 ? "flash" : "other", left: t ? Math.max(0, (t.end - now) / 1000) : 0, end: t ? t.end : 0}; }),
       ult: {left: timers[`${i}-R`] ? Math.max(0, (timers[`${i}-R`].end - now) / 1000) : 0, end: timers[`${i}-R`]?.end || 0, has: true, icon: ri && ri.style.display !== "none" && ri.src ? ri.src : ""},
-      zh: {left: timers[`${i}-Zhonya`] ? Math.max(0, (timers[`${i}-Zhonya`].end - now) / 1000) : 0, end: timers[`${i}-Zhonya`]?.end || 0, has: !!$(`#t${i}-Zhonya`)?.classList.contains("owned"), icon: itemIcon(3157)},
-      dead: deadEnd(i)}); }
+      zh: {left: timers[`${i}-Zhonya`] ? Math.max(0, (timers[`${i}-Zhonya`].end - now) / 1000) : 0, end: timers[`${i}-Zhonya`]?.end || 0, has: !!$(`#t${i}-Zhonya`)?.classList.contains("owned"), icon: itemIcon(3157)}}); }
   // the game clock now (not when the game data last arrived) and absolute times (ms): the overlay counts from them
   // on its own, so a late or bunched update can't make it jump back and forth
   const gt = gtNow(), obj = [], t0 = gt != null ? now - gt * 1000 : 0;
@@ -4885,7 +4864,7 @@ function waveTick(data, t, me, opp){
       if (jg && v && pid(v) === pid(jg)) {
         const drag = help?.obj && t >= help.obj.drag, grubs = help?.obj && t >= help.obj.grubs && t < 840;
         said = rs >= 8 ? `Ha mort ${jg.championName}, torna en ${rs} segons: ${drag ? "és el moment del drac si el vostre jungla hi pot anar" : grubs ? "és el moment de les larves si el vostre jungla hi pot anar" : "empeny l'onada fins a la torre sense por"}.` : `Ha mort el jungla rival: ara pots empènyer l'onada fins a la torre sense por.`;
-        w.seenAt = t; continue;
+        w.seenAt = t; w[`dt${pid(v)}`] = t; continue;   // said: the window isn't said again from minute 14
       }
       if (opp && v && pid(v) === pid(opp) && (role !== "UTILITY")) {
         said = rs >= 15 ? `Ha mort ${opp.championName}, torna en ${rs} segons: empeny l'onada fins a la seva torre i torna a base, no perds res.` : rs > 0 ? `Ha mort ${opp.championName}, però torna en ${rs} segons: empeny l'onada, pega a la torre i no t'allarguis.` : `Ha mort ${opp.championName}: empeny l'onada fins a la seva torre i després torna a base o agafa plaques.`;
@@ -4929,10 +4908,11 @@ function waveLate(data, t, me, w){
     w.foeN = foes.length; const b = back(foes);
     if (b >= 12) say(`${foes.length} rivals morts, el primer torna en ${b} segons: empenyeu les onades i ${t >= 1200 && up("baron") ? "aneu a fer el baró" : up("drag") ? "aneu a fer el drac" : "tireu torres"}.`);
   }
-  // from minute 25 a single death is long enough on its own (40 s or more): 5 against 4
+  // a single death can be a window on its own: their jungler or ADC 25 s or more (no one to contest or defend the
+  // objective), anyone 40 s or more (5 against 4)
   for (const p of foes) {
-    const k = `dt${pid(p)}`, rs = Math.round(p.respawnTimer || 0);
-    if (foes.length >= 2 || t < 1500 || rs < 40 || me.isDead || (w[k] && t - w[k] < 60)) continue;
+    const k = `dt${pid(p)}`, rs = Math.round(p.respawnTimer || 0), key = ["JUNGLE", "BOTTOM"].includes((p.position || "").toUpperCase());
+    if (foes.length >= 2 || rs < (key ? 25 : 40) || me.isDead || (w[k] && t - w[k] < 60)) continue;
     w[k] = t;
     say(`${p.championName} és mort ${rs} segons: ${up("baron") ? "és el moment del baró" : up("drag") ? "és el moment del drac" : "lluiteu 5 contra 4 o tireu una torre"}.`);
     break;

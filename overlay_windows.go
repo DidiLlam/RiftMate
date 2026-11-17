@@ -517,7 +517,7 @@ func ovPaintAll(h uintptr) {
 	}
 	for _, f := range faces {
 		n := f.r.R - f.r.L
-		if b := ovBitmap(f.icon, n, f.dead > 0); b != 0 { // grey while dead
+		if b := ovBitmap(f.icon, n, false); b != 0 {
 			ovBlit(mdc, b, f.r.L, f.r.T, n)
 		} else { // no picture (yet): the first letters of the name
 			box(f.r, rgb(30, 44, 39), sc(6))
@@ -526,9 +526,6 @@ func ovPaintAll(h uintptr) {
 				nm = nm[:3]
 			}
 			text(string(nm), f.r, fSmall, rgb(238, 244, 241), dtCenter|dtVCenter|dtSingle|dtNoPrefix)
-		}
-		if f.dead > 0 { // the death timer, in red over the grey portrait
-			outlined(fmt.Sprint(int(math.Ceil(f.dead))), f.r, fBig, rgb(255, 90, 72), dtCenter|dtVCenter|dtSingle|dtNoPrefix)
 		}
 	}
 	for _, cp := range chips {
