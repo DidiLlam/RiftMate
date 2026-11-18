@@ -1,7 +1,7 @@
 {
- "version": "2.7.3",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.3.exe",
- "size": 10315776,
- "sha256": "dee13ac0d72c48a03c2736f9f2ad0f2dcc48cf5aae392da34dbaf22d514d29b8",
- "notes": "- Pla de partida: la IA ja no el deixa en blanc (responia IGNORA)\n- Punt de control del minut 5: ja no se salta quan coincideix amb un altre avís"
+ "version": "2.7.4",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.4.exe",
+ "size": 10318336,
+ "sha256": "fdb600937f80d80703f49118283c2ed5f5ff094a3a575bbecd20491d3ad130cc",
+ "notes": "- Best plays: els clips passen sols al següent quan s'acaben (també a pantalla completa); es pot desactivar amb 'Una darrere l'altra'"
 }
