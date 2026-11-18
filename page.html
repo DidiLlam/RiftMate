@@ -248,6 +248,7 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .acctask{border-color:var(--accent)}
 .rvit{padding:8px 0;border-bottom:1px solid var(--line)}.rvit.done>p{opacity:.65}.rvit.done>p b:first-child::after{content:" ✓";color:var(--accent)}
 .rvit details{margin-top:4px}.rvit summary{cursor:pointer;color:var(--accent);font-weight:700}
+.autonext{display:inline-flex;align-items:center;gap:4px;margin-left:8px;cursor:pointer}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -1196,6 +1197,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Una darrere l'altra": ["Una detrás de otra", "One after another"],
   "Veu": ["Voz", "Voice"], "La que soni millor": ["La que suene mejor", "Whichever sounds best"], "Femenina": ["Femenina", "Female"], "Masculina": ["Masculina", "Male"], "Automàtica": ["Automática", "Automatic"], "Provar": ["Probar", "Try"],
   "Minut {n}: portes {m} de farm.": ["Minuto {n}: llevas {m} de farmeo.", "Minute {n}: you have {m} CS."],
   "Minut {n}: portes entre {m} i {k} de farm.": ["Minuto {n}: llevas entre {m} y {k} de farmeo.", "Minute {n}: you have between {m} and {k} CS."],
@@ -2293,6 +2295,35 @@ new MutationObserver(() => {
     if (thumbIO) thumbIO.observe(v); else { thumbQ.push(v); thumbNext(); }
   }
 }).observe(document.body, {childList: true, subtree: true});
+// one clip after another: when a clip of your plays (or of the ranking) ends, the next one in the list starts. In
+// full screen the same player goes on with the next clip (the browser doesn't let a page open full screen on its
+// own); when you leave full screen, the list shows the one you were watching.
+let autoNext = store.get("autoNext", true);
+document.addEventListener("ended", e => {
+  const v = e.target; if (!autoNext || !(v instanceof HTMLVideoElement) || !v.classList.contains("lazyv")) return;
+  const list = [...(v.closest("#repPlays, #viewB") || document).querySelectorAll("video.lazyv")];
+  const fs = document.fullscreenElement === v;
+  const cur = fs && v.dataset.chainAt != null ? +v.dataset.chainAt : list.indexOf(v), next = list[cur + 1];
+  if (!next) { if (fs) delete v.dataset.chainAt; return; }
+  if (fs) {
+    if (v.dataset.home == null) v.dataset.home = v.dataset.src;
+    v.dataset.chainAt = cur + 1; v.src = next.dataset.src; v.play().catch(() => {});
+    const card = next.closest(".play[data-pid]");   // counts as watched (NEW goes away)
+    if (card && !mySeen.has(card.dataset.pid)) { mySeen.add(card.dataset.pid); store.set("mySeen", [...mySeen].slice(-800)); card.classList.remove("isnew"); card.querySelector(".bpnew")?.remove(); bpBadgeRefresh(); }
+  } else {
+    if (!next.src) next.src = next.dataset.src;
+    next.scrollIntoView({behavior: "smooth", block: "center"}); next.play().catch(() => {});
+  }
+}, true);
+document.addEventListener("change", e => { if (e.target.classList?.contains("autoNextCb")) { autoNext = e.target.checked; store.set("autoNext", autoNext); document.querySelectorAll(".autoNextCb").forEach(c => c.checked = autoNext); } });
+document.addEventListener("fullscreenchange", () => {
+  // back from full screen: each player shows its own clip again, and the page goes to the last one watched
+  for (const v of document.querySelectorAll("video.lazyv[data-home]")) {
+    const at = +v.dataset.chainAt, list = [...(v.closest("#repPlays, #viewB") || document).querySelectorAll("video.lazyv")];
+    v.src = v.dataset.home; delete v.dataset.home; delete v.dataset.chainAt;
+    list[at]?.scrollIntoView({block: "center"});
+  }
+});
 function playItem(p, rank, isNew){
   return `<div class="play${isNew ? " isnew" : ""}" data-pid="${esc(p.stamp)}:${p.n}"><video class="lazyv" controls preload="none" data-src="${playVideo(p)}"></video>
     <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b>${isNew ? `<span class="bpnew">NEW</span>` : ""}</div>
@@ -2334,7 +2365,7 @@ async function renderPlaysTab(){
   const champs = [...new Set((st.plays || []).map(p => p.champ).filter(Boolean))];
   const off = !st.on ? `<p class="note">Els clips estan desactivats. Activa'ls a Ajustos → En partida → "Clips de les teves millors jugades" <button class="b" type="button" data-goset>Anar-hi</button></p>` : "";
   el.innerHTML = `<section class="card"><h2>Rànquing de les teves jugades</h2>${off}
-    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · les de 80 o més es guarden per sempre${st.keep_low ? "" : "; les de menys de 60 s'esborren al cap de 3 hores"}</span><button class="b small" type="button" data-pdel="*">Esborrar-les totes</button>${myNew(st.plays).length ? `<button class="b small" type="button" id="myAllSeen">Marcar-les totes com a vistes (${myNew(st.plays).length})</button>` : ""}</div>
+    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · les de 80 o més es guarden per sempre${st.keep_low ? "" : "; les de menys de 60 s'esborren al cap de 3 hores"}</span><button class="b small" type="button" data-pdel="*">Esborrar-les totes</button><label class="note autonext"><input type="checkbox" class="autoNextCb"${autoNext ? " checked" : ""}> Una darrere l'altra</label>${myNew(st.plays).length ? `<button class="b small" type="button" id="myAllSeen">Marcar-les totes com a vistes (${myNew(st.plays).length})</button>` : ""}</div>
     <div class="plays">${list.map((p, k) => playItem(p, k + 1, !mySeen.has(`${p.stamp}:${p.n}`))).join("") || `<p class="note">Cap jugada amb aquest filtre.</p>`}</div>`
     : (st.on ? `<p class="note">Encara no hi ha cap jugada. Quan facis una kill, una doble o robis un objectiu, sortirà aquí després de la partida.</p>` : "")}</section>`;
   myPlaysCache = st.plays || [];
@@ -2408,7 +2439,7 @@ async function renderBestPlays(){
         ${p.v ? `<video class="lazyv" data-src="/api/rankfile?id=${p.id}" controls preload="none" playsinline></video>` : `<p class="note">Sense clip (no ha arribat a temps).</p>`}
         <p class="note">${agoTxt(p.at)}</p></div></div>`).join("");
   el.innerHTML = `${join}
-    <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button>${nNew ? `<button class="b" type="button" id="bpAllSeen">Marcar-les totes com a vistes (${nNew})</button>` : ""}</div>
+    <section class="card"><div class="ghead"><h2>Millors jugades</h2><select id="bpF" aria-label="Període"><option value="all">De sempre</option><option value="week">Aquesta setmana</option><option value="day">Avui</option></select><button class="b" type="button" id="bpRef">Actualitzar</button><label class="note autonext"><input type="checkbox" class="autoNextCb"${autoNext ? " checked" : ""}> Una darrere l'altra</label>${nNew ? `<button class="b" type="button" id="bpAllSeen">Marcar-les totes com a vistes (${nNew})</button>` : ""}</div>
       ${rows || `<p class="note">Encara no hi ha jugades. Quan algú que hi participa fa una jugada de 90 punts o més, surt aquí (l'app mira cada 10 minuts, fora de partida).</p>`}
       <p class="note">Les jugades viatgen pel servei ntfy.sh (el dels temporitzadors compartits). Totes les jugades i els clips queden guardats a GitHub (al repositori de l'app), encara que no tinguis l'app oberta quan es fan.</p></section>`;
   const seen = id => { if (!id || bpSeen.has(id)) return; bpSeen.add(id); bpSeenSave(); const row = el.querySelector(`.bprow[data-id="${CSS.escape(id)}"]`); row?.classList.remove("isnew"); row?.querySelector(".bpnew")?.remove(); bpBadge(st.plays); };
