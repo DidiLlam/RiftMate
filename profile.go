@@ -41,12 +41,18 @@ func currentID() string { return loadConfig().MyRiotID }
 
 // isOwner: is this account the owner's, or one of the owner's other accounts? (what the player learns, their
 // reports, goals and plays are shared by all their accounts)
-func isOwner(id string) bool { o := ownerID(); return o == "" || id == "" || sameID(o, id) || isAlt(id) }
+func isOwner(id string) bool {
+	o := ownerID()
+	return o == "" || id == "" || sameID(o, id) || isAlt(id)
+}
 
 // isOwnerAccount: the owner's first account exactly (rank, LP, season and MMR belong to each account)
 func isOwnerAccount(id string) bool { o := ownerID(); return o == "" || id == "" || sameID(o, id) }
 
-func isAlt(id string) bool { _, ok := loadConfig().Alts[strings.ToLower(strings.TrimSpace(id))]; return ok }
+func isAlt(id string) bool {
+	_, ok := loadConfig().Alts[strings.ToLower(strings.TrimSpace(id))]
+	return ok
+}
 
 // samePlayer: two accounts of the same person (the same one, or the owner and one of the owner's accounts)
 func samePlayer(a, b string) bool { return sameID(a, b) || (isOwner(a) && isOwner(b)) }

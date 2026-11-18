@@ -3417,7 +3417,7 @@ function coachTick(data){
   for (let m = 5; m <= 45; m += 5) if (t >= m * 60 && t < m * 60 + 90 && myCs != null && useData) {
     if (game.role === "UTILITY") once("t" + m * 60, `Minut ${m}: portes ${Math.round(me?.scores?.wardScore ?? 0)} de puntuació de visió${m >= 10 ? `, l'objectiu és ${2 * m}` : ""}.`);
     else if (game.role === "JUNGLE") once("t" + m * 60, `Minut ${m}: portes ${myCs} de farm i ${coach.ganks} ${coach.ganks === 1 ? "gank" : "ganks"} amb èxit.`);
-    else once("t" + m * 60, csLine(m, myCs, opp, opCs));
+    else if (!coach.said.has("t" + m * 60)) { coach.said.add("t" + m * 60); coachSay(csLine(m, myCs, opp, opCs), 1); coach.lastSaidAt = t; }
   }
   if (t >= 840) once("t840", "Minut catorze. Comença la mitja partida: pensa en cicles d'onades.");
   if (t >= 1500) once("t1500", "Minut vint-i-cinc. Fase final: una mort pot costar la partida.");
@@ -4021,8 +4021,9 @@ async function aiProactive(kind, question, extra){
   try {
     const lang = speechChoice().lang, t0 = Date.now(), g0 = game;
     const r = await (await fetch("/api/ask", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question, state: (game ? aiState() : "") + (extra ? "\n" + extra : ""), lang, history: aiHistory})})).json(); aiNoteUsed(r);
-    if (r.answer && !r.error) {
+      body: JSON.stringify({question, state: (game ? aiState() : "") + (extra ? "\n" + extra : ""), lang, history: aiHistory, mode: "app"})})).json(); aiNoteUsed(r);
+    if (r.answer && !r.error && /^\s*IGNORA\b/i.test(r.answer)) plog(`IA (${kind}): ha respost IGNORA, no dic res`);
+    else if (r.answer && !r.error) {
       plog(`IA (${kind}): ${r.answer} (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
       aiHistory.push({role: "user", text: question}, {role: "assistant", text: r.answer}); aiHistory = aiHistory.slice(-12);
       aiShow({pla: "Pla de partida", mort: "Després de morir", macro: "Macro"}[kind] || kind, r.answer);

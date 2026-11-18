@@ -121,6 +121,12 @@ func aiAskMode(question, state, lang string, history []aiTurn, mode string) (str
 	} else if strings.TrimSpace(state) != "" {
 		content = "Estat de la partida ara mateix:\n" + state + "\n\nPregunta del jugador: " + question
 	}
+	// a request from the app itself (the game plan, what to do after a death): never microphone noise, so it is
+	// always answered (the AI was answering IGNORA to the plan, and the player got nothing)
+	if mode == "app" {
+		system += "\n\nAQUESTA PETICIÓ LA FA L'APP, NO EL MICRÒFON: no és soroll ni una conversa amb un amic. Respon-la sempre; mai responguis IGNORA."
+		content = strings.Replace(content, "Pregunta del jugador: ", "Petició de l'app: ", 1)
+	}
 	if len(msgs) > 0 && msgs[len(msgs)-1]["role"] == "user" {
 		msgs = msgs[:len(msgs)-1]
 	}
