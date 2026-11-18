@@ -1,7 +1,7 @@
 {
- "version": "2.7.2",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.2.exe",
- "size": 10314752,
- "sha256": "6a71c420b6b83f6c667d2d85965ce0ae0eb699e13801a4989d2d062ba94e20bc",
- "notes": "- Veu del coach: tria femenina o masculina, o una veu concreta, a Ajustos → La veu del coach"
+ "version": "2.7.3",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.3.exe",
+ "size": 10315776,
+ "sha256": "dee13ac0d72c48a03c2736f9f2ad0f2dcc48cf5aae392da34dbaf22d514d29b8",
+ "notes": "- Pla de partida: la IA ja no el deixa en blanc (responia IGNORA)\n- Punt de control del minut 5: ja no se salta quan coincideix amb un altre avís"
 }
