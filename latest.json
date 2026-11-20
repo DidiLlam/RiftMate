@@ -1,7 +1,7 @@
 {
- "version": "2.7.4",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.4.exe",
- "size": 10318336,
- "sha256": "fdb600937f80d80703f49118283c2ed5f5ff094a3a575bbecd20491d3ad130cc",
- "notes": "- Best plays: els clips passen sols al següent quan s'acaben (també a pantalla completa); es pot desactivar amb 'Una darrere l'altra'"
+ "version": "2.7.5",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.5.exe",
+ "size": 10324480,
+ "sha256": "69e44fac722670a0e4ec37c5c6df42c834aa073e61c1b253484ec3f8f0b23a56",
+ "notes": "- Temporitzadors: clic dret (o mantenir premut al mòbil) per posar el temps que queda, p. ex. 2:20; la roda del ratolí suma o resta 5 s\n- Per veu: 'flash Ahri 2:20' posa el temps que queda\n- Si se n'anul·la un per error: botó 'Desfer' durant un minut, o dir 'desfés'"
 }
