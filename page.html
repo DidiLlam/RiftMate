@@ -249,6 +249,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .rvit{padding:8px 0;border-bottom:1px solid var(--line)}.rvit.done>p{opacity:.65}.rvit.done>p b:first-child::after{content:" ✓";color:var(--accent)}
 .rvit details{margin-top:4px}.rvit summary{cursor:pointer;color:var(--accent);font-weight:700}
 .autonext{display:inline-flex;align-items:center;gap:4px;margin-left:8px;cursor:pointer}
+.leftin{position:absolute;z-index:50;width:5.5em;font:700 16px var(--mono, monospace);padding:4px 6px;border:2px solid var(--accent);border-radius:8px;background:var(--card);color:var(--fg)}
+.b.undo{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;box-shadow:0 4px 18px rgba(0,0,0,.45);border-color:var(--accent);font-weight:800}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -1197,6 +1199,8 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "↶ Desfer: {x}": ["↶ Deshacer: {x}", "↶ Undo: {x}"], "Recuperat.": ["Recuperado.", "Restored."],
+  "Temps que queda": ["Tiempo que queda", "Time left"],
   "Una darrere l'altra": ["Una detrás de otra", "One after another"],
   "Veu": ["Voz", "Voice"], "La que soni millor": ["La que suene mejor", "Whichever sounds best"], "Femenina": ["Femenina", "Female"], "Masculina": ["Masculina", "Male"], "Automàtica": ["Automática", "Automatic"], "Provar": ["Probar", "Try"],
   "Minut {n}: portes {m} de farm.": ["Minuto {n}: llevas {m} de farmeo.", "Minute {n}: you have {m} CS."],
@@ -2150,12 +2154,66 @@ ROWS.forEach(({label: lane, def: def2, team}, i) => {
     const btn = el.querySelector(`#t${i}-${slot}`);
     const go = () => { unlockAudio(); startTimer(i, slot, spellFn(), false); };
     btn.addEventListener("click", go);
+    btn.addEventListener("contextmenu", e => { e.preventDefault(); editLeft(i, slot, spellFn(), btn); });
+    let lp = 0; btn.addEventListener("touchstart", () => { lp = setTimeout(() => editLeft(i, slot, spellFn(), btn), 600); }, {passive: true});
+    btn.addEventListener("touchend", () => clearTimeout(lp));
+    btn.addEventListener("wheel", e => { const t = timers[`${i}-${slot}`]; if (!t) return; e.preventDefault();
+      t.end = Math.max(Date.now() + 1000, Math.min(Date.now() + t.total * 1000, t.end + (e.deltaY < 0 ? 5000 : -5000))); t.warned = (t.end - Date.now()) / 1000 <= 35; render(); clipSoon(); }, {passive: false});
     btn.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target === btn) { e.preventDefault(); go(); } });
   };
   bind("s1", () => sel1.value); bind("s2", () => sel.value); bind("Zhonya", () => "Zhonya"); bind("R", () => "R");
 });
 
-function cancel(key){ delete timers[key]; render(); clipSoon(); }
+// cancelling keeps the timer for a minute, to undo it ("Desfer" or saying "desfés"): a wrong tap or a misheard
+// "cancel·la" doesn't lose the count
+let undoT = null, undoHideT = 0;
+function cancel(key){
+  if (timers[key] && timers[key].end > Date.now()) { undoT = {key, t: timers[key], at: Date.now()}; showUndo(); }
+  delete timers[key]; render(); clipSoon();
+}
+function showUndo(){
+  let b = $("#undoBtn");
+  if (!b) { b = document.createElement("button"); b.id = "undoBtn"; b.type = "button"; b.className = "b undo"; b.addEventListener("click", undoCancel); document.body.appendChild(b); }
+  const sp = NAMES[undoT.t.spell] || undoT.t.spell, who = undoT.t.who?.() || "";
+  b.textContent = `↶ Desfer: ${sp} ${who}`; b.hidden = false;
+  clearTimeout(undoHideT); undoHideT = setTimeout(() => { b.hidden = true; undoT = null; }, 60000);
+}
+function undoCancel(){
+  if (!undoT || undoT.t.end <= Date.now()) { $("#undoBtn") && ($("#undoBtn").hidden = true); return false; }
+  timers[undoT.key] = undoT.t; render(); clipSoon();
+  const [i] = undoT.key.split("-"); duoTell(+i, undoT.t.spell, Math.round((undoT.t.end - Date.now()) / 1000));
+  plog(`Temporitzador recuperat: ${undoT.t.spell} ${undoT.t.who?.() || ""}`);
+  undoT = null; $("#undoBtn").hidden = true; return true;
+}
+// what's left, set by hand: "2:20", "2 20", "2.20" or seconds ("90")
+function leftFromText(text){
+  const t = String(text);
+  let m = t.match(/\b(\d{1,2})\s*[:.,'’ ]\s*([0-5]\d)\b/); if (m) return +m[1] * 60 + +m[2];
+  m = t.match(/\b(\d{2,3})\s*(?:s|seg|segons|segundos|seconds)?\b/); if (m && +m[1] >= 5 && +m[1] <= 400) return +m[1];
+  m = t.match(/\b([1-6])\s*(?:min|minuts?|minutos?)\b/); if (m) return +m[1] * 60;
+  return null;
+}
+const fmtLeft = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+function setLeft(i, slot, spell, left){
+  const haste = spell === "Zhonya" ? 0 : ($(`#boots${i}`).checked ? 10 : 0) + ($(`#cosmic${i}`).checked ? 18 : 0);
+  const total = spell === "R" ? ultCooldown(i) : CD[spell] / (1 + haste / 100);
+  if (!total || !(left > 0)) return false;
+  left = Math.min(left, Math.round(total));
+  timers[`${i}-${slot}`] = {end: Date.now() + left * 1000, total, warned: left <= 35, spell, started: Date.now() - (total - left) * 1000, who: () => $(`#name${i}`).value.trim() || rowLabel(i)};
+  render(); clipSoon(); duoTell(i, spell, left);
+  return true;
+}
+// right click on a spell (or a long press on a phone): type what's left; the mouse wheel on a running timer: ±5 s
+function editLeft(i, slot, spell, btn){
+  const k = `${i}-${slot}`, cur = timers[k] ? Math.ceil((timers[k].end - Date.now()) / 1000) : "";
+  const inp = document.createElement("input"); inp.className = "leftin"; inp.placeholder = "2:20"; inp.value = cur ? fmtLeft(cur) : ""; inp.setAttribute("aria-label", "Temps que queda");
+  const box = btn.getBoundingClientRect(); Object.assign(inp.style, {left: `${box.left + scrollX}px`, top: `${box.bottom + scrollY + 4}px`});
+  document.body.appendChild(inp); inp.focus(); inp.select();
+  let closed = false;
+  const done = ok => { if (closed) return; closed = true; if (ok) { const v = leftFromText(inp.value.includes(":") || /\s/.test(inp.value.trim()) ? inp.value : (+inp.value > 9 ? inp.value + "s" : inp.value + " min")); if (v != null && setLeft(i, slot, spell, v)) plog(`Temporitzador posat a mà: ${spell} ${$(`#name${i}`).value.trim()}, queden ${v} s`); } inp.remove(); };
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") done(true); if (e.key === "Escape") done(false); });
+  inp.addEventListener("blur", () => done(inp.value.trim() !== "" && inp.value !== (cur ? fmtLeft(cur) : "")));
+}
 // in game, the enemy timers are kept on the clipboard as a chat line: Enter, Ctrl+V, Enter sends them, without leaving the game
 let clipTimer = 0, clipLast = "";
 function clipSoon(){
@@ -2958,7 +3016,11 @@ function handle(text, final = true, opt = {}){
   const ai = typeof aiHandle === "function" ? aiHandle(text, final) : false;
   if (ai === true) return true;
   if (ai === "skip") return false;
-  const words = norm(text).split(" ");
+  // a time said with the command ("flash Ahri 2:20", "flash Ahri 2 20", "flash Ahri 90"): what's left of it
+  // "desfés" (or "deshaz", "undo"): the last timer cancelled comes back
+  if (final && /^(desfes|desfer|desfesho|deshaz|deshacer|undo|recupera|recuperal)$/.test(norm(text).replace(/\s+/g, ""))) { if (undoCancel()) { confirmTone(true); $("#status").textContent = "Recuperat."; } return true; }
+  const tLeft = leftFromText(text);
+  const words = norm(text).split(" ").filter(w => !/^\d+$/.test(w));
   const saidCancel = CANCEL.some(c => norm(text).startsWith(c) || words.includes(c));
   const s = findSpell(words);
   if (!s) {
@@ -2992,6 +3054,10 @@ function handle(text, final = true, opt = {}){
   const known = game?.spells?.[i];
   if (known && !["Zhonya", "R"].includes(s.sp) && !known.includes(s.sp)) { if (final) plog(`Veu: "${text}" -> ignorat: ${who} no porta ${s.sp}`); return true; }
   const slot = slotFor(i, s.sp), key = `${i}-${slot}`;
+  if (!isCancel && tLeft != null) {
+    if (setLeft(i, slot, s.sp, tLeft)) { confirmTone(true); $("#status").textContent = `${NAMES[s.sp]} ${de(who)}: queden ${fmtLeft(tLeft)}.`; $("#status").className = "note"; plog(`Veu: "${text}" -> ${s.sp} ${who}, queden ${tLeft} s`); }
+    return true;
+  }
   // already counting, and not checked by Whisper: saying it again may be talk ("still 2 minutes on Xerath's flash"),
   // so it doesn't restart it. "Cancel·la flash Xerath" stops it.
   // said again on its own ("flash Darius", checked by Whisper): it was used again, start over
