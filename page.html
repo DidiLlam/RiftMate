@@ -3226,6 +3226,16 @@ function voiceLine(l){
       // Whisper often misspells the champion ("Flash the ginger", "barrera, lejinch" for Jinx): if it heard the same
       // spell in a short phrase, it's a confirmation, not something else
       { const ww = norm(w.w || "").split(" ").filter(Boolean), sw = findSpell(ww), sf = fm.cmd.split("|")[0];
+        // Windows heard "cancel·la" but Whisper didn't ("Hostia, flash de Aatrox" became "cancela flash de Atrox"):
+        // it wasn't a cancel, it was the spell used. Put the timer back and start it again.
+        const wCancel = CANCEL.some(c => norm(w.w || "").includes(c));
+        if (fm.cmd.endsWith("|x") && !wCancel && sw && sw.sp === sf) {
+          for (const [k, v] of Object.entries(fm.prev)) if (!timers[k] && v) timers[k] = v;
+          undoT = null; if ($("#undoBtn")) $("#undoBtn").hidden = true;
+          plog(`Veu: Whisper "${w.w}" no diu cancel·la: no anul·lo, és ${sf} de nou`);
+          handle(fm.t.split(" ").filter(x => !CANCEL.includes(norm(x))).join(" "), true, {reset: true});
+          return;
+        }
         if (!cw && sw && sw.sp === sf && ww.length <= 5) { plog(`Veu: Whisper "${w.w}" confirma "${fm.t}"`); return; } }
       if (!cw && !(w.w || "").trim()) return;                         // Whisper wrote nothing (it may not have caught it): keep what Windows heard
       if (!cw && w.c >= 0.8) return;                                  // Windows was very sure: keep it
