@@ -20,6 +20,37 @@ type meInfo struct {
 	Owner   bool   `json:"owner"`
 	Ask     bool   `json:"ask,omitempty"` // an account the app doesn't know yet: is it the owner's or someone else's?
 	Main    string `json:"main,omitempty"`
+	Viewing bool   `json:"viewing,omitempty"` // another of your accounts, not the one in use
+	Playing string `json:"playing,omitempty"` // then: the one in use
+}
+
+// the header of another of your accounts (Riot's API), kept 10 minutes
+var meOther = map[string]struct {
+	m  meInfo
+	at time.Time
+}{}
+
+func meFor(id string) *meInfo {
+	if v, ok := meOther[strings.ToLower(id)]; ok && time.Since(v.at) < 10*time.Minute {
+		return &v.m
+	}
+	c := loadConfig()
+	p := strings.SplitN(id, "#", 2)
+	m := meInfo{Name: p[0], Tag: p[1]}
+	if puuid, err := puuidFor(&c, id); err == nil && c.RiotKey != "" {
+		var sm struct {
+			ProfileIconID int `json:"profileIconId"`
+			SummonerLevel int `json:"summonerLevel"`
+		}
+		if riotGetHostQ(c, platformHost(c), "/lol/summoner/v4/summoners/by-puuid/"+puuid, &sm, true) == nil {
+			m.Level, m.Icon = sm.SummonerLevel, sm.ProfileIconID
+		}
+	}
+	meOther[strings.ToLower(id)] = struct {
+		m  meInfo
+		at time.Time
+	}{m, time.Now()}
+	return &m
 }
 
 var (
@@ -48,6 +79,11 @@ func meJSON() []byte {
 		out = *meLast
 	}
 	out.Version = version
+	if v := viewOrCurrent(); out.Name != "" && strings.Contains(v, "#") && !sameID(v, out.Name+"#"+out.Tag) {
+		playing := out.Name + "#" + out.Tag
+		out = *meFor(v)
+		out.Version, out.Viewing, out.Playing = version, true, playing
+	}
 	out.Owner = out.Name == "" || isOwner(out.Name+"#"+out.Tag)
 	if !out.Owner {
 		c := loadConfig()

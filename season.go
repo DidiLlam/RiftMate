@@ -48,7 +48,7 @@ var (
 	seasonLastOK time.Time
 )
 
-func seasonFile() string { return accountFile("temporada.json") }
+func seasonFile() string { return viewFile("temporada.json") }
 
 func loadSeason() seasonCache {
 	var c seasonCache
@@ -75,7 +75,7 @@ func seasonSync() {
 	fail := func(e string) { seasonMu.Lock(); seasonErr = e; seasonMu.Unlock(); logf("Temporada: %s", e) }
 
 	c := loadConfig()
-	id := myRiotID()
+	id := viewID()
 	if c.RiotKey == "" || id == "" {
 		fail(map[bool]string{true: "no_key", false: "no_riot_id"}[c.RiotKey == ""])
 		return

@@ -27,7 +27,7 @@ var (
 	histFiles = map[string]map[string]histMatch{}
 )
 
-func histFile() string { return accountFile("historial.json") }
+func histFile() string { return viewFile("historial.json") }
 
 func loadHist() map[string]histMatch {
 	f := histFile()
@@ -44,7 +44,7 @@ func loadHist() map[string]histMatch {
 
 func matchesJSON(start, count int) ([]byte, error) {
 	c := loadConfig()
-	id := myRiotID()
+	id := viewID()
 	if c.RiotKey == "" {
 		return nil, fmt.Errorf("no_key")
 	}
@@ -119,7 +119,7 @@ func matchesHandler(send func(http.ResponseWriter, int, string, []byte)) http.Ha
 // and kept with the game. It's their rank now, not on the day of the game.
 func ranksForMatch(mid string) ([]byte, error) {
 	c := loadConfig()
-	puuid, err := puuidFor(&c, myRiotID())
+	puuid, err := puuidFor(&c, viewID())
 	if err != nil {
 		return nil, err
 	}

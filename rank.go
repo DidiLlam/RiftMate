@@ -58,7 +58,7 @@ func rankJSON(force bool) []byte {
 	}
 	c := loadConfig()
 	res := map[string]any{}
-	id := myRiotID()
+	id := viewID()
 	switch {
 	case c.RiotKey == "":
 		res["error"] = "no_key"

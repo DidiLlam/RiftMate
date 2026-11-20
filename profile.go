@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // Profiles: everything that belongs to one League account (reports, season, peak rank) is kept apart, so a
@@ -88,9 +89,42 @@ func profileFile(name string) string {
 }
 
 // accountFile: like profileFile, but one per account even among the owner's own accounts: rank, LP, season
-func accountFile(name string) string {
+func accountFile(name string) string { return accountFileFor(name, currentID()) }
+
+// viewFile: the file of the account being looked at (one of the player's other accounts, chosen in the app
+// without logging into it), else the one in use
+func viewFile(name string) string { return accountFileFor(name, viewOrCurrent()) }
+
+// The account being looked at: rank, LP, season and history of another of the player's accounts, without
+// logging into it. Empty: the one in use. Only for the player's own accounts; it isn't kept when the app closes.
+var (
+	viewMu   sync.Mutex
+	viewAcct string
+)
+
+func viewOrCurrent() string {
+	viewMu.Lock()
+	v := viewAcct
+	viewMu.Unlock()
+	if v != "" && isOwner(v) {
+		return v
+	}
+	return currentID()
+}
+
+// viewID: like myRiotID (asks the League client), unless another account is being looked at
+func viewID() string {
+	viewMu.Lock()
+	v := viewAcct
+	viewMu.Unlock()
+	if v != "" && isOwner(v) {
+		return v
+	}
+	return myRiotID()
+}
+
+func accountFileFor(name, id string) string {
 	root := filepath.Dir(dataDir())
-	id := currentID()
 	if isOwnerAccount(id) {
 		return filepath.Join(root, name)
 	}

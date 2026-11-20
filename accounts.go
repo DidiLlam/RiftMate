@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 type acctInfo struct {
@@ -62,11 +63,32 @@ func accountsSeen() map[string]*acctInfo {
 func accountsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		var in struct {
-			ID     string `json:"id"`
-			Mine   bool   `json:"mine"`
-			Forget bool   `json:"forget"`
+			ID     string  `json:"id"`
+			Mine   bool    `json:"mine"`
+			Forget bool    `json:"forget"`
+			View   *string `json:"view"` // look at this account ("" = the one in use)
 		}
 		json.NewDecoder(r.Body).Decode(&in)
+		if in.View != nil {
+			v := strings.TrimSpace(*in.View)
+			if v != "" && (!strings.Contains(v, "#") || !isOwner(v) || sameID(v, currentID())) {
+				v = ""
+			}
+			viewMu.Lock()
+			changed := !sameID(viewAcct, v) || (viewAcct == "") != (v == "")
+			viewAcct = v
+			viewMu.Unlock()
+			if changed {
+				rankMu.Lock()
+				rankLast = nil
+				rankMu.Unlock()
+				seasonMu.Lock()
+				seasonLastOK = time.Time{}
+				seasonMu.Unlock()
+				logf("Comptes: mirant %s", map[bool]string{true: "el compte en ús", false: v}[v == ""])
+			}
+			in.ID = ""
+		}
 		id := strings.TrimSpace(in.ID)
 		k := strings.ToLower(id)
 		c := loadConfig()
@@ -116,5 +138,8 @@ func accountsHandler(w http.ResponseWriter, r *http.Request) {
 		return list[i].Games > list[j].Games
 	})
 	w.Header().Set("content-type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"accounts": list, "owner": c.Owner, "current": c.MyRiotID})
+	viewMu.Lock()
+	view := viewAcct
+	viewMu.Unlock()
+	json.NewEncoder(w).Encode(map[string]any{"accounts": list, "owner": c.Owner, "current": c.MyRiotID, "view": view})
 }
