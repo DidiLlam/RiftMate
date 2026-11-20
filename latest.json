@@ -1,7 +1,7 @@
 {
- "version": "2.7.5",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.5.exe",
- "size": 10324480,
- "sha256": "69e44fac722670a0e4ec37c5c6df42c834aa073e61c1b253484ec3f8f0b23a56",
- "notes": "- Temporitzadors: clic dret (o mantenir premut al mòbil) per posar el temps que queda, p. ex. 2:20; la roda del ratolí suma o resta 5 s\n- Per veu: 'flash Ahri 2:20' posa el temps que queda\n- Si se n'anul·la un per error: botó 'Desfer' durant un minut, o dir 'desfés'"
+ "version": "2.7.6",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.7.6.exe",
+ "size": 10324992,
+ "sha256": "f1d2fa1c2b8a6c40ee2b3075ceb3cb69c94a1c6f1e5ef803e6dfee2926ddb8a4",
+ "notes": "- Veu: si Windows sent 'cancel·la' però Whisper no (p. ex. 'Hostia, flash de Aatrox'), ja no anul·la el temporitzador: el torna a començar"
 }
