@@ -257,6 +257,9 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .memenu button{display:flex;gap:4px;align-items:baseline;width:100%;padding:8px 10px;border:0;border-radius:8px;background:none;color:var(--fg);cursor:pointer;text-align:left;font:inherit}
 .memenu button:hover{background:var(--chip, rgba(255,255,255,.06))}.memenu button.on{outline:1px solid var(--accent)}
 .memenu button span{opacity:.6}.memenu button small{margin-left:auto;color:var(--accent)}.memenu .note{margin:6px 8px 2px;font-size:11px}
+.voicectl{position:fixed;right:18px;bottom:18px;z-index:65;display:flex;gap:6px;align-items:center;padding:8px 10px;border:1px solid var(--accent);border-radius:14px;background:var(--panel);box-shadow:0 6px 22px rgba(0,0,0,.4)}
+.vcdot{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:vcp 1s infinite alternate}.voicectl.paused .vcdot{animation:none;opacity:.4}
+@keyframes vcp{from{opacity:.35}to{opacity:1}}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -1206,6 +1209,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "❚❚ Pausa": ["❚❚ Pausa", "❚❚ Pause"], "▶ Continua": ["▶ Continúa", "▶ Resume"],
   "jugant": ["jugando", "playing"], "Mirant aquest compte · jugues amb {x}": ["Mirando esta cuenta · juegas con {x}", "Viewing this account · you're playing on {x}"],
   "Rang, LP, MMR, temporada i historial del compte que triïs, sense haver-hi d'entrar.": ["Rango, LP, MMR, temporada e historial de la cuenta que elijas, sin tener que entrar.", "Rank, LP, MMR, season and history of the account you pick, without logging in."],
   "↶ Desfer: {x}": ["↶ Deshacer: {x}", "↶ Undo: {x}"], "Recuperat.": ["Recuperado.", "Restored."],
@@ -2852,8 +2856,37 @@ function sayPump(){
   t1 = setTimeout(() => { if (sayCur === u && !started) { plog("La veu s'havia encallat: la reinicio"); synth.cancel(); sayHold = Date.now() + 350; sayCur = null; if (++sayStuck <= 2) sayQ.unshift(item); else item.cb?.("lost"); sayPump(); } }, 4000);
   // a voice that never says it finished is let go, but not before a long sentence could be said whole (it used to
   // cut at 30 s: the matchup summary stopped at "the last time against Ahri")
-  t2 = setTimeout(() => { if (sayCur === u) { synth.cancel(); done(); } }, Math.max(30000, 8000 + String(text).length * 110));
+  const lim = () => { t2 = setTimeout(() => { if (sayCur !== u) return; if (sayPaused) return lim(); synth.cancel(); done(); }, Math.max(30000, 8000 + String(text).length * 110)); };
+  lim();
 }
+// pause / go on / stop what the coach is saying (the lessons after a game, the spoken report, a long answer):
+// a small control at the bottom while it speaks outside a game
+let sayPaused = false;
+function voicePause(){
+  if (!synth) return;
+  if (sayPaused) { sayPaused = false; synth.resume(); } else { sayPaused = true; synth.pause(); }
+  voiceCtl();
+}
+function voiceStop(){
+  sayPaused = false; reportSpeaking = false; sayCancel();
+  const b = $("#rpVoice"); if (b) b.textContent = "▶ Escolta l'informe";
+  voiceCtl();
+}
+function voiceCtl(){
+  let el = $("#voiceCtl");
+  const on = synth && (synth.speaking || sayPaused) && !game;
+  if (!on) { if (el) el.hidden = true; if (!synth?.speaking) sayPaused = false; return; }
+  if (!el) {
+    el = document.createElement("div"); el.id = "voiceCtl"; el.className = "voicectl";
+    el.innerHTML = `<span class="vcdot"></span><button type="button" class="b small" id="vcPause"></button><button type="button" class="b small" id="vcStop">■ Atura</button>`;
+    document.body.appendChild(el);
+    $("#vcPause").addEventListener("click", voicePause); $("#vcStop").addEventListener("click", voiceStop);
+  }
+  el.hidden = false; el.classList.toggle("paused", sayPaused);
+  $("#vcPause").textContent = sayPaused ? "▶ Continua" : "❚❚ Pausa";
+  i18nAll?.();
+}
+setInterval(voiceCtl, 400);
 // interrupt everything queued (an answer of the AI, the spoken report)
 function sayCancel(){ sayQ.length = 0; sayCur = null; sayHold = Date.now() + 350; if (synth) synth.cancel(); }
 function showVoice(){
@@ -6786,6 +6819,7 @@ function reportNarrative(r){
 var reportSpeaking = false;   // var: speak() may run before this line
 function speakReport(r){
   const btn = $("#rpVoice");
+  if (reportSpeaking && sayPaused) { voicePause(); return; }
   if (reportSpeaking) { synth.cancel(); reportSpeaking = false; if (btn) btn.textContent = "▶ Escolta l'informe"; sayPump(); return; }
   if (!synth) return;
   sayCancel(); reportSpeaking = true; if (btn) btn.textContent = "■ Atura";
