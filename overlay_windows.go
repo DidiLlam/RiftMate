@@ -534,6 +534,9 @@ func ovPaintAll(h uintptr) {
 		if cp.fresh { // just marked: an orange frame for a moment
 			box(ovRect{cp.r.L - sc(2), cp.r.T - sc(2), cp.r.R + sc(2), cp.r.B + sc(2)}, rgb(255, 154, 74), sc(5))
 		}
+		if cp.kind == "Zhonya" && !cp.faded && !cp.fresh { // bought: a gold frame, so it stands out from the dimmed ones
+			box(ovRect{cp.r.L - sc(2), cp.r.T - sc(2), cp.r.R + sc(2), cp.r.B + sc(2)}, rgb(242, 193, 78), sc(5))
+		}
 		if b := ovBitmap(cp.icon, n, run || cp.faded); b != 0 {
 			ovBlit(mdc, b, cp.r.L, cp.r.T, n)
 		} else {
