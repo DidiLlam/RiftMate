@@ -1,7 +1,7 @@
 {
- "version": "2.8.4",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.4.exe",
- "size": 10351616,
- "sha256": "ab8070e9b4e98ff09f579765fb0f9b1c6f2ad43d89749a453a03bc5c479f496f",
- "notes": "- Només rankeds: a les personalitzades, normals i ARAM el coach no explica res (els temporitzadors segueixen funcionant)\n- Les personalitzades no es guarden com a partida"
+ "version": "2.8.5",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.5.exe",
+ "size": 10353152,
+ "sha256": "8c9e0e3d7b111239378961e00ac080719942fc2ccc78af1659b5a3c13dbc705b",
+ "notes": "- Zhonya: quan un rival el compra es veu ressaltat amb un marc daurat (a la pestanya i a l'overlay)"
 }
