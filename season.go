@@ -221,8 +221,21 @@ type champForm struct {
 	Last    int64   `json:"last"`  // end of the last game (unix)
 }
 
+// puuidKnown: an account's PUUID if it's already saved (no call to Riot)
+func puuidKnown(c Config, id string) string {
+	for k, v := range c.PUUIDs {
+		if strings.EqualFold(k, id) {
+			return v
+		}
+	}
+	return ""
+}
+
 func seasonJSON() []byte {
 	cache := loadSeason()
+	if p := puuidKnown(loadConfig(), viewOrCurrent()); p != "" && cache.PUUID != "" && p != cache.PUUID {
+		cache = seasonCache{Games: map[string]seasonGame{}} // another account's file: this one's isn't read yet
+	}
 	ids, need := cache.IDs, cache.Need
 	seasonMu.Lock()
 	out := map[string]any{"busy": seasonBusy, "done": seasonDone, "total": seasonTotal, "error": seasonErr, "synced": cache.IDs != nil}
@@ -354,6 +367,13 @@ func seasonGamesHandler(send func(http.ResponseWriter, int, string, []byte)) htt
 		}
 		from := time.Now().Add(-time.Duration(days) * 24 * time.Hour).Unix()
 		c := loadSeason()
+		// only the games of the account looked at: a file written for another account (before the accounts were
+		// separated) isn't shown as this one's
+		if cfg := loadConfig(); c.PUUID != "" {
+			if p := puuidKnown(cfg, viewOrCurrent()); p != "" && p != c.PUUID {
+				c.Games = nil
+			}
+		}
 		type g struct {
 			End   int64  `json:"e"`
 			Champ string `json:"c"`

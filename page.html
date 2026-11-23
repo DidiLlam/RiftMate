@@ -4859,7 +4859,12 @@ async function viewAccount(id){
   const view = acctId && id.toLowerCase() === acctId.toLowerCase() ? "" : id;
   try { await fetch("/api/accounts", {method: "POST", body: JSON.stringify({view})}); } catch (e) { return; }
   viewAcct = view;
-  await loadMe(); loadAccounts(); loadHistory(); loadRank(true); loadSeason(false);
+  lpSeason = null; lpSeasonAsked = ""; lpRankSig = ""; renderLpChart();   // the LP chart of the other account, not the last one's
+  await loadMe(); loadAccounts(); loadHistory(); loadRank(true);
+  // its season: read from Riot if needed, then the chart again
+  await loadSeason(true);
+  for (let i = 0; i < 60 && seasonData?.busy; i++) { await new Promise(r => setTimeout(r, 2000)); await loadSeason(false); }
+  lpSeason = null; lpSeasonAsked = ""; renderLpChart();
   if (typeof loadMatches === "function" && $("#viewH") && !$("#viewH").hidden) loadMatches(true);
 }
 loadAccounts(); loadMe(); setInterval(() => { if (!game) loadMe(); }, 180000);
