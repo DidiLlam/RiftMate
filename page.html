@@ -3366,6 +3366,7 @@ function onGameStart(data){
   // the practice tool: no rivals to scout, no plan from the AI, no report; only the farm drill
   if (data.gameData?.gameMode === "PRACTICETOOL") { game = {ids: [pid(me)], me: pid(me), practice: true, zhonya: new Set(), boots: new Set(), seenEv: -1, oppIdx: 0}; drill = null; plog("Eina de pràctica: exercici de farm"); return; }
   const foes = data.allPlayers.filter(p => p.team !== me.team);
+  gameRanked = null; gameQueue = 0; setTimeout(checkQueue, 0);
   placeTeams(me.team === "ORDER" ? "blue" : me.team === "CHAOS" ? "red" : null);
   try { startScout(data, me); } catch (e) {}
   const slots = Array(5).fill(null), rest = [];
@@ -3514,8 +3515,20 @@ const coachPhase = t => t < 840 ? "linia" : t < 1500 ? "mitja" : "final";
 // 3 = general reminders. "Quant parla el coach" decides which are said; the same sentence isn't said again within
 // 3 minutes, and a useful one waits 12 s after the previous message (a reminder, 25 s) or isn't said.
 let coachLastAt = 0; const coachSaidAt = new Map();
+// only ranked games get explanations: in a custom game, a normal or ARAM the coach keeps quiet (the timers still
+// work). The queue comes from the League client; unknown, it talks as before.
+let gameRanked = null, gameQueue = 0;
+async function checkQueue(){
+  for (let i = 0; i < 12 && game; i++) {
+    try { const q = await (await fetch("/api/gamequeue", {cache: "no-store"})).json();
+      if (q.known) { gameRanked = !!q.ranked; gameQueue = q.queue; plog(`Cua de la partida: ${q.queue}${q.ranked ? " (ranked)" : q.custom ? " (personalitzada: el coach no explica res)" : " (no ranked: el coach no explica res)"}`); return; } } catch (e) {}
+    await new Promise(r => setTimeout(r, 10000));
+  }
+}
+const coachQuiet = () => !!game && gameRanked === false;
 function coachSay(text, prio = 2){
   if (Date.now() < coachMuteUntil) { plog("Coach (callat): " + text); return; }
+  if (coachQuiet()) { plog("Coach (no és ranked): " + text); return; }
   const lvl = $("#cTalk")?.value || "normal", now = Date.now();
   if (prio === 1 && now - (coachSaidAt.get(text) || 0) < 20000) { plog(`Coach (no dit, repetit): ${text}`); return; }
   if (prio > 1) {
@@ -4169,6 +4182,7 @@ function aiLimitNote(err){
   return at ? `La IA gratuïta de Google ha arribat al límit d'avui: torna a funcionar a les ${at}. Mentrestant, els avisos de l'app continuen.` : "La IA gratuïta ha arribat al límit d'aquest minut. Torna-ho a provar d'aquí a un minut.";
 }
 async function aiProactive(kind, question, extra){
+  if (coachQuiet()) { plog(`IA (${kind}): no és ranked, no la faig servir`); return; }
   if (!aiHasKey || !$("#cAiAuto")?.checked || aiAutoBusy || !location.protocol.startsWith("http") || Date.now() < aiLimitUntil) return;
   if (!aiBudgetOk(kind)) { plog(`IA (${kind}): no la faig servir per guardar el pressupost del dia (${aiUsed} de ${aiBudget()} peticions)`); return; }
   aiAutoBusy = true;
@@ -4345,7 +4359,9 @@ function maybeReview(r){
   reviewTried.add(r.date); aiReview(r, true);
 }
 // lessons of a report: asked once, saved in the report
+const reportRanked = r => !r.queue_id || r.queue_id === 420 || r.queue_id === 440;
 async function aiReview(r, speakIt){
+  if (r && !reportRanked(r)) return;
   if (!r || r.error || r.ai_review || !aiHasKey || !$("#cAiAuto")?.checked || !location.protocol.startsWith("http")) return;
   const b = r.map?.board, me = b?.players.find(p => p.me);
   const text = [reportNarrative(r).join(" "),
@@ -6075,7 +6091,9 @@ function showMatchup(mine, opp){
   if (!lines.length) lines.push(`<p class="note">Encara no hi ha dades d'aquest enfrontament. Es guardaran a partir d'aquesta partida.</p>`);
   $("#mTitle").textContent = `${mine} contra ${opp}`; $("#mBody").innerHTML = lines.join(""); $("#mCard").hidden = false;
   // each part on its own: a short pause between them, and one that fails doesn't take the rest with it
-  if (say.length && on("vMatchup")) setTimeout(() => { plog("Coach: " + say.join(" ")); for (const x of say) speak(x); }, 2500);
+  if (say.length && on("vMatchup")) setTimeout(async () => {
+    try { const q = await (await fetch("/api/gamequeue", {cache: "no-store"})).json(); if (q.known && !q.ranked) { plog("Coach (no és ranked, no dic l'enfrontament): " + say.join(" ")); return; } } catch (e) {}
+    plog("Coach: " + say.join(" ")); for (const x of say) speak(x); }, 2500);
 }
 
 // ---------- Session guard (anti-tilt) ----------
@@ -7983,7 +8001,7 @@ let histCount = -1;
 async function loadHistory(){
   try {
     const h = await (await fetch("/api/history", {cache:"no-store"})).json();
-    if (histCount >= 0 && h.length > histCount) { mhLoaded = false; showTab(true); window.scrollTo({top: 0}); toFront("informe"); if (on("vGame")) speak("Informe de la partida llest.");
+    if (histCount >= 0 && h.length > histCount) { mhLoaded = false; showTab(true); window.scrollTo({top: 0}); toFront("informe"); if (on("vGame") && reportRanked(h[0] || {})) speak("Informe de la partida llest.");
       }
     const fresh = histCount >= 0 && h.length > histCount;
     lpBackfill(h);

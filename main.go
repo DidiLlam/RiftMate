@@ -30,7 +30,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.8.3"
+	version = "2.8.4"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -234,6 +234,11 @@ func (r *Recorder) finish(result string) {
 	playsGameEnd(rec.Date, rec.Duration >= 180)
 	if rec.Mode == "PRACTICETOOL" {
 		logf("Eina de pràctica: no es guarda com a partida")
+		return
+	}
+	rec.Queue = int(curQueue.Load())
+	if rec.Queue == -1 {
+		logf("Partida personalitzada: no es guarda com a partida")
 		return
 	}
 	if rec.Duration < 180 {
@@ -523,6 +528,7 @@ func serve(ln net.Listener) {
 	mux.HandleFunc("/api/guideai", guideAIHandler)
 	mux.HandleFunc("/api/provids", proVidsHandler)
 	mux.HandleFunc("/api/accounts", accountsHandler)
+	mux.HandleFunc("/api/gamequeue", gameQueueHandler)
 	mux.HandleFunc("/api/study", studyHandler)
 	mux.HandleFunc("/api/ranking", bpHandler)
 	mux.HandleFunc("/api/rankfile", rankFileHandler)

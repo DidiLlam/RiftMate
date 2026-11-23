@@ -467,16 +467,61 @@ func clipHandler(w http.ResponseWriter, req *http.Request) {
 // curGameID: the id of the game being played, read from the client's gameflow session (the replay's id)
 var curGameID atomic.Int64
 
+// curQueue: the queue of the game being played (420 Solo/Duo, 440 Flex, 400 Normal...; -1 a custom game, 0 unknown)
+var curQueue atomic.Int64
+
+// gameQueueHandler: GET /api/gamequeue: is the game (or the champion select) a ranked one? From the client.
+func gameQueueHandler(w http.ResponseWriter, r *http.Request) {
+	q := curQueue.Load()
+	if q == 0 {
+		q = sessionQueue()
+	}
+	w.Header().Set("content-type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"queue": q, "ranked": q == 420 || q == 440, "custom": q == -1, "known": q != 0})
+}
+
+// sessionQueue: the queue from the client's gameflow session (in the champion select too); 0 if unknown
+func sessionQueue() int64 {
+	var sess struct {
+		GameData struct {
+			IsCustomGame bool `json:"isCustomGame"`
+			Queue        struct {
+				ID int64 `json:"id"`
+			} `json:"queue"`
+		} `json:"gameData"`
+	}
+	if code, err := lcuGet("/lol-gameflow/v1/session", &sess); err != nil || code != 200 {
+		return 0
+	}
+	if sess.GameData.IsCustomGame {
+		return -1
+	}
+	if sess.GameData.Queue.ID > 0 {
+		return sess.GameData.Queue.ID
+	}
+	return 0
+}
+
 func captureGameID() {
+	curQueue.Store(0)
 	for i := 0; i < 20; i++ {
 		var sess struct {
 			GameData struct {
-				GameID int64 `json:"gameId"`
+				GameID       int64 `json:"gameId"`
+				IsCustomGame bool  `json:"isCustomGame"`
+				Queue        struct {
+					ID int64 `json:"id"`
+				} `json:"queue"`
 			} `json:"gameData"`
 		}
 		if code, err := lcuGet("/lol-gameflow/v1/session", &sess); err == nil && code == 200 && sess.GameData.GameID > 0 {
 			curGameID.Store(sess.GameData.GameID)
-			logf("Partida %d (per a la repetició)", sess.GameData.GameID)
+			q := sess.GameData.Queue.ID
+			if sess.GameData.IsCustomGame {
+				q = -1
+			}
+			curQueue.Store(q)
+			logf("Partida %d (per a la repetició), cua %d", sess.GameData.GameID, q)
 			duoGameStart(sess.GameData.GameID)
 			return
 		}

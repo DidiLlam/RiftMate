@@ -70,7 +70,8 @@ type Record struct {
 	Events   []Event  `json:"events"`
 	Duration float64  `json:"duration"`
 	Result   string   `json:"result"`
-	Mode     string   `json:"mode,omitempty"` // the game's mode (PRACTICETOOL is not kept)
+	Mode     string   `json:"mode,omitempty"`  // the game's mode (PRACTICETOOL is not kept)
+	Queue    int      `json:"queue,omitempty"` // the client's queue (420 Solo/Duo, 440 Flex, ...; 0 unknown)
 }
 
 type Death struct {
@@ -404,7 +405,7 @@ func analyse(rec *Record) map[string]any {
 		result = rec.Result
 	}
 	return map[string]any{
-		"date": rec.Date, "champion": me.ChampionName, "opponent": oppChamp, "result": result,
+		"date": rec.Date, "champion": me.ChampionName, "opponent": oppChamp, "result": result, "queue_id": rec.Queue,
 		"duration": dur, "kda": []int{k, d, a}, "kp": kp, "cs": cs, "opp_cs": ocs, "final_cs": finalCS, "opp_final_cs": oppFinal, "cs_curve": curve,
 		"cs_rate": map[string]*float64{"línia": csLane, "mitja": csMid, "final": csLate, "total": total},
 		"lvl10":   lvl10, "deaths": deaths, "kills": kills, "assists": assists, "roams": roams,
