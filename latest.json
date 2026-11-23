@@ -1,7 +1,7 @@
 {
- "version": "2.8.3",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.3.exe",
- "size": 10345472,
- "sha256": "400ae6ace1e663616344d310eca5095c4b0777ecf18d84252ac48af7deea5e54",
- "notes": "- Comptes: en mirar un altre compte, el gràfic de LP i la temporada són els d'aquell compte (abans es quedaven els de l'anterior)"
+ "version": "2.8.4",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.4.exe",
+ "size": 10351616,
+ "sha256": "ab8070e9b4e98ff09f579765fb0f9b1c6f2ad43d89749a453a03bc5c479f496f",
+ "notes": "- Només rankeds: a les personalitzades, normals i ARAM el coach no explica res (els temporitzadors segueixen funcionant)\n- Les personalitzades no es guarden com a partida"
 }
