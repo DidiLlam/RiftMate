@@ -1,7 +1,7 @@
 {
- "version": "2.8.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.1.exe",
- "size": 10339840,
- "sha256": "bed7857adff95fd196c21b84103500921d6e863a058aa3540c07c9c2da717803",
- "notes": "- Veu del coach: botó per pausar, continuar o aturar el que diu fora de partida (les lliçons d'acabar la partida, l'informe escoltat)"
+ "version": "2.8.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.2.exe",
+ "size": 10342400,
+ "sha256": "f28f57684198e87c40b616d3ecf8bdeacdded091699994cf70296dbc137b5e02",
+ "notes": "- Botó 'Actualitzar' a dalt: ho torna a llegir tot (rang, LP, temporada i gràfic de LP, historial, informes) si has jugat sense RiftMate obert"
 }
