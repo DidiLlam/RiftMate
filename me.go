@@ -128,5 +128,16 @@ func meFetch() *meInfo {
 }
 
 func meHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) { send(w, 200, "application/json", meJSON()) }
+	return func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Query().Get("force") == "1" { // "update everything": ask again now
+			meMu.Lock()
+			meLast = nil
+			meOther = map[string]struct {
+				m  meInfo
+				at time.Time
+			}{}
+			meMu.Unlock()
+		}
+		send(w, 200, "application/json", meJSON())
+	}
 }

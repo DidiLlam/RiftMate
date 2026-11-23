@@ -260,6 +260,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 .voicectl{position:fixed;right:18px;bottom:18px;z-index:65;display:flex;gap:6px;align-items:center;padding:8px 10px;border:1px solid var(--accent);border-radius:14px;background:var(--panel);box-shadow:0 6px 22px rgba(0,0,0,.4)}
 .vcdot{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:vcp 1s infinite alternate}.voicectl.paused .vcdot{animation:none;opacity:.4}
 @keyframes vcp{from{opacity:.35}to{opacity:1}}
+.refall{margin-left:10px;white-space:nowrap}.refall.busy{opacity:.75}.refall.busy::first-letter{display:inline-block}
+@media (max-width:640px){.refall span{display:none}}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -478,6 +480,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
     <div class="mechip" id="meChip" hidden><div class="meicon"><img id="meImg" alt="" onerror="this.style.opacity=0"><span class="melvl" id="meLvl"></span></div>
       <div class="mename"><b id="meName" data-noi18n></b><span id="meTag" data-noi18n></span><small class="meview" id="meView" hidden></small></div><span class="mecaret" id="meCaret" hidden>▾</span>
       <div class="memenu" id="meMenu" hidden></div></div>
+    <button class="b refall" id="refAll" type="button" title="Actualitza-ho tot: rang, LP, temporada, historial i informes (si has jugat sense RiftMate obert)">⟳ <span>Actualitzar</span></button>
   </header>
   <div class="whero topbanner" aria-hidden="true"><div><p class="wtitle" data-noi18n>RiftMate</p><p class="wsub">El teu coach de veu</p></div></div>
   <div class="tabs" role="tablist"><button role="tab" id="tabT" aria-selected="true">Temporitzador</button><button role="tab" id="tabR" aria-selected="false">Informes</button><button role="tab" id="tabB" aria-selected="false">Best plays</button><button role="tab" id="tabH" aria-selected="false">Historial</button><button role="tab" id="tabC" aria-selected="false">Coach</button><button role="tab" id="tabG" aria-selected="false">Guies</button><button role="tab" id="tabS" aria-selected="false">Temporada</button><button role="tab" id="tabM" aria-selected="false">MMR</button><button role="tab" id="tabA" aria-selected="false">Ajustos</button></div>
@@ -1209,6 +1212,8 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Actualitzant…": ["Actualizando…", "Updating…"], "Actualitzat": ["Actualizado", "Updated"],
+  "Actualitza-ho tot: rang, LP, temporada, historial i informes (si has jugat sense RiftMate obert)": ["Actualízalo todo: rango, LP, temporada, historial e informes (si has jugado sin RiftMate abierto)", "Update everything: rank, LP, season, history and reports (if you played without RiftMate open)"],
   "❚❚ Pausa": ["❚❚ Pausa", "❚❚ Pause"], "▶ Continua": ["▶ Continúa", "▶ Resume"],
   "jugant": ["jugando", "playing"], "Mirant aquest compte · jugues amb {x}": ["Mirando esta cuenta · juegas con {x}", "Viewing this account · you're playing on {x}"],
   "Rang, LP, MMR, temporada i historial del compte que triïs, sense haver-hi d'entrar.": ["Rango, LP, MMR, temporada e historial de la cuenta que elijas, sin tener que entrar.", "Rank, LP, MMR, season and history of the account you pick, without logging in."],
@@ -4790,9 +4795,9 @@ let artResize = 0; addEventListener("resize", () => { clearTimeout(artResize); a
 setTimeout(() => { sideArt(); decoStart(); }, 1200);
 setInterval(() => { if (!game) sideArt(); }, 15 * 60 * 1000);
 // ---------- Header: summoner name, level and icon (League client or Riot API), app version ----------
-async function loadMe(){
+async function loadMe(force){
   if (!location.protocol.startsWith("http")) return;
-  let m; try { m = await (await fetch("/api/me", {cache: "no-store"})).json(); } catch (e) { return; }
+  let m; try { m = await (await fetch("/api/me" + (force ? "?force=1" : ""), {cache: "no-store"})).json(); } catch (e) { return; }
   if (m.version) { $("#appVer").textContent = "v" + m.version; renderNews(m.version); }
   applyAccount(m);
   if (!m.name) { $("#meChip").hidden = true; return; }
@@ -4805,6 +4810,32 @@ async function loadMe(){
   if (m.viewing !== meViewing) { meViewing = !!m.viewing; }
   viewAcct = m.viewing ? `${m.name}#${m.tag}` : "";
 }
+// "Update everything": for games played without RiftMate open, or anything that looks old. Rank and LP, the
+// season (Riot's list of games, which the LP chart and the win rates come from), the history, the reports, your
+// accounts and plays, all at once; the season can take a while (Riot sends the games one by one)
+let refBusy = false;
+async function refreshAll(){
+  if (refBusy || !location.protocol.startsWith("http")) return;
+  refBusy = true; const b = $("#refAll"); b.disabled = true; b.classList.add("busy"); b.querySelector("span").textContent = "Actualitzant…";
+  plog("Actualitzar-ho tot");
+  try {
+    await Promise.allSettled([loadMe(true), loadAccounts(), loadRank(true), loadHistory(), loadStatus?.(), loadWhen?.()]);
+    if (typeof bpBadgeRefresh === "function") bpBadgeRefresh();
+    if (typeof loadMatches === "function" && $("#viewH") && !$("#viewH").hidden) loadMatches(true);
+    await loadSeason(true);
+    for (let i = 0; i < 60; i++) {   // the season, until Riot has sent the new games (2 minutes at most)
+      await new Promise(r => setTimeout(r, 2000));
+      if (seasonData && !seasonData.busy) break;
+      await loadSeason(false);
+    }
+    lpSeason = null; lpSeasonAsked = ""; renderLpChart(); loadHistory();
+    b.querySelector("span").textContent = "Actualitzat";
+  } catch (e) { b.querySelector("span").textContent = "Actualitzar"; }
+  refBusy = false; b.disabled = false; b.classList.remove("busy");
+  setTimeout(() => { if (!refBusy) b.querySelector("span").textContent = "Actualitzar"; i18nAll(); }, 4000);
+  i18nAll();
+}
+$("#refAll").addEventListener("click", refreshAll);
 // the header's menu: your accounts, to look at any of them without logging in
 let meViewing = false, viewAcct = "", myAccts = [];
 function renderMeMenu(){
