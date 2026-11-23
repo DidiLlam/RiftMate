@@ -1,7 +1,7 @@
 {
- "version": "2.8.2",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.2.exe",
- "size": 10342400,
- "sha256": "f28f57684198e87c40b616d3ecf8bdeacdded091699994cf70296dbc137b5e02",
- "notes": "- Botó 'Actualitzar' a dalt: ho torna a llegir tot (rang, LP, temporada i gràfic de LP, historial, informes) si has jugat sense RiftMate obert"
+ "version": "2.8.3",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.3.exe",
+ "size": 10345472,
+ "sha256": "400ae6ace1e663616344d310eca5095c4b0777ecf18d84252ac48af7deea5e54",
+ "notes": "- Comptes: en mirar un altre compte, el gràfic de LP i la temporada són els d'aquell compte (abans es quedaven els de l'anterior)"
 }
