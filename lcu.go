@@ -183,6 +183,15 @@ func champSelect() map[string]any {
 			Spell1ID           int    `json:"spell1Id"`
 			Spell2ID           int    `json:"spell2Id"`
 		} `json:"myTeam"`
+		Bans struct {
+			MyTeamBans    []int `json:"myTeamBans"`
+			TheirTeamBans []int `json:"theirTeamBans"`
+		} `json:"bans"`
+		Actions [][]struct {
+			ChampionID int    `json:"championId"`
+			Type       string `json:"type"`
+			Completed  bool   `json:"completed"`
+		} `json:"actions"`
 		TheirTeam []struct {
 			ChampionID int `json:"championId"`
 		} `json:"theirTeam"`
@@ -220,5 +229,19 @@ func champSelect() map[string]any {
 		c := championByKey(p.ChampionID)
 		theirs = append(theirs, csPlayer{Champ: c.ID, Name: c.Name})
 	}
-	return map[string]any{"client": true, "active": true, "phase": s.Timer.Phase, "my_position": myPos, "my_team": mine, "their_team": theirs}
+	// the bans (both teams): a banned champion can't be suggested as your pick
+	bans := []string{}
+	for _, id := range append(append([]int{}, s.Bans.MyTeamBans...), s.Bans.TheirTeamBans...) {
+		if id > 0 {
+			bans = append(bans, championByKey(id).Name)
+		}
+	}
+	for _, turn := range s.Actions {
+		for _, a := range turn {
+			if a.Type == "ban" && a.Completed && a.ChampionID > 0 {
+				bans = append(bans, championByKey(a.ChampionID).Name)
+			}
+		}
+	}
+	return map[string]any{"client": true, "active": true, "phase": s.Timer.Phase, "my_position": myPos, "my_team": mine, "their_team": theirs, "bans": bans}
 }

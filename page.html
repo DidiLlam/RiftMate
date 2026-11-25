@@ -6594,7 +6594,9 @@ function pickEst(c, opp){
 }
 function pickRows(role, enemyLaner){
   const fromHist = Object.entries(histCache.filter(r => !r.error && r.role === role).reduce((a, r) => (a[r.champion] = (a[r.champion] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1]).map(x => x[0]);
-  const cands = [...new Set([...csPool(), ...fromHist])].slice(0, 5);
+  // not a champion that's already taken by someone else in this game (the rival's Diana can't be your pick)
+  const taken = c => csTaken.has(norm(knownChamp(c) || c));
+  const cands = [...new Set([...csPool(), ...fromHist])].filter(c => !taken(c) && !(enemyLaner && norm(knownChamp(c) || c) === norm(knownChamp(enemyLaner) || enemyLaner))).slice(0, 5);
   if (!cands.length) return null;
   const rows = cands.map(c => {
     const all = recordVs(c, null), vs = enemyLaner ? recordVs(c, enemyLaner) : {n: 0}, sv = enemyLaner ? seasonVs(c, enemyLaner) : {n: 0};
@@ -6655,8 +6657,10 @@ function csExtra(cs){
   return goal + (ban.length && !cs.their_team.length ? `<p class="csban">Ban suggerit: ${ban.map(([n, r]) => fmt(n, r)).join(" · ")} <span class="note">(els rivals de línia que més et guanyen aquesta temporada)</span></p>` : "")
     + (vs.length ? `<p class="csban">Contra els que han triat: ${vs.map(([n, r]) => `<span class="${r.w >= r.l ? "good" : "bad"}">${fmt(n, r)}</span>`).join(" · ")}</p>` : "");
 }
+let csTaken = new Set();
 function renderCS(cs){
   const me = cs.my_team.find(p => p.me) || {}, role = cs.my_position || (me.position || "");
+  csTaken = new Set([...cs.their_team, ...cs.my_team.filter(p => !p.me && p.locked)].map(p => p.name).concat(cs.bans || []).filter(Boolean).map(n => norm(knownChamp(n) || n)));
   const enemies = cs.their_team.map(p => p.name);
   if (csSel && !enemies.includes(csSel)) { csSel = ""; csSelAuto = false; }
   if (!csSel || csSelAuto) { const g = guessLaner(role, enemies); csSel = g; csSelAuto = !!g; }
