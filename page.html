@@ -263,6 +263,8 @@ td.good{color:var(--good);font-weight:600} td.bad{color:var(--loss)}
 @keyframes vcp{from{opacity:.35}to{opacity:1}}
 .refall{margin-left:10px;white-space:nowrap}.refall.busy{opacity:.75}.refall.busy::first-letter{display:inline-block}
 @media (max-width:640px){.refall span{display:none}}
+.vsl span[data-svc]{cursor:pointer}.vsl span[data-svc]:hover{outline:1px solid var(--accent)}.vsl span.on{outline:2px solid var(--accent)}
+.svg{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}.svhead{display:flex;gap:8px;align-items:center;margin-bottom:8px}.svhead .b{margin-left:auto}
 .greel{max-width:760px}.greel video{width:100%;border-radius:8px;background:#000;display:block}
 .greel .gcvk{font-size:20px}.greel .gfsb{bottom:56px}.gcvw.greel:fullscreen .gfsb,.gcvw.greel.gfs .gfsb{bottom:76px}
 .greel .gcvname{display:block;position:absolute;right:10px;top:8px;color:#fff;font-weight:700;font-size:14px;text-shadow:0 0 6px #000;max-width:60%;text-align:right}
@@ -1213,6 +1215,9 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Totes": ["Todas", "All"], "Tancar": ["Cerrar", "Close"], "Cap partida.": ["Ninguna partida.", "No games."], "Llegint les partides de Riot…": ["Leyendo las partidas de Riot…", "Reading the games from Riot…"],
+  "Totes les partides amb {x}": ["Todas las partidas con {x}", "All games with {x}"], "{x} contra {y}": ["{x} contra {y}", "{x} vs {y}"], "Més partides ({n})": ["Más partidas ({n})", "More games ({n})"],
+  "De millor a pitjor (victòries menys derrotes). Toca'n un per veure les partides.": ["De mejor a peor (victorias menos derrotas). Toca uno para ver las partidas.", "Best to worst (wins minus losses). Tap one to see the games."],
   "Guardar només les bones (70 punts o més), totes les que hi hagi a cada partida": ["Guardar solo las buenas (70 puntos o más), todas las que haya en cada partida", "Keep only the good ones (70 points or more), however many each game has"],
   "es guarden totes": ["se guardan todas", "all are kept"], "només les de 70 o més, totes les de cada partida; les de 80 o més, per sempre": ["solo las de 70 o más, todas las de cada partida; las de 80 o más, para siempre", "only 70 or more, all of each game; 80 or more, for good"],
   "La teva jugada bona d'aquesta partida": ["Tu jugada buena de esta partida", "Your good play this game"], "Les teves {n} jugades bones d'aquesta partida": ["Tus {n} jugadas buenas de esta partida", "Your {n} good plays this game"],
@@ -4923,6 +4928,20 @@ async function loadSeason(sync){
   seasonTimer = setTimeout(() => loadSeason(false), r.busy || !r.synced ? 3000 : 60000);
 }
 $("#seasonBody").addEventListener("click", e => {
+  const ch = e.target.closest("[data-svc]");
+  if (ch) { const same = sv && sv.champ === ch.dataset.svc && sv.vs === ch.dataset.svv; sv = same ? null : {champ: ch.dataset.svc, vs: ch.dataset.svv, data: [], total: null, start: 0}; if (sv) svLoad(false); else loadSeason(false); return; }
+  if (e.target.closest("[data-svclose]")) { sv = null; loadSeason(false); return; }
+  if (e.target.closest("[data-svmore]")) { svLoad(true); return; }
+  const card = e.target.closest(".svg .mh");
+  if (card) {
+    if (e.target.closest("a")) return;
+    const id = card.dataset.id; mhOpen.has(id) ? mhOpen.delete(id) : mhOpen.add(id); loadSeason(false);
+    const m = sv?.data.find(x => x.id === id);
+    if (mhOpen.has(id) && m && !m.ranks && !m.ranksLoading) { m.ranksLoading = true;
+      fetch("/api/matches/ranks?id=" + encodeURIComponent(id), {cache: "no-store"}).then(r => r.json()).then(r => { if (r.board) { Object.assign(m, r); loadSeason(false); } }).catch(() => {}).finally(() => { m.ranksLoading = false; }); }
+    return;
+  }
+  if (e.target.closest(".vsrow")) return;
   const tr = e.target.closest("tr.cl"); if (!tr) return;
   const c = tr.dataset.ch; seasonOpen.has(c) ? seasonOpen.delete(c) : seasonOpen.add(c);
   loadSeason(false);
@@ -4931,10 +4950,31 @@ $("#seasonBody").addEventListener("click", e => {
 function vsRow(c){
   // best to worst: wins minus losses, then win rate, then games
   const sorted = c.vs.slice().sort((x, y) => (y.wins - y.losses) - (x.wins - x.losses) || y.wins / y.games - x.wins / x.games || y.games - x.games);
-  const list = sorted.map(o => { const wr = Math.round(100 * o.wins / o.games);
-    return `<span title="${o.wins}V ${o.losses}D"><img src="${champImg(o.champ)}" alt="" onerror="this.style.visibility='hidden'"><i data-noi18n>${esc(o.name)}</i> <b class="${o.games >= 2 ? (wr >= 50 ? "good" : "bad") : ""}">${o.wins}–${o.losses}</b></span>`; }).join("");
-  const more = `<span class="note">De millor a pitjor (victòries menys derrotes)</span>`;
-  return `<tr class="vsrow"><td colspan="6"><div class="vsl">${list}${more}</div></td></tr>`;
+  const on = o => sv && sv.champ === c.champ && sv.vs === o;
+  const all = `<span class="svall${on("") ? " on" : ""}" data-svc="${esc(c.champ)}" data-svv="" title="Totes les partides amb ${esc(c.name)}"><b>Totes</b> <b>${c.wins}–${c.losses}</b></span>`;
+  const list = all + sorted.map(o => { const wr = Math.round(100 * o.wins / o.games);
+    return `<span class="${on(o.champ) ? "on" : ""}" data-svc="${esc(c.champ)}" data-svv="${esc(o.champ)}" title="${o.wins}V ${o.losses}D · toca per veure les partides"><img src="${champImg(o.champ)}" alt="" onerror="this.style.visibility='hidden'"><i data-noi18n>${esc(o.name)}</i> <b class="${o.games >= 2 ? (wr >= 50 ? "good" : "bad") : ""}">${o.wins}–${o.losses}</b></span>`; }).join("");
+  const more = `<span class="note">De millor a pitjor (victòries menys derrotes). Toca'n un per veure les partides.</span>`;
+  return `<tr class="vsrow"><td colspan="6"><div class="vsl">${list}${more}</div>${sv && sv.champ === c.champ ? svGames() : ""}</td></tr>`;
+}
+// the games behind a record: one champion (against one opponent, or all), as in the History tab, from Riot
+let sv = null;   // {champ, vs, data: [], total, start, loading, err}
+function svGames(){
+  const head = `<div class="svhead"><b>${sv.vs ? `${esc(displayChamp(sv.champ))} contra ${esc(displayChamp(sv.vs))}` : `Totes les partides amb ${esc(displayChamp(sv.champ))}`}</b>${sv.total != null ? ` <span class="note">${sv.total} ${sv.total === 1 ? "partida" : "partides"}</span>` : ""}<button class="b small" type="button" data-svclose>Tancar</button></div>`;
+  if (sv.err) return `<div class="svg">${head}<p class="note warn">${esc(sv.err === "no_key" ? "Cal la clau de Riot (Ajustos)." : sv.err)}</p></div>`;
+  const cards = sv.data.map(mhCard).join("");
+  const more = sv.total != null && sv.data.length < sv.total ? `<button class="b small" type="button" data-svmore ${sv.loading ? "disabled" : ""}>Més partides (${sv.total - sv.data.length})</button>` : "";
+  return `<div class="svg">${head}${cards || (sv.loading ? `<p class="note">Llegint les partides de Riot…</p>` : `<p class="note">Cap partida.</p>`)}${more}</div>`;
+}
+async function svLoad(more){
+  if (!sv || sv.loading) return;
+  sv.loading = true; if (!more) { sv.data = []; sv.start = 0; } loadSeason(false);
+  const qid = seasonQueue === "RANKED_FLEX_SR" ? 440 : 420, me = sv;
+  let r; try { r = await (await fetch(`/api/matches?champ=${encodeURIComponent(sv.champ)}&vs=${encodeURIComponent(sv.vs)}&queue=${qid}&start=${sv.start}&count=10`, {cache: "no-store"})).json(); } catch (e) { r = {error: "connexió"}; }
+  if (sv !== me) return;
+  sv.loading = false;
+  if (r.error) sv.err = r.error; else { sv.data.push(...(r.matches || [])); sv.total = r.total; sv.start += 10; }
+  loadSeason(false);
 }
 // season record of one of my champions against one lane opponent (names as the client gives them)
 function seasonVs(mine, opp){

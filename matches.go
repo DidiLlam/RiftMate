@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -59,6 +60,11 @@ func matchesJSON(start, count int) ([]byte, error) {
 	if err := riotGet(c, fmt.Sprintf("/lol/match/v5/matches/by-puuid/%s/ids?type=ranked&start=%d&count=%d", puuid, start, count), &ids); err != nil {
 		return nil, err
 	}
+	return matchesByIDs(c, id, puuid, ids, nil)
+}
+
+// matchesByIDs: these games as history cards (the ones not read yet, from Riot); extra goes into the answer
+func matchesByIDs(c Config, id, puuid string, ids []string, extra map[string]any) ([]byte, error) {
 	histMu.Lock()
 	defer histMu.Unlock()
 	cache := loadHist()
@@ -97,7 +103,44 @@ func matchesJSON(start, count int) ([]byte, error) {
 		}
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].End > out[j].End })
-	return json.Marshal(map[string]any{"matches": out, "riot_id": id, "platform": platformHost(c)})
+	res := map[string]any{"matches": out, "riot_id": id, "platform": platformHost(c)}
+	for k, v := range extra {
+		res[k] = v
+	}
+	return json.Marshal(res)
+}
+
+// champMatchesJSON: the season's games with one champion (and, if given, against one lane opponent), newest
+// first, from the season already read: /api/matches?champ=Leblanc&vs=Sylas&queue=420&start=0&count=10
+func champMatchesJSON(champ, vs string, queue, start, count int) ([]byte, error) {
+	c := loadConfig()
+	id := viewID()
+	if c.RiotKey == "" {
+		return nil, fmt.Errorf("no_key")
+	}
+	puuid, err := puuidFor(&c, id)
+	if err != nil {
+		return nil, err
+	}
+	sc := loadSeason()
+	type gm struct {
+		id  string
+		end int64
+	}
+	list := []gm{}
+	for mid, g := range sc.Games {
+		if g.Remake || !strings.EqualFold(g.Champ, champ) || (queue != 0 && g.Queue != queue) || (vs != "" && !strings.EqualFold(g.Opp, vs)) {
+			continue
+		}
+		list = append(list, gm{mid, g.End})
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].end > list[j].end })
+	total := len(list)
+	ids := []string{}
+	for i := start; i < total && i < start+count; i++ {
+		ids = append(ids, list[i].id)
+	}
+	return matchesByIDs(c, id, puuid, ids, map[string]any{"total": total, "start": start})
 }
 
 func matchesHandler(send func(http.ResponseWriter, int, string, []byte)) http.HandlerFunc {
@@ -107,7 +150,14 @@ func matchesHandler(send func(http.ResponseWriter, int, string, []byte)) http.Ha
 		if count <= 0 || count > 20 {
 			count = 10
 		}
-		b, err := matchesJSON(start, count)
+		var b []byte
+		var err error
+		if ch := req.URL.Query().Get("champ"); ch != "" {
+			q, _ := strconv.Atoi(req.URL.Query().Get("queue"))
+			b, err = champMatchesJSON(ch, req.URL.Query().Get("vs"), q, start, count)
+		} else {
+			b, err = matchesJSON(start, count)
+		}
 		if err != nil {
 			b, _ = json.Marshal(map[string]string{"error": err.Error()})
 		}
