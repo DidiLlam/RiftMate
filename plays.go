@@ -547,11 +547,23 @@ func playsScore(ps []*Play) {
 }
 
 // The bar for keeping a play: no fixed number per game. A game with six great plays keeps the six, and a game
-// whose best plays are poor keeps none. 80 or more: kept; under 80: deleted once the AI has scored it (an unscored
-// play waits for its score). "Keep the low ones" keeps them all.
+// whose best plays are poor keeps none. 80 or more: kept; under 80: deleted. A play the AI couldn't score yet
+// (no requests left, Gemini down) waits for its score only if it could reach 80 (a simple score of 60 or more,
+// e.g. a double kill alone) and for 3 days at most; it isn't shown until then. "Keep the low ones" keeps them all.
 const (
 	playKeepMin = 80
+	playWaitMin = 60
+	playWaitFor = 72 * time.Hour
 )
+
+// playWaiting: an unscored play that may still make the bar
+func playWaiting(p Play) bool {
+	if p.AI || p.Score < playWaitMin {
+		return false
+	}
+	fi, err := os.Stat(filepath.Join(playsRoot(), p.Stamp, p.File))
+	return err == nil && time.Since(fi.ModTime()) < playWaitFor
+}
 
 // playsAdd: into the index, then only the ones worth keeping stay
 func playsAdd(ps []*Play) {
@@ -574,7 +586,7 @@ func playsSelectLocked(all []Play) {
 	keepLow := plCfg.KeepLow
 	out, gone := []Play{}, 0
 	for _, p := range all {
-		if keepLow || !p.AI || p.Score >= playKeepMin {
+		if keepLow || p.Score >= playKeepMin || playWaiting(p) {
 			out = append(out, p)
 		} else {
 			os.Remove(filepath.Join(playsRoot(), p.Stamp, p.File))
@@ -705,6 +717,19 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			}
 			all = out
 		}
+		c := playsLoadCfg()
+		pending := 0
+		if !c.KeepLow { // only the ones over the bar are shown; the ones waiting for the AI, once scored
+			out := []Play{}
+			for _, p := range all {
+				if p.Score >= playKeepMin {
+					out = append(out, p)
+				} else {
+					pending++
+				}
+			}
+			all = out
+		}
 		if all == nil {
 			all = []Play{} // [] for the page, not null
 		}
@@ -716,8 +741,7 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			}
 			return nil
 		})
-		c := playsLoadCfg()
-		b, _ := json.Marshal(map[string]any{"dir_error": dirErr, "dir": c.Dir, "dir_now": playsRoot(), "gdrive": gdriveFolder(), "keep_low": c.KeepLow, "on": c.On, "supported": playsSupported, "encoder": c.Encoder, "state": st, "error": e, "plays": all, "mb": size >> 20})
+		b, _ := json.Marshal(map[string]any{"pending": pending, "dir_error": dirErr, "dir": c.Dir, "dir_now": playsRoot(), "gdrive": gdriveFolder(), "keep_low": c.KeepLow, "on": c.On, "supported": playsSupported, "encoder": c.Encoder, "state": st, "error": e, "plays": all, "mb": size >> 20})
 		send(w, 200, "application/json", b)
 	}
 }
