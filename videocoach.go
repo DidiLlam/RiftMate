@@ -282,7 +282,7 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 	body, _ := json.Marshal(map[string]any{
 		"systemInstruction": map[string]any{"parts": []map[string]string{{"text": map[bool]string{true: vcCleanSystem, false: vcSystem}[clean != ""]}}},
 		"contents":          []map[string]any{{"role": "user", "parts": []map[string]string{{"text": sb.String()}}}},
-		"generationConfig":  map[string]any{"maxOutputTokens": 2000, "temperature": 0.4, "responseMimeType": "application/json"},
+		"generationConfig":  map[string]any{"maxOutputTokens": 8192, "temperature": 0.4, "responseMimeType": "application/json"},
 	})
 	if _, err := pickGeminiModel(c.AIKey); err != nil {
 		return vcResult{}, err
@@ -308,16 +308,32 @@ func vcAsk(rec *Record, report map[string]any, deaths []vcDeath, info []DeathInf
 	var last error
 	for _, model := range order {
 		t0 := time.Now()
-		req, _ := http.NewRequest("POST", gemBase()+"/v1beta/models/"+model+":generateContent", bytes.NewReader(body))
-		req.Header.Set("x-goog-api-key", c.AIKey)
-		req.Header.Set("content-type", "application/json")
-		r, err := vcHTTP.Do(req)
+		// "high demand" (5xx) passes in a few seconds: the same model again, twice, before the next one
+		var r *http.Response
+		var raw []byte
+		var err error
+		for try := 0; try < 3; try++ {
+			if try > 0 {
+				time.Sleep(time.Duration(5*try) * time.Second)
+			}
+			req, _ := http.NewRequest("POST", gemBase()+"/v1beta/models/"+model+":generateContent", bytes.NewReader(body))
+			req.Header.Set("x-goog-api-key", c.AIKey)
+			req.Header.Set("content-type", "application/json")
+			r, err = vcHTTP.Do(req)
+			if err != nil {
+				continue
+			}
+			raw, _ = io.ReadAll(io.LimitReader(r.Body, 2<<20))
+			r.Body.Close()
+			if r.StatusCode < 500 {
+				break
+			}
+			logf("Coach de morts: %s HTTP %d, ho torno a provar", model, r.StatusCode)
+		}
 		if err != nil {
 			last = err
 			continue
 		}
-		raw, _ := io.ReadAll(io.LimitReader(r.Body, 2<<20))
-		r.Body.Close()
 		if r.StatusCode == 429 {
 			if strings.Contains(string(raw), "PerDay") {
 				gemMu.Lock()
