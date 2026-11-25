@@ -1,7 +1,7 @@
 {
- "version": "2.8.9",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.9.exe",
- "size": 10366464,
- "sha256": "9e3c82c563c1b0b42ef8c33a903939f5bbf9e89a9e951df02b10d2e2e6dcd67e",
- "notes": "- Coach de morts: si la IA està saturada (error 503) ho torna a provar uns segons després; més marge perquè la resposta no quedi tallada"
+ "version": "2.9.0",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.0.exe",
+ "size": 10365440,
+ "sha256": "9ef5aa9222f4bbf2cbe29ecde78a7439830bdd772a1f5b2a933b933496642238",
+ "notes": "- Jugades: només es guarden les de 80 punts o més\n- Les de 70 a 79 que ja tenies s'esborren en obrir l'app"
 }
