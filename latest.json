@@ -1,7 +1,7 @@
 {
- "version": "2.9.0",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.0.exe",
- "size": 10365440,
- "sha256": "9ef5aa9222f4bbf2cbe29ecde78a7439830bdd772a1f5b2a933b933496642238",
- "notes": "- Jugades: només es guarden les de 80 punts o més\n- Les de 70 a 79 que ja tenies s'esborren en obrir l'app"
+ "version": "2.9.1",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.1.exe",
+ "size": 10368512,
+ "sha256": "7e83d3bb95986faad3eec9e23dc4d6e9e4b4841409fe53ee5a100d361fd873e4",
+ "notes": "- Jugades: les de menys de 80 ja no es mostren ni es guarden, tampoc les que la IA no havia pogut puntuar\n- Les que esperen la nota de la IA només es guarden si poden arribar a 80, i com a molt 3 dies"
 }
