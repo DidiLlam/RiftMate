@@ -25,7 +25,7 @@ import (
 type playCfg struct {
 	On      bool   `json:"on"`
 	Encoder string `json:"encoder,omitempty"`  // the one that worked on this PC
-	KeepLow bool   `json:"keep_low,omitempty"` // don't delete the ones under 60 after 3 hours
+	KeepLow bool   `json:"keep_low,omitempty"` // keep every play, even under the bar (70)
 	Dir     string `json:"dir,omitempty"`      // where the videos go (e.g. a Google Drive folder); "" = the app's own folder
 }
 
@@ -466,9 +466,7 @@ func playsRescore() {
 			}
 		}
 	}
-	if b, err := json.MarshalIndent(cur, "", " "); err == nil {
-		os.WriteFile(playsIndex(), b, 0o644)
-	}
+	playsSelectLocked(cur) // scored now: the ones under the bar go
 	logf("Jugades: la IA ha puntuat %d jugades que tenia pendents", changed)
 }
 
@@ -548,8 +546,16 @@ func playsScore(ps []*Play) {
 	logf("Jugades: %s ha puntuat %d jugades", model, len(ans.Plays))
 }
 
-// playsAdd: into the index; only the clips worth keeping stay on disk: those scored 80 or more, for good, and the 3
-// best of each of the last 10 games (so the report shows them); the rest are deleted
+// The bar for keeping a play: no fixed number per game. A game with six great plays keeps the six, and a game
+// whose best plays are poor keeps none. 80 or more: kept for good; 70 to 79: kept for the last 20 games; under
+// 70: deleted once the AI has scored it (an unscored play waits for its score). "Keep the low ones" keeps them all.
+const (
+	playKeepMin   = 70
+	playKeepGood  = 80
+	playKeepGames = 20
+)
+
+// playsAdd: into the index, then only the ones worth keeping stay
 func playsAdd(ps []*Play) {
 	plMu.Lock()
 	defer plMu.Unlock()
@@ -557,37 +563,43 @@ func playsAdd(ps []*Play) {
 	for _, p := range ps {
 		all = append(all, *p)
 	}
-	byGame := map[string][]int{}
-	for i, p := range all {
-		byGame[p.Stamp] = append(byGame[p.Stamp], i)
+	playsSelectLocked(all)
+}
+
+func playsSelectLocked(all []Play) {
+	if !plCfgRead {
+		plCfgRead = true
+		if b, err := os.ReadFile(playsCfgFile()); err == nil {
+			json.Unmarshal(b, &plCfg)
+		}
 	}
+	keepLow := plCfg.KeepLow
 	games := []string{}
-	for g := range byGame {
-		games = append(games, g)
+	seen := map[string]bool{}
+	for _, p := range all {
+		if !seen[p.Stamp] {
+			seen[p.Stamp] = true
+			games = append(games, p.Stamp)
+		}
 	}
 	sort.Sort(sort.Reverse(sort.StringSlice(games)))
-	keep := map[int]bool{}
-	for gi, g := range games {
-		idx := byGame[g]
-		sort.Slice(idx, func(a, b int) bool { return all[idx[a]].Score > all[idx[b]].Score })
-		for k, i := range idx {
-			if gi < 10 && k < 3 {
-				keep[i] = true
-			}
+	recent := map[string]bool{}
+	for i, g := range games {
+		if i < playKeepGames {
+			recent[g] = true
 		}
 	}
-	for i, p := range all { // 80 or more: kept for good
-		if p.Score >= 80 {
-			keep[i] = true
-		}
-	}
-	out := []Play{}
-	for i, p := range all {
-		if keep[i] {
+	out, gone := []Play{}, 0
+	for _, p := range all {
+		if keepLow || !p.AI || p.Score >= playKeepGood || (p.Score >= playKeepMin && recent[p.Stamp]) {
 			out = append(out, p)
 		} else {
 			os.Remove(filepath.Join(playsRoot(), p.Stamp, p.File))
+			gone++
 		}
+	}
+	if gone > 0 {
+		logf("Jugades: %d per sota de %d punts no es guarden", gone, playKeepMin)
 	}
 	if b, err := json.MarshalIndent(out, "", " "); err == nil {
 		os.MkdirAll(playsLocalRoot(), 0o755)
