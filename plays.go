@@ -25,7 +25,7 @@ import (
 type playCfg struct {
 	On      bool   `json:"on"`
 	Encoder string `json:"encoder,omitempty"`  // the one that worked on this PC
-	KeepLow bool   `json:"keep_low,omitempty"` // keep every play, even under the bar (70)
+	KeepLow bool   `json:"keep_low,omitempty"` // keep every play, even under the bar (80)
 	Dir     string `json:"dir,omitempty"`      // where the videos go (e.g. a Google Drive folder); "" = the app's own folder
 }
 
@@ -547,12 +547,10 @@ func playsScore(ps []*Play) {
 }
 
 // The bar for keeping a play: no fixed number per game. A game with six great plays keeps the six, and a game
-// whose best plays are poor keeps none. 80 or more: kept for good; 70 to 79: kept for the last 20 games; under
-// 70: deleted once the AI has scored it (an unscored play waits for its score). "Keep the low ones" keeps them all.
+// whose best plays are poor keeps none. 80 or more: kept; under 80: deleted once the AI has scored it (an unscored
+// play waits for its score). "Keep the low ones" keeps them all.
 const (
-	playKeepMin   = 70
-	playKeepGood  = 80
-	playKeepGames = 20
+	playKeepMin = 80
 )
 
 // playsAdd: into the index, then only the ones worth keeping stay
@@ -574,24 +572,9 @@ func playsSelectLocked(all []Play) {
 		}
 	}
 	keepLow := plCfg.KeepLow
-	games := []string{}
-	seen := map[string]bool{}
-	for _, p := range all {
-		if !seen[p.Stamp] {
-			seen[p.Stamp] = true
-			games = append(games, p.Stamp)
-		}
-	}
-	sort.Sort(sort.Reverse(sort.StringSlice(games)))
-	recent := map[string]bool{}
-	for i, g := range games {
-		if i < playKeepGames {
-			recent[g] = true
-		}
-	}
 	out, gone := []Play{}, 0
 	for _, p := range all {
-		if keepLow || !p.AI || p.Score >= playKeepGood || (p.Score >= playKeepMin && recent[p.Stamp]) {
+		if keepLow || !p.AI || p.Score >= playKeepMin {
 			out = append(out, p)
 		} else {
 			os.Remove(filepath.Join(playsRoot(), p.Stamp, p.File))

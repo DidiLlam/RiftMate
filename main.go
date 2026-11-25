@@ -30,7 +30,7 @@ var welcomeJPG []byte
 const (
 	appName = "RiftMate"
 	oldName = "LoL Temporitzador" // name of the first versions (data is migrated)
-	version = "2.8.9"
+	version = "2.9.0"
 	port    = 8765
 	liveURL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 )
@@ -666,7 +666,13 @@ func main() {
 	go func() {
 		time.Sleep(5 * time.Second)
 		fixUnknownResults()
-		seasonSync()                                             // season win rate per champion: first time reads the whole season, then only new games
+		seasonSync() // season win rate per champion: first time reads the whole season, then only new games
+		go func() {  // plays kept under an older, lower bar go away
+			time.Sleep(20 * time.Second)
+			plMu.Lock()
+			playsSelectLocked(playsReadLocked())
+			plMu.Unlock()
+		}()
 		go studyLoop()                                           // your macro mistakes, to the study page on your phone
 		go func() { time.Sleep(2 * time.Minute); benchAuto() }() // Challenger games of your champions, in the background
 	}()

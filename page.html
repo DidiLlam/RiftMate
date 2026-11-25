@@ -566,7 +566,7 @@ button.face.sel .pic{box-shadow:0 0 0 3px var(--red)}
   <section class="card" data-g="partida" id="playsCard"><h2>Clips de les teves millors jugades <span class="pill">prova</span></h2>
     <label class="ph-item" for="cPlays"><input type="checkbox" id="cPlays"><span>Gravar les jugades: quan mates algú, fas una doble o robes un objectiu, l'app en guarda un clip de pocs segons. Després de la partida la IA els puntua i a l'informe hi surt el teu top 3. També grava les teves morts, per veure-les a "Per què has mort" (s'esborren 30 minuts després de la partida).</span></label>
     <p class="note">Grava amb la targeta gràfica (NVIDIA, AMD o Intel), com Outplayed o Medal; el primer cop descarrega ffmpeg (uns 80 MB). Pot costar una mica d'FPS: compara-ho amb el comptador del joc. Necessita el LoL en "Sense vores". Porten només el so del joc (ni el Discord ni la veu del coach); també hi surt l'overlay.</p>
-    <label class="ph-item" for="cPlaysLow"><input type="checkbox" id="cPlaysLow" checked><span>Guardar només les bones (70 punts o més), totes les que hi hagi a cada partida</span></label>
+    <label class="ph-item" for="cPlaysLow"><input type="checkbox" id="cPlaysLow" checked><span>Guardar només les bones (80 punts o més)</span></label>
     <label class="ph-item" for="cPlaysDrive"><input type="checkbox" id="cPlaysDrive"><span>Guardar els vídeos a Google Drive (a la carpeta "RiftMate clips"), en lloc de l'ordinador</span></label>
     <p class="note" id="playsDir"></p>
     <p class="note" id="playsState"></p></section>
@@ -1218,8 +1218,8 @@ const I18N = {
   "Totes": ["Todas", "All"], "Tancar": ["Cerrar", "Close"], "Cap partida.": ["Ninguna partida.", "No games."], "Llegint les partides de Riot…": ["Leyendo las partidas de Riot…", "Reading the games from Riot…"],
   "Totes les partides amb {x}": ["Todas las partidas con {x}", "All games with {x}"], "{x} contra {y}": ["{x} contra {y}", "{x} vs {y}"], "Més partides ({n})": ["Más partidas ({n})", "More games ({n})"],
   "De millor a pitjor (victòries menys derrotes). Toca'n un per veure les partides.": ["De mejor a peor (victorias menos derrotas). Toca uno para ver las partidas.", "Best to worst (wins minus losses). Tap one to see the games."],
-  "Guardar només les bones (70 punts o més), totes les que hi hagi a cada partida": ["Guardar solo las buenas (70 puntos o más), todas las que haya en cada partida", "Keep only the good ones (70 points or more), however many each game has"],
-  "es guarden totes": ["se guardan todas", "all are kept"], "només les de 70 o més, totes les de cada partida; les de 80 o més, per sempre": ["solo las de 70 o más, todas las de cada partida; las de 80 o más, para siempre", "only 70 or more, all of each game; 80 or more, for good"],
+  "Guardar només les bones (80 punts o més)": ["Guardar solo las buenas (80 puntos o más)", "Keep only the good ones (80 points or more)"],
+  "es guarden totes": ["se guardan todas", "all are kept"], "només les de 80 o més": ["solo las de 80 o más", "only 80 or more"],
   "La teva jugada bona d'aquesta partida": ["Tu jugada buena de esta partida", "Your good play this game"], "Les teves {n} jugades bones d'aquesta partida": ["Tus {n} jugadas buenas de esta partida", "Your {n} good plays this game"],
   "Actualitzant…": ["Actualizando…", "Updating…"], "Actualitzat": ["Actualizado", "Updated"],
   "Actualitza-ho tot: rang, LP, temporada, historial i informes (si has jugat sense RiftMate obert)": ["Actualízalo todo: rango, LP, temporada, historial e informes (si has jugado sin RiftMate abierto)", "Update everything: rank, LP, season, history and reports (if you played without RiftMate open)"],
@@ -2432,7 +2432,7 @@ async function renderPlays(r){
   const el = $("#playsTop"); if (!el || !r?.date) return;
   let st = null; try { st = await (await fetch("/api/plays", {cache: "no-store"})).json(); } catch (e) { return; }
   if (!st?.plays?.length) { el.innerHTML = ""; return; }
-  // every play of this game that passed the bar (70 or more), however many: none if none was good
+  // every play of this game that passed the bar (80 or more), however many: none if none was good
   const mine = st.plays.filter(p => p.stamp === playStamp(r.date)).sort((a, b) => b.score - a.score);
   el.innerHTML = mine.length ? `<section class="card"><h2>${mine.length === 1 ? "La teva jugada bona d'aquesta partida" : `Les teves ${mine.length} jugades bones d'aquesta partida`}</h2><div class="plays">${mine.map(p => playItem(p)).join("")}</div>
     <div class="bar"><button class="b" type="button" data-goplays>Veure el rànquing de totes les jugades</button></div></section>` : "";
@@ -2451,7 +2451,7 @@ async function renderPlaysTab(){
   const champs = [...new Set((st.plays || []).map(p => p.champ).filter(Boolean))];
   const off = !st.on ? `<p class="note">Els clips estan desactivats. Activa'ls a Ajustos → En partida → "Clips de les teves millors jugades" <button class="b" type="button" data-goset>Anar-hi</button></p>` : "";
   el.innerHTML = `<section class="card"><h2>Rànquing de les teves jugades</h2>${off}
-    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · ${st.keep_low ? "es guarden totes" : "només les de 70 o més, totes les de cada partida; les de 80 o més, per sempre"}</span><button class="b small" type="button" data-pdel="*">Esborrar-les totes</button><label class="note autonext"><input type="checkbox" class="autoNextCb"${autoNext ? " checked" : ""}> Una darrere l'altra</label>${myNew(st.plays).length ? `<button class="b small" type="button" id="myAllSeen">Marcar-les totes com a vistes (${myNew(st.plays).length})</button>` : ""}</div>
+    ${(st.plays || []).length ? `<div class="bar"><select id="playsF" aria-label="Filtre"><option value="all">Totes</option><option value="week">Aquesta setmana</option>${champs.map(c => `<option value="${esc(c)}">${esc(displayChamp(c))}</option>`).join("")}</select><span class="note">${(st.plays || []).length} jugades guardades · ${st.mb} MB al teu ordinador · ${st.keep_low ? "es guarden totes" : "només les de 80 o més"}</span><button class="b small" type="button" data-pdel="*">Esborrar-les totes</button><label class="note autonext"><input type="checkbox" class="autoNextCb"${autoNext ? " checked" : ""}> Una darrere l'altra</label>${myNew(st.plays).length ? `<button class="b small" type="button" id="myAllSeen">Marcar-les totes com a vistes (${myNew(st.plays).length})</button>` : ""}</div>
     <div class="plays">${list.map((p, k) => playItem(p, k + 1, !mySeen.has(`${p.stamp}:${p.n}`))).join("") || `<p class="note">Cap jugada amb aquest filtre.</p>`}</div>`
     : (st.on ? `<p class="note">Encara no hi ha cap jugada. Quan facis una kill, una doble o robis un objectiu, sortirà aquí després de la partida.</p>` : "")}</section>`;
   myPlaysCache = st.plays || [];
