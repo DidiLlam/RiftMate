@@ -1,7 +1,7 @@
 {
- "version": "2.8.8",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.8.exe",
- "size": 10365952,
- "sha256": "9b616ddbf2e20d8666ddee45cd217db41b73d27eb213666b9081947d4ce31f53",
- "notes": "- Selecció de campions: ja no et recomana un campió que ja ha triat algú (el rival, un company) o que està banejat"
+ "version": "2.8.9",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.8.9.exe",
+ "size": 10366464,
+ "sha256": "9e3c82c563c1b0b42ef8c33a903939f5bbf9e89a9e951df02b10d2e2e6dcd67e",
+ "notes": "- Coach de morts: si la IA està saturada (error 503) ho torna a provar uns segons després; més marge perquè la resposta no quedi tallada"
 }
