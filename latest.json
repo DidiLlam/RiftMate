@@ -1,7 +1,7 @@
 {
- "version": "2.9.3",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.3.exe",
- "size": 10383872,
- "sha256": "273444b24329bef9d15061060771ba4417948849df0e1af8f70a8bf0ae22d874",
- "notes": "- Pla de línia: sense pla quan és el mateix campió (a ranked no passa)"
+ "version": "2.9.4",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.4.exe",
+ "size": 10384384,
+ "sha256": "4442ade8658185d8e087b1dc80794beb52f994f34216bfe8a550752d49cae547",
+ "notes": "- MMR: la previsió de la propera partida fa servir els LP de l'última victòria i l'última derrota, no la mitjana de 20 partides"
 }
