@@ -1,7 +1,7 @@
 {
- "version": "2.9.2",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.2.exe",
+ "version": "2.9.3",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.3.exe",
  "size": 10383872,
- "sha256": "fb04a9139d5ee4fc71af81daa3b738e8d5c6e6602d650351e36e60e330248ee3",
- "notes": "- Pla de línia: en començar la partida, el coach et diu quin és el pla (iniciació, desgast, aguantar o roam) segons el teu campió i el del rival"
+ "sha256": "273444b24329bef9d15061060771ba4417948849df0e1af8f70a8bf0ae22d874",
+ "notes": "- Pla de línia: sense pla quan és el mateix campió (a ranked no passa)"
 }
