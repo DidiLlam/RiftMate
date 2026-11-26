@@ -644,6 +644,33 @@ func playsHandler(send func(http.ResponseWriter, int, string, []byte)) http.Hand
 			http.ServeFile(w, req, filepath.Join(playsRoot(), g, f))
 			return
 		}
+		if req.Method == http.MethodPost && (q.Get("copy") != "" || q.Get("show") != "") { // share a play: copy the video, or show it in its folder
+			id := q.Get("copy") + q.Get("show")
+			var file string
+			plMu.Lock()
+			for _, p := range playsReadLocked() {
+				if fmt.Sprintf("%s:%d", p.Stamp, p.N) == id {
+					file = filepath.Join(playsRoot(), p.Stamp, p.File)
+				}
+			}
+			plMu.Unlock()
+			res := map[string]any{"ok": false}
+			if _, err := os.Stat(file); file == "" || err != nil {
+				res["error"] = "no trobo el vídeo"
+			} else if q.Get("show") != "" {
+				openFolder(file)
+				res["ok"] = true
+			} else if err := playCopy(file); err != nil {
+				logf("Jugades: no s'ha pogut copiar %s: %v", file, err)
+				res["error"] = "no s'ha pogut copiar"
+			} else {
+				res["ok"] = true
+				logf("Jugades: vídeo copiat per compartir (%s)", filepath.Base(file))
+			}
+			b, _ := json.Marshal(res)
+			send(w, 200, "application/json", b)
+			return
+		}
 		if req.Method == http.MethodPost && q.Get("delmort") != "" { // death clips of a game: one file, or "*" for all
 			g, f := q.Get("g"), q.Get("delmort")
 			n := 0

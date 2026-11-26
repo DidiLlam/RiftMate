@@ -329,3 +329,13 @@ func rankPreview(src, dst string) error {
 	}
 	return nil
 }
+
+// playCopy: the clip onto the clipboard as a file, to paste it (Ctrl+V) in a WhatsApp or Discord chat
+func playCopy(path string) error {
+	lit := strings.ReplaceAll(path, "'", "''")
+	out, err := hidden("powershell", "-NoProfile", "-NonInteractive", "-Command", "Set-Clipboard -LiteralPath '"+lit+"'").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%v %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}

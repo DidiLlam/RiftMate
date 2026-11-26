@@ -1217,6 +1217,8 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "Compartir": ["Compartir", "Share"], "Carpeta": ["Carpeta", "Folder"],
+  "vídeo copiat: obre el xat a WhatsApp o Discord i enganxa'l amb Ctrl+V": ["vídeo copiado: abre el chat en WhatsApp o Discord y pégalo con Ctrl+V", "video copied: open the chat in WhatsApp or Discord and paste it with Ctrl+V"],
   "farm per minut": ["farm por minuto", "CS per minute"], "millor partida": ["mejor partida", "best game"],
   "Ell et vol desgastar de lluny. Aguanta amb l'onada a prop de la teva torre i, quan falli o gasti l'habilitat principal, entra amb tot, sobretot a partir del 6.": ["Te quiere desgastar de lejos. Aguanta con la oleada cerca de tu torre y, cuando falle o gaste su habilidad principal, entra con todo, sobre todo a partir del 6.", "He wants to poke you from range. Hold with the wave near your tower and, when he misses or uses his main ability, go all in, especially from level 6."],
   "Té control per aturar-te. Abans del 6, trades curts; entra amb tot quan hagi gastat o fallat el control.": ["Tiene control para pararte. Antes del 6, trades cortos; entra con todo cuando haya gastado o fallado el control.", "He has crowd control to stop you. Before 6, short trades; go all in once he has used or missed it."],
@@ -2451,8 +2453,17 @@ function playItem(p, rank, isNew){
   return `<div class="play${isNew ? " isnew" : ""}" data-pid="${esc(p.stamp)}:${p.n}"><video class="lazyv" controls preload="none" data-src="${playVideo(p)}"></video>
     <div class="playtxt"><div><span class="pscore">${p.score}</span>${rank ? `<span class="note">#${rank}</span> ` : ""}<b>${esc(p.title || "")}</b>${isNew ? `<span class="bpnew">NEW</span>` : ""}</div>
     <div class="note">${esc(displayChamp(p.champ || ""))} · minut ${mm(p.t)}${rank ? ` · ${esc(p.date || "")}` : ""}</div>${p.why ? `<div>${esc(p.why)}</div>` : ""}
-    <div><button class="b small" type="button" data-pdel="${esc(p.stamp)}:${p.n}">Esborrar</button></div></div></div>`;
+    <div><button class="b small" type="button" data-pshare="${esc(p.stamp)}:${p.n}" title="Copia el vídeo: enganxa'l a WhatsApp o Discord amb Ctrl+V">Compartir</button> <button class="b small" type="button" data-pshow="${esc(p.stamp)}:${p.n}" title="Obre la carpeta amb el vídeo">Carpeta</button> <button class="b small" type="button" data-pdel="${esc(p.stamp)}:${p.n}">Esborrar</button></div></div></div>`;
 }
+// share a play: the video onto the clipboard (as a file), to paste it in a chat; or its folder
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-pshare],[data-pshow]"); if (!b) return;
+  const copy = !!b.dataset.pshare, id = b.dataset.pshare || b.dataset.pshow;
+  let st = {ok: false};
+  try { st = await (await fetch(`/api/plays?${copy ? "copy" : "show"}=${encodeURIComponent(id)}`, {method: "POST"})).json(); } catch (err) {}
+  if (!copy) { if (!st.ok) watchShow({ok: false, pre: "Compartir", text: st.error || "l'app no respon"}); return; }
+  watchShow(st.ok ? {ok: true, pre: "Compartir", text: "vídeo copiat: obre el xat a WhatsApp o Discord i enganxa'l amb Ctrl+V"} : {ok: false, pre: "Compartir", text: st.error === "no s'ha pogut copiar" ? "no s'ha pogut copiar. Fes servir el botó Carpeta i arrossega el vídeo al xat" : (st.error || "l'app no respon")});
+});
 // the videos of your deaths (recorded while you played; kept 30 minutes after the game) under each death
 async function fillDeathClips(r){
   const slots = document.querySelectorAll("#report .dclip"); if (!slots.length) return;
