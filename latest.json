@@ -1,7 +1,7 @@
 {
- "version": "2.9.6",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.6.exe",
- "size": 10385920,
- "sha256": "c7e252336d296e54c9e68103202c4fb77b8da74615599680bfd92faf2b478d7b",
- "notes": "- Imatge del dia de ranked: K/D/A de cada partida i, a la dreta, K/D/A total, farm per minut, participació i la millor partida"
+ "version": "2.9.7",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.7.exe",
+ "size": 10393600,
+ "sha256": "8688a8741617e205171df7bb6059afe56f6a3546c510aee60c20c55a8e0bb50b",
+ "notes": "- Jugades: botó Compartir (copia el vídeo per enganxar-lo a WhatsApp o Discord amb Ctrl+V) i botó Carpeta"
 }
