@@ -1,7 +1,7 @@
 {
- "version": "2.9.5",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.5.exe",
- "size": 10384384,
- "sha256": "932786bce442da8fccd9ead2b98e540635abaa692378b0b1cd42ce4788ed965c",
- "notes": "- MMR: el rang de la gent de les partides només compta de les últimes 20 (abans podien ser partides velles i l'estimació no es movia)\n- Diu de quan és l'última partida amb aquestes dades"
+ "version": "2.9.6",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.6.exe",
+ "size": 10385920,
+ "sha256": "c7e252336d296e54c9e68103202c4fb77b8da74615599680bfd92faf2b478d7b",
+ "notes": "- Imatge del dia de ranked: K/D/A de cada partida i, a la dreta, K/D/A total, farm per minut, participació i la millor partida"
 }
