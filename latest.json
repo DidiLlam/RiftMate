@@ -1,7 +1,7 @@
 {
- "version": "2.9.4",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.4.exe",
+ "version": "2.9.5",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.5.exe",
  "size": 10384384,
- "sha256": "4442ade8658185d8e087b1dc80794beb52f994f34216bfe8a550752d49cae547",
- "notes": "- MMR: la previsió de la propera partida fa servir els LP de l'última victòria i l'última derrota, no la mitjana de 20 partides"
+ "sha256": "932786bce442da8fccd9ead2b98e540635abaa692378b0b1cd42ce4788ed965c",
+ "notes": "- MMR: el rang de la gent de les partides només compta de les últimes 20 (abans podien ser partides velles i l'estimació no es movia)\n- Diu de quan és l'última partida amb aquestes dades"
 }
