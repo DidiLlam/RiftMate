@@ -1217,6 +1217,7 @@ const I18N = {
   "Encara no hi ha partides classificatòries aquesta temporada.": ["Todavía no hay partidas clasificatorias esta temporada.", "No ranked games this season yet."],
   "Preparant la lectura de la temporada…": ["Preparando la lectura de la temporada…", "Getting ready to read the season…"],
   "Actualitzar": ["Actualizar", "Refresh"],
+  "farm per minut": ["farm por minuto", "CS per minute"], "millor partida": ["mejor partida", "best game"],
   "Ell et vol desgastar de lluny. Aguanta amb l'onada a prop de la teva torre i, quan falli o gasti l'habilitat principal, entra amb tot, sobretot a partir del 6.": ["Te quiere desgastar de lejos. Aguanta con la oleada cerca de tu torre y, cuando falle o gaste su habilidad principal, entra con todo, sobre todo a partir del 6.", "He wants to poke you from range. Hold with the wave near your tower and, when he misses or uses his main ability, go all in, especially from level 6."],
   "Té control per aturar-te. Abans del 6, trades curts; entra amb tot quan hagi gastat o fallat el control.": ["Tiene control para pararte. Antes del 6, trades cortos; entra con todo cuando haya gastado o fallado el control.", "He has crowd control to stop you. Before 6, short trades; go all in once he has used or missed it."],
   "Duel d'assassins: guanya qui arriba primer al nivell 2, 3 i 6. Empeny la primera onada i no entris mai amb menys nivell que ell.": ["Duelo de asesinos: gana quien llega antes al nivel 2, 3 y 6. Empuja la primera oleada y nunca entres con menos nivel que él.", "Assassin duel: whoever hits level 2, 3 and 6 first wins. Push the first wave and never go in a level behind."],
@@ -7967,11 +7968,25 @@ async function shareCard(kind){
       x.fillText(tr("El meu dia de ranked"), 88, 124);
       x.font = F(800, 96); x.fillStyle = "#e9efed"; x.fillText(`${day.w}V – ${day.l}D`, 60, 270);
       if (day.lp != null) { x.font = F(800, 64); x.fillStyle = day.lp >= 0 ? "#3ddc97" : "#ff6b6b"; x.fillText(`${day.lp >= 0 ? "+" : ""}${day.lp} LP`, 60, 350); }
-      const icons = day.games.slice(-10);
-      for (let i = 0; i < icons.length; i++) { const g = icons[i], cx = 60 + i * 104, cy = 400;
+      // each game: the champion, framed green or red, and its K/D/A under it
+      const icons = day.games.slice(-10), S = 76;
+      for (let i = 0; i < icons.length; i++) { const g = icons[i], cx = 60 + i * 104, cy = 372;
         const im = withImages ? await loadImg(`/api/ddimg?p=${encodeURIComponent(`cdn/${iconVer}/img/champion/${champId(g.champion)}.png`)}`) : null;
-        x.save(); x.beginPath(); x.roundRect(cx, cy, 88, 88, 14); x.clip(); if (im) x.drawImage(im, cx, cy, 88, 88); else { x.fillStyle = "#24332f"; x.fillRect(cx, cy, 88, 88); } x.restore();
-        x.lineWidth = 5; x.strokeStyle = g.result === "Victòria" ? "#3ddc97" : "#ff6b6b"; x.beginPath(); x.roundRect(cx, cy, 88, 88, 14); x.stroke(); }
+        x.save(); x.beginPath(); x.roundRect(cx, cy, S, S, 12); x.clip(); if (im) x.drawImage(im, cx, cy, S, S); else { x.fillStyle = "#24332f"; x.fillRect(cx, cy, S, S); } x.restore();
+        x.lineWidth = 5; x.strokeStyle = g.result === "Victòria" ? "#3ddc97" : "#ff6b6b"; x.beginPath(); x.roundRect(cx, cy, S, S, 12); x.stroke();
+        if (g.kda) { x.fillStyle = "#c9d6d2"; x.font = F(600, 19); x.textAlign = "center"; x.fillText(g.kda.join("/"), cx + S / 2, cy + S + 26); x.textAlign = "left"; } }
+      // the day in numbers, on the right: K/D/A of all the games, farm, kill participation and the best game
+      const gs = day.games.filter(g => g.kda), sum = i => gs.reduce((a, g) => a + (g.kda[i] || 0), 0);
+      if (gs.length) {
+        const K = sum(0), D = sum(1), A = sum(2), ratio = D ? ((K + A) / D).toFixed(1).replace(".", ",") : "Perfect";
+        const cs = gs.filter(g => g.final_cs != null && g.duration > 0), csm = cs.length ? cs.reduce((a, g) => a + g.final_cs / (g.duration / 60), 0) / cs.length : null;
+        const kp = gs.filter(g => g.kp != null), kpa = kp.length ? Math.round(kp.reduce((a, g) => a + g.kp, 0) / kp.length) : null;
+        const score = g => (g.result === "Victòria" ? 100 : 0) + ((g.kda[0] + g.kda[2]) / Math.max(1, g.kda[1]));
+        const best = gs.slice().sort((a, b) => score(b) - score(a))[0];
+        const rows = [[`${K} / ${D} / ${A}`, `KDA ${ratio}`], csm != null ? [csm.toFixed(1).replace(".", ","), tr("farm per minut")] : null,
+          kpa != null ? [`${kpa}%`, tr("participació")] : null, gs.length > 1 ? [`${displayChamp(best.champion)} ${best.kda.join("/")}`, tr("millor partida")] : null].filter(Boolean);
+        rows.forEach(([v, l], i) => { const y = 200 + i * 80; x.fillStyle = "#e9efed"; x.font = F(700, 36); x.fillText(v, 640, y); x.fillStyle = "#9fb1ab"; x.font = F(500, 20); x.fillText(l, 640, y + 28); });
+      }
     }
     if (mySolo) {
       const em = withImages ? await loadImg(emblemUrl(mySolo.tier)) : null;
