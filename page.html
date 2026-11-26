@@ -2634,8 +2634,12 @@ function mmrForecast(d){
   const n = absName(myRankAbs), need = myRankAbs >= 2800 ? 0 : 100 - n.lp, next = absName(Math.min(2800, myRankAbs - n.lp + 100));
   const f = x => x.toFixed(1).replace(".", ",");
   const games = per > 0.5 && need > 0 ? Math.ceil(need / per) : 0;
+  // the next game: what Riot gave you the last time you won and the last time you lost (newest first), not the
+  // average of 20 games: the LP per game moves with your MMR, and the last one is the best guess of the next one
+  const lastW = solo.find(r => r.lp.delta > 0)?.lp.delta, lastL = solo.find(r => r.lp.delta < 0)?.lp.delta;
+  const nextW = lastW != null ? lastW : Math.round(d.W), nextL = lastL != null ? -lastL : Math.round(d.L);
   return `<section class="card"><h2>Previsió</h2><ul class="mmrwhy">
-    <li><b>Propera partida:</b> si guanyes, uns <b>+${Math.round(d.W)}</b> LP; si perds, uns <b>−${Math.round(d.L)}</b>.</li>
+    <li><b>Propera partida:</b> si guanyes, uns <b>+${nextW}</b> LP; si perds, uns <b>−${nextL}</b>.</li>
     <li><b>Ara guanyes el ${Math.round(100 * p)}%</b> de les últimes ${solo.length} partides: de mitjana ${per >= 0 ? "+" : "−"}${f(Math.abs(per))} LP per partida.</li>
     <li>${games ? `Al ritme actual, <b data-noi18n>${esc(tierTxt({tier: next.tier, rank: next.rank}))}</b> en unes <b>${games} partides</b> (et falten ${need} LP).`
       : `Amb aquests LP, per no perdre'n cal guanyar el <b>${Math.round(100 * even)}%</b> de les partides; per pujar, més que això.`}</li>
