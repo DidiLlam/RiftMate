@@ -1,7 +1,7 @@
 {
- "version": "2.9.1",
- "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.1.exe",
- "size": 10368512,
- "sha256": "7e83d3bb95986faad3eec9e23dc4d6e9e4b4841409fe53ee5a100d361fd873e4",
- "notes": "- Jugades: les de menys de 80 ja no es mostren ni es guarden, tampoc les que la IA no havia pogut puntuar\n- Les que esperen la nota de la IA només es guarden si poden arribar a 80, i com a molt 3 dies"
+ "version": "2.9.2",
+ "url": "https://raw.githubusercontent.com/DidiLlam/RiftMate/dist/RiftMate-2.9.2.exe",
+ "size": 10383872,
+ "sha256": "fb04a9139d5ee4fc71af81daa3b738e8d5c6e6602d650351e36e60e330248ee3",
+ "notes": "- Pla de línia: en començar la partida, el coach et diu quin és el pla (iniciació, desgast, aguantar o roam) segons el teu campió i el del rival"
 }
