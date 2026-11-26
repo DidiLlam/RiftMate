@@ -6162,6 +6162,7 @@ const LANE_ARCH_NAME = {A: "assassí", P: "mag d'artilleria", C: "mag de control
 function lanePlan(mine, opp){
   const key = s => String(s || "").toLowerCase().replace(/[^a-z]/g, "");
   const find = n => { const k = key(n); for (const [c, a] of Object.entries(LANE_ARCH)) if (key(c) === k) return a; return null; };
+  if (key(mine) === key(opp)) return null;   // a mirror: not in ranked (one pick per champion)
   const a = find(mine), b = find(opp); if (!a || !b) return null;
   const p = LANE_PLAN[`${a}>${b}`]; return p ? {name: p[0], tip: p[1], me: LANE_ARCH_NAME[a], opp: LANE_ARCH_NAME[b]} : null;
 }
