@@ -2602,7 +2602,8 @@ function mmrData(){
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
   const W = avg(w), L = avg(l);
   const off = W != null && L != null ? Math.max(-300, Math.min(300, (W - L) * MMR_K)) : null;
-  const lob = solo.filter(r => r.lobby?.n >= 5 && !r.lobby.duo).slice(0, 10), lobAvg = avg(lob.map(r => r.lobby.avg));
+  // the lobby only from recent games: an old one would freeze the estimate
+  const lob = solo.slice(0, 20).filter(r => r.lobby?.n >= 5 && !r.lobby.duo).slice(0, 10), lobAvg = avg(lob.map(r => r.lobby.avg));
   const duoG = solo.filter(r => r.lobby?.duo), soloG = solo.filter(r => r.lobby && !r.lobby.duo);
   let est = null;
   if (myRankAbs != null && off != null) est = myRankAbs + off;
@@ -2614,7 +2615,7 @@ function mmrData(){
     hist.push({date: solo[i].date, rank: abs, mmr: ww != null && ll != null ? abs + Math.max(-300, Math.min(300, (ww - ll) * MMR_K)) : null});
     abs -= solo[i].lp.delta;
   }
-  return {W, L, off, n: last.length, lobAvg, lobN: lob.length, est, duoG, soloG, hist: hist.reverse()};
+  return {W, L, off, n: last.length, lobAvg, lobN: lob.length, lobLast: lob[0]?.date, est, duoG, soloG, hist: hist.reverse()};
 }
 function mmrChart(h){
   const pts = h.filter(x => x.mmr != null); if (pts.length < 4) return "";
@@ -2707,7 +2708,7 @@ function renderMmr(){
     <p>${verdict}${needWins ? ` Si encadenes unes <b>${needWins} victòries netes</b> (victòries menys derrotes), els LP et tornaran a ser favorables.` : ""}</p>
     <ul class="mmrwhy">
       ${d.off != null ? `<li><b>LP:</b> guanyes <b>+${f(d.W)}</b> i perds <b>−${f(d.L)}</b> de mitjana (últimes ${d.n} partides) → ${d.off >= 0 ? "+" : ""}${Math.round(d.off)} LP respecte del rang.</li>` : ""}
-      ${d.lobN ? `<li><b>Amb qui jugues:</b> la mitjana dels altres 9 jugadors de les teves últimes ${d.lobN} partides en solitari és <b data-noi18n>${esc(mmrRank(d.lobAvg))}</b>.</li>` : `<li class="note">A partir d'ara l'app també apunta el rang de la gent de cada partida: com més en tingui, més fina serà l'estimació.</li>`}
+      ${d.lobN ? `<li><b>Amb qui jugues:</b> la mitjana dels altres jugadors de les teves últimes ${d.lobN} partides en solitari és <b data-noi18n>${esc(mmrRank(d.lobAvg))}</b> (l'última, el ${esc(String(d.lobLast).slice(0, 10))}).</li>` : `<li class="note">A partir d'ara l'app també apunta el rang de la gent de cada partida: com més en tingui, més fina serà l'estimació.</li>`}
     </ul>
     <p class="note">És una estimació: Riot no ensenya el MMR enlloc.</p></section>
     <section class="card"><h2>Evolució</h2>${mmrChart(d.hist) || `<p class="note">Calen més partides amb LP apuntats.</p>`}</section>
